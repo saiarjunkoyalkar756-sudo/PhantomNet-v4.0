@@ -1,0 +1,23 @@
+{
+    "name": "Anomaly Detector AI",
+    "version": "0.9.0",
+    "description": "An AI module for detecting anomalies in security event data.",
+    "author": "PhantomNet AI Team",
+    "entry_point": "anomaly_entry.py",
+    "type": "ai_module",
+    "dependencies": [
+        "numpy",
+        "scikit-learn"
+    ],
+    "permissions": [
+        "log_messages",
+        "database_access:read_only"
+    ],
+    "sandbox_config": {
+        "isolation_level": "medium",
+        "resource_limits": {
+            "cpu_shares": 1024,
+            "memory_mb": 1024
+        }
+    }
+}

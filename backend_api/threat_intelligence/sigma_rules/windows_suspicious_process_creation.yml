@@ -1,0 +1,21 @@
+title: Suspicious PowerShell Download
+id: 5f8d6b9e-6a3a-4b6c-8a1a-4a6d1b2c3d4e
+status: experimental
+description: Detects PowerShell process that contains a command to download a file from the internet.
+author: PhantomNet AI
+date: 2025/12/11
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4688 # Process Creation
+        NewProcessName|endswith: '\powershell.exe'
+        CommandLine|contains:
+            - 'Net.WebClient'
+            - 'DownloadFile'
+            - 'DownloadString'
+    condition: selection
+falsepositives:
+    - Legitimate scripts that download files.
+level: high

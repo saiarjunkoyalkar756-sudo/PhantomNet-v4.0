@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 15% 5%; /* pn-dark-blue */
+    --foreground: 210 20% 90%; /* pn-text-light */
+    --card: 220 15% 8%; /* pn-dark-light */
+    --card-foreground: 210 20% 90%; /* pn-text-light */
+    --popover: 220 15% 8%; /* pn-dark-light */
+    --popover-foreground: 210 20% 90%; /* pn-text-light */
+    --primary: 185 100% 50%; /* pn-neon-blue */
+    --primary-foreground: 220 15% 5%; /* pn-dark-blue */
+    --secondary: 260 70% 60%; /* pn-electric-purple */
+    --secondary-foreground: 210 20% 90%; /* pn-text-light */
+    --muted: 220 10% 20%;
+    --muted-foreground: 210 10% 40%;
+    --accent: 185 100% 50%; /* pn-neon-blue */
+    --accent-foreground: 220 15% 5%; /* pn-dark-blue */
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 210 20% 90%;
+    --border: 220 10% 20%; /* pn-border */
+    --input: 220 10% 25%;
+    --ring: 185 100% 50%; /* pn-neon-blue */
+    --radius: 0.5rem;
+
+    --pn-dark-blue: hsl(220 15% 5%);
+    --pn-dark-light: hsl(220 15% 8%);
+    --pn-neon-blue: hsl(185 100% 50%);
+    --pn-electric-purple: hsl(260 70% 60%);
+    --pn-text-light: hsl(210 20% 90%);
+    --pn-text-muted: hsl(210 10% 40%);
+    --pn-heading: hsl(0 0% 100%);
+    --pn-border: hsl(220 10% 20%);
+  }
+
+  .dark {
+    --background: 220 15% 5%; /* pn-dark-blue */
+    --foreground: 210 20% 90%; /* pn-text-light */
+    --card: 220 15% 8%; /* pn-dark-light */
+    --card-foreground: 210 20% 90%; /* pn-text-light */
+    --popover: 220 15% 8%; /* pn-dark-light */
+    --popover-foreground: 210 20% 90%; /* pn-text-light */
+    --primary: 185 100% 50%; /* pn-neon-blue */
+    --primary-foreground: 220 15% 5%; /* pn-dark-blue */
+    --secondary: 260 70% 60%; /* pn-electric-purple */
+    --secondary-foreground: 210 20% 90%; /* pn-text-light */
+    --muted: 220 10% 20%;
+    --muted-foreground: 210 10% 40%;
+    --accent: 185 100% 50%; /* pn-neon-blue */
+    --accent-foreground: 220 15% 5%; /* pn-dark-blue */
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 210 20% 90%;
+    --border: 220 10% 20%; /* pn-border */
+    --input: 220 10% 25%;
+    --ring: 185 100% 50%; /* pn-neon-blue */
+  }
+}
+
+

@@ -1,0 +1,12 @@
+
+{
+    "name": "Test Plugin",
+    "version": "1.0.0",
+    "description": "A plugin for testing purposes.",
+    "author": "Test Author",
+    "entry_point": "test_entry.py",
+    "type": "utility",
+    "dependencies": ["requests"],
+    "permissions": ["log_messages", "network_access:scan"],
+    "sandbox_config": {"isolation_level": "low"}
+}

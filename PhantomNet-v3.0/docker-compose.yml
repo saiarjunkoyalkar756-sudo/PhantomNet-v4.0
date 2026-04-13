@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend_api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment: # Add environment variables here
+      ANALYZER_SERVICE_URL: http://analyzer:8000 # Point to the analyzer service
+    volumes:
+      - ./backend_api:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      analyzer: # Add analyzer as a dependency
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  analyzer: # Define the analyzer service
+    build:
+      context: ./backend_api/analyzer
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000" # Expose analyzer on a different port if needed, or keep 8000 internally
+    env_file:
+      - .env
+    volumes:
+      - ./backend_api/analyzer:/app
+    depends_on:
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"] # Health check for analyzer
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./dashboard_frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6.2-alpine
+
+volumes:
+  postgres_data:

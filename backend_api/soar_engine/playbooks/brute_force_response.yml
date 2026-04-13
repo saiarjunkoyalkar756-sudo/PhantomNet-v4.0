@@ -1,0 +1,42 @@
+- name: Brute Force Response Playbook
+  trigger:
+    alert_name: brute_force_attempt
+  context:
+    incident_owner: security_team
+    default_priority: medium
+  steps:
+    - action: NOTIFY_USER
+      tool_name: Notification
+      parameters:
+        message: "Brute force attempt detected from {{ event.src_ip }} on {{ event.host_name }}. Severity: {{ event.severity }}"
+    
+    - action: block_ip
+      tool_name: Firewall
+      parameters:
+        ip_address: "{{ event.src_ip }}"
+      condition: "event.severity == 'critical'" # Only block if critical
+
+    - action: create_ticket
+      tool_name: ITSM
+      parameters:
+        title: "Brute Force Incident on {{ event.host_name }} from {{ event.src_ip }}"
+        description: "A brute force attempt was detected. Source IP: {{ event.src_ip }}, Target Host: {{ event.host_name }}. Further investigation is required."
+        priority: "{{ 'high' if event.severity == 'critical' else playbook_context.default_priority }}"
+      condition: "event.severity == 'critical' or event.severity == 'high'" # Only create ticket for high/critical
+    
+    - action: isolate_host
+      tool_name: EDR
+      parameters:
+        hostname: "{{ event.host_name }}"
+      condition: "event.severity == 'critical'" # Only isolate if critical
+
+    - action: dispatch_agent_command
+      tool_name: CommandDispatcher
+      parameters:
+        agent_id: "{{ event.agent_id if 'agent_id' in event else 'unknown_agent' }}" # Assuming event data might contain agent_id
+        command_type: "quarantine_host"
+        payload:
+          hostname: "{{ event.host_name }}"
+          reason: "Critical brute force attempt detected"
+      condition: "event.severity == 'critical'" # Dispatch quarantine command only if critical
+

@@ -1,0 +1,14 @@
+[Unit]
+Description=PhantomNet Autonomous Cyber Defense Backend
+After=network.target
+
+[Service]
+ExecStart=/path/to/phantomnet/.venv_backend/bin/uvicorn backend_api.gateway_service.main:app --host 0.0.0.0 --port 8000
+WorkingDirectory=/path/to/phantomnet/
+Restart=always
+User=$(whoami) # Or a dedicated user
+Environment="PYTHONUNBUFFERED=1"
+# Environment="PHANTOMNET_CONFIG=/path/to/phantomnet/backend_api/config/backend.yml" # If config path is not default
+
+[Install]
+WantedBy=multi-user.target

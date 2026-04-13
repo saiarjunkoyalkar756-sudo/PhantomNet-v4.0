@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+httpx
+pydantic
+python-dotenv
+# LLM client libraries (e.g., openai, anthropic, google-generativeai)
+# For conceptual implementation, direct httpx calls to LLM APIs will be used.

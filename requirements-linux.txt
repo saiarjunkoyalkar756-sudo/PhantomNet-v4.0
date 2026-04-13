@@ -1,0 +1,20 @@
+fastapi>=0.100.0
+uvicorn>=0.20.0
+pydantic>=2.0.0
+httpx>=0.23.0
+watchfiles>=0.18.0
+psutil>=5.9.0
+watchdog>=3.0.0
+redis>=5.0.0
+cryptography>=40.0.0
+python-jose[cryptography]>=3.3.0 # For PyJWT
+PyJWT>=2.6.0
+packaging>=23.0 # For version parsing in plugins/loader
+pandas>=2.0.0
+scikit-learn
+scikit-learn
+prometheus_client>=0.17.1
+bcc>=0.29.1
+pyroute2>=0.7.7
+yara-python>=4.5.1
+scapy

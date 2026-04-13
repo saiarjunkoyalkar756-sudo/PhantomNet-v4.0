@@ -1,0 +1,533 @@
+
+---
+
+📘 PhantomNet Agent – Refactor & Upgrade Design
+
+1. Purpose of PhantomNet Agent
+
+The PhantomNet Agent is a lightweight, extensible security sensor that runs on endpoints, servers, or cloud nodes and is responsible for:
+
+Collecting telemetry (processes, files, network, logs)
+
+Executing scans and tools (like nmap, nuclei, etc. – safely and only in authorized scope)
+
+Sending structured events to PhantomNet backend (analyzer, SIEM, etc.)
+
+Receiving and optionally executing actions (isolate host, kill process, block IP)
+
+Running optional plugins to extend behavior per environment / org
+
+
+Goal: Upgrade the agent to be XDR-grade, modular, and production-ready.
+
+
+---
+
+2. High-Level Goals of the Redesign
+
+1. Modularity – Clean separation of collectors, analyzers, actions, transport.
+
+
+2. Extensibility – Plugin marketplace–ready: easy to add new scanners, tools, behaviors.
+
+
+3. Security – Strong config validation, secure communication, least privilege.
+
+
+4. Reliability – Graceful failures, retries, local buffering if backend is offline.
+
+
+5. Performance – Async/event-driven where appropriate, low overhead on endpoints.
+
+
+6. Clarity – Easy to understand for new contributors; good docs, typed Python.
+
+
+
+
+---
+
+3. Target Architecture (Conceptual)
+
++------------------------+
+|  PhantomNet Agent      |
+|                        |
+|  +------------------+  |
+|  | Collectors       |  |   -> process, file, net, DNS, logs
+|  +------------------+  |
+|  +------------------+  |
+|  | Local Analyzer   |  |   -> optional heuristics/AI-lite
+|  +------------------+  |
+|  +------------------+  |
+|  | Action Engine    |  |   -> kill proc, isolate host, etc.
+|  +------------------+  |
+|  +------------------+  |
+|  | Plugin Runtime   |  |
+|  +------------------+  |
+|  +------------------+  |
+|  | Transport (Bus)  |  |   -> Kafka/Redis/HTTP
+|  +------------------+  |
++-----------+------------+
+            |
+            v
+   PhantomNet Backend (analyzer, orchestrator, report service)
+
+
+---
+
+4. Proposed Directory Structure
+
+phantomnet_agent/
+├── __init__.py
+├── main.py                # CLI entrypoint
+├── core/
+│   ├── config.py          # load/validate config
+│   ├── logging_config.py  # structured logging setup
+│   ├── state.py           # agent runtime state
+│   └── utils.py
+├── bus/
+│   ├── base.py            # abstract Transport
+│   ├── kafka_bus.py       # Kafka implementation
+│   ├── redis_bus.py       # Redis Streams/pubsub
+│   └── http_bus.py        # fallback HTTP transport
+├── collectors/
+│   ├── base.py            # Collector interface
+│   ├── process_collector.py
+│   ├── file_collector.py
+│   ├── network_collector.py
+│   ├── dns_collector.py
+│   └── log_collector.py
+├── analyzers/
+│   ├── base.py
+│   ├── local_rules_engine.py
+│   └── ai_client.py       # calls backend AI or local model
+├── actions/
+│   ├── base.py
+│   ├── process_actions.py # kill, suspend, etc.
+│   ├── network_actions.py # block IP, add fw rule
+│   └── system_actions.py  # isolate host, lock user, etc.
+├── plugins/
+│   ├── loader.py          # plugin manager
+│   ├── sandbox.py         # safe execution
+│   └── examples/
+│       ├── sample_scanner/
+│       │   ├── plugin.json
+│       │   └── plugin.py
+│       └── sample_enricher/
+├── api/
+│   ├── health_api.py      # local FastAPI for /health, /status
+│   └── control_api.py     # optional local admin/control
+├── security/
+│   ├── crypto.py          # signing, encryption helpers
+│   ├── auth.py            # agent identity, tokens
+│   └── integrity.py       # config + binary integrity checks
+├── schemas/
+│   ├── events.py          # Pydantic models for events
+│   ├── actions.py
+│   └── config_schema.py
+├── config/
+│   ├── agent.example.yml
+│   └── logging.yml
+└── tests/
+    ├── test_collectors.py
+    ├── test_bus.py
+    └── test_plugins.py
+
+
+---
+
+5. Agent Modes
+
+Command-line entrypoint: phantomnet_agent (or python -m phantomnet_agent).
+
+Supported modes:
+
+full – collectors + local analyzer + actions + plugins.
+
+collector-only – only telemetry, no actions.
+
+forensics – one-shot data gather + send.
+
+osint – OSINT-enriched scans, if enabled.
+
+dry-run – config check, integrity, and connectivity tests only.
+
+
+Example CLI:
+
+phantomnet_agent --mode full --config /etc/phantomnet/agent.yml
+phantomnet_agent --mode collector-only --config ./config/agent.yml
+
+
+---
+
+6. Initialization Flow
+
+6.1 Startup Steps
+
+1. Load config
+
+From agent.yml, env vars, and defaults.
+
+Validate via schemas/config_schema.py.
+
+
+
+2. Initialize logging
+
+JSON-structured logs, include agent_id, host, mode.
+
+
+
+3. Run security checks
+
+Optional: verify binary signature / integrity hash.
+
+Validate config signature (if enabled).
+
+
+
+4. Initialize transport (bus)
+
+Try Kafka → Redis → HTTP fallback (based on config).
+
+Perform connectivity check.
+
+
+
+5. Register / enroll agent (if first run)
+
+Send registration event to backend.
+
+
+
+6. Load plugins
+
+Scan plugins/ + external plugin paths.
+
+Validate plugin.json (name, version, permissions).
+
+
+
+7. Start collectors
+
+Each collector runs in its own async task or thread.
+
+Periodically emits events to the bus.
+
+
+
+8. Start local API (optional)
+
+FastAPI on localhost:PORT with:
+
+/health
+
+/status
+
+/metrics (basic)
+
+
+
+
+9. Enter main loop
+
+Receive commands/events from backend
+
+Dispatch to actions / plugins
+
+Continue telemetry until shutdown.
+
+
+
+
+
+---
+
+7. Transport / Bus Design
+
+7.1 Base Interface
+
+# bus/base.py
+from abc import ABC, abstractmethod
+from typing import Dict, Any
+
+class Transport(ABC):
+    @abstractmethod
+    async def send_event(self, topic: str, payload: Dict[str, Any]) -> None:
+        ...
+
+    @abstractmethod
+    async def receive_commands(self, topic: str):
+        """Async generator yielding commands."""
+        yield
+
+Implementations:
+
+KafkaTransport(Transport) – for production.
+
+RedisTransport(Transport) – good for labs / local.
+
+HttpTransport(Transport) – simple fallback.
+
+
+Config example:
+
+bus:
+  type: "kafka"          # or "redis" or "http"
+  kafka:
+    bootstrap_servers: "kafka:9092"
+    events_topic: "phantomnet.events"
+    commands_topic: "phantomnet.commands"
+  redis:
+    url: "redis://redis:6379/0"
+  http:
+    endpoint: "https://phantomnet-gateway/api/agent/events"
+
+
+---
+
+8. Collector Design
+
+8.1 Base Class
+
+# collectors/base.py
+from abc import ABC, abstractmethod
+
+class Collector(ABC):
+    def __init__(self, transport, config):
+        self.transport = transport
+        self.config = config
+
+    @abstractmethod
+    async def run(self):
+        """Main loop for this collector."""
+        ...
+
+Examples:
+
+ProcessCollector – polls process list, detects new processes, suspicious parents.
+
+FileCollector – monitors key directories (via inotify/FSEvents/Watchdog where available).
+
+NetworkCollector – snapshots connections via psutil or platform tools.
+
+DnsCollector – parse local resolver logs / application logs.
+
+LogCollector – tails syslog, Windows Event Logs, app logs.
+
+
+Each collector emits events using common schemas from schemas/events.py.
+
+
+---
+
+9. Plugin System
+
+9.1 Plugin Manifest
+
+Example plugin.json:
+
+{
+  "name": "nmap_surface_scanner",
+  "version": "1.0.0",
+  "entry": "plugin:run",
+  "description": "Performs authorized nmap scans and reports open ports.",
+  "permissions": [
+    "network:scan",
+    "filesystem:read",
+    "exec:nmap"
+  ]
+}
+
+9.2 Loader
+
+Discovers plugins in:
+
+phantomnet_agent/plugins/
+
+paths listed in config: plugins.paths
+
+
+Validates manifest using Pydantic model.
+
+Imports entry module/function dynamically (importlib).
+
+Wraps execution inside a sandbox:
+
+timeouts
+
+restricted environment variables
+
+optional seccomp / no shell (implementation-specific)
+
+
+
+
+---
+
+10. Security & Hardening
+
+Mutual TLS or token-based auth for agent → backend.
+
+Rotate agent credentials periodically.
+
+Ensure secure storage of keys (OS keyring where possible).
+
+Minimal privileges:
+
+Only require admin/root if specific collectors/actions need it.
+
+Support degraded mode if running unprivileged.
+
+
+Config integrity check:
+
+Optionally sign config files and verify at startup.
+
+
+
+
+---
+
+11. Health, Status & Observability
+
+Local FastAPI app (optional) for:
+
+GET /health → {status: "ok", mode, version}
+
+GET /status → info on collectors, bus, queue sizes
+
+GET /metrics → counters (events_sent, commands_processed, errors, etc.)
+
+
+Also:
+
+Emit heartbeat events to backend:
+
+agent_id, hostname, mode, uptime, version.
+
+
+
+
+---
+
+12. Configuration Example
+
+config/agent.example.yml:
+
+agent:
+  id: "agent-{{autogen}}"
+  mode: "full"
+  backend_env: "dev"
+  log_level: "INFO"
+
+bus:
+  type: "redis"
+  redis:
+    url: "redis://redis:6379/0"
+    events_channel: "phantomnet.events"
+    commands_channel: "phantomnet.commands"
+
+collectors:
+  process:
+    enabled: true
+    interval_seconds: 5
+  file:
+    enabled: true
+    paths:
+      - "/var/www"
+      - "/etc"
+  network:
+    enabled: true
+    interval_seconds: 10
+  dns:
+    enabled: false
+  logs:
+    enabled: true
+    files:
+      - "/var/log/auth.log"
+
+plugins:
+  enabled: true
+  paths:
+    - "/opt/phantomnet/plugins"
+  allowed_permissions:
+    - "network:scan"
+    - "filesystem:read"
+    - "exec:nmap"
+
+security:
+  tls:
+    enabled: true
+    ca_file: "/etc/phantomnet/ca.pem"
+    cert_file: "/etc/phantomnet/agent.crt"
+    key_file: "/etc/phantomnet/agent.key"
+  verify_config_signature: false
+
+
+---
+
+13. Testing Strategy
+
+Unit tests
+
+collectors with mocked OS interfaces (psutil, watchdog)
+
+bus transports with local Kafka/Redis in CI
+
+plugin loader with fake plugin directories
+
+
+Integration tests
+
+run agent in collector-only mode with test backend
+
+verify events structure using schemas
+
+
+Security tests
+
+ensure invalid config fails fast
+
+ensure plugin permission checks work
+
+
+
+
+---
+
+14. Migration Plan (From Current Agent)
+
+1. Introduce new core/, bus/, collectors/, plugins/ alongside old code.
+
+
+2. Implement minimal subset:
+
+RedisTransport
+
+ProcessCollector
+
+/health endpoint
+
+
+
+3. Switch phantomnet_agent.main to new architecture behind a feature flag.
+
+
+4. Port existing logic into:
+
+collectors → for telemetry
+
+plugins → for scanners / special tasks
+
+
+
+5. Remove deprecated entrypoints once stable.
+
+
+
+
+---
+
+

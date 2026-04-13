@@ -1,0 +1,63 @@
+agent:
+  id: "agent-{{autogen}}"
+  mode: "collector-only"
+  backend_env: "dev"
+  log_level: "DEBUG"
+  manager_url: "http://localhost:8080"
+  bus:
+    type: "http"
+    http:
+      endpoint: "http://localhost:8080" # Changed from example for local testing
+
+collectors:
+  process:
+    enabled: false
+    interval_seconds: 5
+  ebpf_process:
+    enabled: true
+  file:
+    enabled: false
+    interval_seconds: 60
+    paths:
+      - "/var/log"
+      - "/etc"
+  ebpf_file:
+    enabled: true
+  windows_registry:
+    enabled: false
+  ebpf_driver:
+    enabled: true
+  ebpf_simulator:
+    enabled: true
+    interval_seconds: 5
+  memory_scanner:
+    enabled: true
+    rule_path: "yara_rules.yar"
+    interval_seconds: 300
+  software:
+    enabled: true
+    interval: 3600 # Run once every hour
+  network:
+    enabled: true
+    interval_seconds: 10
+  dns:
+    enabled: false # Requires more specific log file paths
+  logs:
+    enabled: true
+    interval_seconds: 5
+    files:
+      - "/var/log/auth.log"
+  container:
+    enabled: true
+    interval_seconds: 10
+
+plugins:
+  enabled: true
+  paths:
+    - "./plugins/examples" # Relative to agent root
+  allowed_permissions:
+    - "network:scan"
+    - "filesystem:read"
+    - "exec:nmap" # Example permission, not implemented yet
+
+  safe_ai_mode: true

@@ -1,0 +1,14 @@
+[Unit]
+Description=PhantomNet Agent
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/phantomnet-agent
+ExecStart=/opt/phantomnet-agent/venv/bin/python main.py --config /opt/phantomnet-agent/config/agent.yml
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

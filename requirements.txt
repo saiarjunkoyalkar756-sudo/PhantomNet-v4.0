@@ -1,0 +1,40 @@
+# Core FastAPI and Server
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+pydantic==2.7.1
+python-dotenv==1.0.1
+loguru==0.7.2
+
+# Database
+sqlalchemy==2.0.29
+alembic==1.13.1
+# psycopg2-binary # Commented out for Termux compatibility. Install postgresql-dev if needed.
+
+# Messaging and Caching
+redis==5.0.4
+kafka-python==2.0.2
+
+# Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pyotp==2.9.0
+python-multipart==0.0.9
+
+# Networking & Web
+websockets==12.0
+httpx==0.27.0
+requests==2.31.0
+
+# AI/ML (Safe for Termux)
+numpy==1.26.4
+# scikit-learn==1.4.2 # Commented out for Termux compatibility due to build issues.
+# TensorFlow is heavy. Use tensorflow-lite for edge devices if needed.
+# tensorflow-lite==2.16.1
+
+# Blockchain
+web3
+py-solc-x
+
+# Network Analysis
+scapy
+networkx==3.3

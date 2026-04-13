@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+networkx
+python-multipart # For dependency injection
+Jinja2 # For dependency injection

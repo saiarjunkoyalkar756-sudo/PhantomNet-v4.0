@@ -1,0 +1,21 @@
+{
+    "name": "Basic Security Report",
+    "version": "1.0.0",
+    "description": "A basic template for generating security summary reports.",
+    "author": "PhantomNet Report Team",
+    "entry_point": "report_entry.py",
+    "type": "report_template",
+    "dependencies": [],
+    "permissions": [
+        "file_system:read_only",
+        "file_system:write_only",
+        "log_messages"
+    ],
+    "sandbox_config": {
+        "isolation_level": "medium",
+        "resource_limits": {
+            "cpu_shares": 512,
+            "memory_mb": 512
+        }
+    }
+}

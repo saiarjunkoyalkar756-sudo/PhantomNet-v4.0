@@ -1,0 +1,221 @@
+version: '3.8'
+
+networks:
+  backend-net:
+    driver: bridge
+
+services:
+  # --------------------------------------------------------------------------
+  #  API Gateway Service
+  # --------------------------------------------------------------------------
+  gateway:
+    build:
+      context: ./gateway_service
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    networks:
+      - backend-net
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=json
+      - OPERATIONAL_DB_URL=postgresql://phantomnet:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - POLICY_DB_URL=postgresql://phantomnet:${DB_PASSWORD}@postgres:5432/${DB_NAME} # Example: using same db
+      - REDIS_HOST=${REDIS_HOST}
+      - SECRET_KEY=${JWT_SECRET_KEY}
+    env_file:
+      - .env
+
+  # --------------------------------------------------------------------------
+  #  Core Infrastructure Services
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
+    networks:
+      - backend-net
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - backend-net
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    env_file:
+      - .env
+
+  # --------------------------------------------------------------------------
+  #  Example Microservices (add others following this pattern)
+  # --------------------------------------------------------------------------
+  analyzer:
+    build:
+      context: ./analyzer
+      dockerfile: Dockerfile
+    container_name: analyzer-service
+    networks:
+      - backend-net
+    depends_on:
+      - redis
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - REDIS_HOST=redis
+
+  asset_inventory:
+    build:
+      context: ./asset_inventory
+      dockerfile: Dockerfile
+    container_name: asset-inventory-service
+    networks:
+      - backend-net
+    depends_on:
+      - postgres
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - DATABASE_URL=postgresql://user:password@postgres:5432/maindb
+    env_file:
+      - .env
+
+  graph_intelligence:
+    build:
+      context: ./graph_intelligence_service
+      dockerfile: Dockerfile
+    container_name: graph-intelligence-service
+    networks:
+      - backend-net
+    depends_on:
+      - neo4j
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+    env_file:
+      - .env
+
+  vulnerability_scanner:
+    build:
+      context: ./vulnerability_scanner_service
+      dockerfile: Dockerfile
+    container_name: vulnerability-scanner-service
+    networks:
+      - backend-net
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+
+  mitre_attack_mapper:
+    build:
+      context: ./mitre_attack_mapper
+      dockerfile: Dockerfile
+    container_name: mitre-attack-mapper-service
+    networks:
+      - backend-net
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+
+  cloud_security:
+    build:
+      context: ./cloud_security_service
+      dockerfile: Dockerfile
+    container_name: cloud-security-service
+    networks:
+      - backend-net
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+
+  siem_integration:
+    build:
+      context: ./siem_integration_service
+      dockerfile: Dockerfile
+    container_name: siem-integration-service
+    networks:
+      - backend-net
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+
+  sandbox:
+    build:
+      context: ./sandbox_service
+      dockerfile: Dockerfile
+    container_name: sandbox-service
+    networks:
+      - backend-net
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+
+  case_management:
+    build:
+      context: ./case_management_service
+      dockerfile: Dockerfile
+    container_name: case-management-service
+    networks:
+      - backend-net
+    depends_on:
+      - postgres
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - DB_HOST=postgres
+      - DB_NAME=phantomnet_db
+      - DB_USER=phantomnet
+      - DB_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .env
+
+  compliance_reporting:
+    build:
+      context: ./compliance_reporting_service
+      dockerfile: Dockerfile
+    container_name: compliance-reporting-service
+    networks:
+      - backend-net
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+
+  threat_intelligence:
+    build:
+      context: ./threat_intelligence_service
+      dockerfile: Dockerfile
+    container_name: threat-intelligence-service
+    networks:
+      - backend-net
+    depends_on:
+      - redis
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - REDIS_HOST=redis
+      # API Keys will be pulled from the .env file
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
+  redis_data:

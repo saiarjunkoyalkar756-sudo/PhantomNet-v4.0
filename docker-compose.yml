@@ -1,0 +1,458 @@
+version: '3.8'
+
+services:
+  telemetry-ingestor:
+    build:
+      context: .
+      dockerfile: infra/docker/telemetry-ingestor.Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
+      SERVICE_NAME: 'telemetry-ingestor'
+      ENVIRONMENT: 'development'
+
+  event-normalizer:
+    build:
+      context: .
+      dockerfile: infra/docker/event-normalizer.Dockerfile
+    ports:
+      - "8002:8000" # Expose port for FastAPI app
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
+      SERVICE_NAME: 'event-normalizer'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000' # Internal port for uvicorn
+
+  ai-behavioral-engine:
+    build:
+      context: .
+      dockerfile: infra/docker/ai-behavioral-engine.Dockerfile
+    ports:
+      - "8003:8000" # Expose port for FastAPI app
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
+      SERVICE_NAME: 'ai-behavioral-engine'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000' # Internal port for uvicorn
+
+  alert-storage:
+    build:
+      context: .
+      dockerfile: infra/docker/alert-storage.Dockerfile
+    ports:
+      - "8004:8000" # Expose port for FastAPI app
+    depends_on:
+      - redpanda
+      - postgres
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'alert-storage'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000' # Internal port for uvicorn
+    env_file:
+      - .env
+
+  gateway-service:
+    build:
+      context: ./backend_api/gateway_service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'gateway-service'
+      ENVIRONMENT: 'development'
+    env_file:
+      - .env
+
+  command-dispatcher:
+    build:
+      context: .
+      dockerfile: infra/docker/command-dispatcher.Dockerfile
+    ports:
+      - "8005:8000" # Expose port for FastAPI app
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
+      SERVICE_NAME: 'command-dispatcher'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000' # Internal port for uvicorn
+
+  graph-intelligence-service:
+    build:
+      context: ./backend_api/graph_intelligence_service
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8000"
+    depends_on:
+      - neo4j
+    environment:
+      NEO4J_URI: 'bolt://neo4j:7687'
+      NEO4J_USER: 'neo4j'
+      NEO4J_PASSWORD: '${NEO4J_PASSWORD}'
+    env_file:
+      - .env
+
+  vulnerability-management-service:
+    build:
+      context: ./backend_api/vulnerability_management_service
+      dockerfile: Dockerfile
+    ports:
+      - "8019:8000"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'vulnerability-management-service'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  mitre-attack-mapper-service:
+    build:
+      context: ./backend_api/mitre_attack_mapper
+      dockerfile: Dockerfile
+    ports:
+      - "8009:8000"
+    environment:
+      SERVICE_NAME: 'mitre-attack-mapper'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  cloud-security-service:
+    build:
+      context: ./backend_api/cloud_security_service
+      dockerfile: Dockerfile
+    ports:
+      - "8010:8000"
+    environment:
+      SERVICE_NAME: 'cloud-security'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  siem-integration-service:
+    build:
+      context: ./backend_api/siem_integration_service
+      dockerfile: Dockerfile
+    ports:
+      - "8011:8000"
+    environment:
+      SERVICE_NAME: 'siem-integration'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  sandbox-service:
+    build:
+      context: ./backend_api/sandbox_service
+      dockerfile: Dockerfile
+    ports:
+      - "8012:8000"
+    environment:
+      SERVICE_NAME: 'sandbox'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  case-management-service:
+    build:
+      context: ./backend_api/case_management_service
+      dockerfile: Dockerfile
+    ports:
+      - "8013:8000"
+    depends_on:
+      - postgres
+    environment:
+      SERVICE_NAME: 'case-management'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+    env_file:
+      - .env
+
+  compliance-reporting-service:
+    build:
+      context: ./backend_api/compliance_reporting_service
+      dockerfile: Dockerfile
+    ports:
+      - "8014:8000"
+    environment:
+      SERVICE_NAME: 'compliance-reporting'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  threat-intelligence-service:
+    build:
+      context: ./backend_api/threat_intelligence_service
+      dockerfile: Dockerfile
+    ports:
+      - "8015:8000"
+    depends_on:
+      - redis
+    environment:
+      SERVICE_NAME: 'threat-intelligence'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+      REDIS_HOST: 'redis'
+      # API Keys will be pulled from the .env file
+    env_file:
+      - .env
+
+  soar-playbook-engine:
+    build:
+      context: ./backend_api/soar_playbook_engine
+      dockerfile: Dockerfile
+    ports:
+      - "8016:8000"
+    depends_on:
+      - postgres
+      - redpanda # Add redpanda dependency
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'soar-playbook-engine'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092' # Add Kafka config
+      SOAR_ALERT_TOPIC: 'soar-alerts' # Add Kafka config
+      SOAR_KAFKA_GROUP_ID: 'soar-engine-group' # Add Kafka config
+    env_file:
+      - .env
+
+  playbook-flow-builder:
+    build:
+      context: ./backend_api/playbook_flow_builder
+      dockerfile: Dockerfile
+    ports:
+      - "8017:8000"
+    environment:
+      SERVICE_NAME: 'playbook-flow-builder'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  auto-response-engine:
+    build:
+      context: ./backend_api/auto_response_engine
+      dockerfile: Dockerfile
+    ports:
+      - "8018:8000"
+    depends_on:
+      - soar-playbook-engine
+    environment:
+      SERVICE_NAME: 'auto-response-engine'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  siem-ingest-service:
+    build:
+      context: ./backend_api/siem_ingest_service
+      dockerfile: Dockerfile
+    ports:
+      - "8020:8000"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'siem-ingest-service'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  log-normalizer:
+    build:
+      context: ./backend_api/log_normalizer
+      dockerfile: Dockerfile
+    ports:
+      - "8021:8000"
+    environment:
+      SERVICE_NAME: 'log-normalizer'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  phantomql-engine:
+    build:
+      context: ./backend_api/phantomql_engine
+      dockerfile: Dockerfile
+    ports:
+      - "8022:8000"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'phantomql-engine'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  attack-graph-engine:
+    build:
+      context: ./backend_api/attack_graph_engine
+      dockerfile: Dockerfile
+    ports:
+      - "8023:8000"
+    depends_on:
+      - neo4j
+    environment:
+      NEO4J_URI: 'bolt://neo4j:7687'
+      NEO4J_USER: 'neo4j'
+      NEO4J_PASSWORD: '${NEO4J_PASSWORD}'
+      SERVICE_NAME: 'attack-graph-engine'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  lateral-movement-detector:
+    build:
+      context: ./backend_api/lateral_movement_detector
+      dockerfile: Dockerfile
+    ports:
+      - "8024:8000"
+    environment:
+      SERVICE_NAME: 'lateral-movement-detector'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  forensics-engine:
+    build:
+      context: ./backend_api/forensics_engine
+      dockerfile: Dockerfile
+    ports:
+      - "8025:8000"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'forensics-engine'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  compliance-service:
+    build:
+      context: ./backend_api/compliance_service
+      dockerfile: Dockerfile
+    ports:
+      - "8026:8000"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_NAME: 'compliance-service'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  audit-log-collector:
+    build:
+      context: ./backend_api/audit_log_collector
+      dockerfile: Dockerfile
+    ports:
+      - "8027:8000"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: 'postgres'
+      DB_NAME: 'phantomnet_db'
+      DB_USER: 'phantomnet'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      SERVICE_name: 'audit-log-collector'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    command:
+      - redpanda start
+      - --smp 1
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: phantomnet_db
+      POSTGRES_USER: phantomnet
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    env_file:
+      - .env
+
+  neo4j:
+    image: neo4j:5
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+    volumes:
+      - neo4j_data:/data
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
+  redis_data:
+  neo4j_data:

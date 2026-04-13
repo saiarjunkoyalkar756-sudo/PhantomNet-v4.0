@@ -1,0 +1,22 @@
+- name: "Ransomware Detected Playbook"
+  trigger:
+    type: "alert"
+    name: "Ransomware Detected"
+  steps:
+    - name: "Isolate Host"
+      action: "isolate_host"
+      parameters:
+        hostname: "{{ event.hostname }}"
+    - name: "Block IP"
+      action: "block_ip"
+      parameters:
+        ip_address: "{{ event.source_ip }}"
+    - name: "Terminate Malicious Process"
+      action: "KILL_PROCESS"
+      parameters:
+        hostname: "{{ event.hostname }}"
+        process_name: "{{ event.process_name }}"
+    - name: "Notify SOC"
+      action: "NOTIFY_USER"
+      parameters:
+        message: "Ransomware detected on {{ event.hostname }} from {{ event.source_ip }}. Playbook executed successfully."

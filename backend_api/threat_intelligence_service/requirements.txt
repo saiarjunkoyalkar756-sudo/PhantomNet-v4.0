@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+httpx
+redis
+python-dotenv
+pydantic
+# Specific API clients - these might need separate installation or are handled directly by httpx
+# pyotx (for AlienVault OTX)
+# shodan
+# censys-python
+# virustotal-api (if needed, or direct httpx)

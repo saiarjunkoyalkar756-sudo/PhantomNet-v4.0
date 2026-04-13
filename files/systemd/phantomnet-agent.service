@@ -1,0 +1,14 @@
+[Unit]
+Description=PhantomNet Autonomous Cyber Defense Agent
+After=network.target
+
+[Service]
+ExecStart=/path/to/phantomnet/.venv_phantomnet/bin/python /path/to/phantomnet/phantomnet_agent/main.py
+WorkingDirectory=/path/to/phantomnet/phantomnet_agent
+Restart=always
+User=$(whoami) # Or a dedicated user
+Environment="PYTHONUNBUFFERED=1"
+# Environment="PHANTOMNET_CONFIG=/path/to/phantomnet/phantomnet_agent/config/agent.yml" # If config path is not default
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+{
+    "name": "Blue Team Defender",
+    "version": "1.0.0",
+    "description": "An AI agent personality focused on defensive actions and threat mitigation.",
+    "author": "PhantomNet AI Team",
+    "entry_point": "blue_team_personality_entry.py",
+    "type": "agent_personality",
+    "dependencies": [],
+    "permissions": [
+        "log_messages",
+        "database_access:read_only",
+        "system_command:limited"
+    ],
+    "sandbox_config": {
+        "isolation_level": "high",
+        "resource_limits": {
+            "cpu_shares": 768,
+            "memory_mb": 768
+        }
+    }
+}

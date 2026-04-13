@@ -1,0 +1,21 @@
+{
+    "name": "Kerbrute Scanner",
+    "version": "1.0.0",
+    "description": "A plugin to perform Kerbrute-like brute-force enumeration on Active Directory.",
+    "author": "PhantomNet Contrib",
+    "entry_point": "kerbrute_entry.py",
+    "type": "scanner",
+    "dependencies": [],
+    "permissions": [
+        "network_access:scan",
+        "system_command:limited",
+        "log_messages"
+    ],
+    "sandbox_config": {
+        "isolation_level": "high",
+        "resource_limits": {
+            "cpu_shares": 1024,
+            "memory_mb": 512
+        }
+    }
+}

@@ -1,0 +1,27 @@
+#!/bin/bash
+# phantomnet-cli
+# CLI tool to manage PhantomNet services
+
+ACTION=$1
+SERVICE=$2
+
+if [ -z "$ACTION" ] || [ -z "$SERVICE" ]; then
+    echo "Usage: phantomnet-cli <start|stop|restart|status|enable|disable> <backend|agent>"
+    exit 1
+fi
+
+case "$SERVICE" in
+    backend)
+        SERVICE_NAME="phantomnet-backend.service"
+        ;;
+    agent)
+        SERVICE_NAME="phantomnet-agent.service"
+        ;;
+    *)
+        echo "Invalid service: $SERVICE. Must be 'backend' or 'agent'."
+        exit 1
+        ;;
+esac
+
+echo "Executing: sudo systemctl $ACTION $SERVICE_NAME"
+sudo systemctl "$ACTION" "$SERVICE_NAME"

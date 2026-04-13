@@ -1,0 +1,63 @@
+agent:
+  id: "agent-{{autogen}}"
+  mode: "full"
+  backend_env: "dev"
+  log_level: "DEBUG"
+  bus:
+    type: "http"
+    # redis:
+    #   url: "redis://localhost:6379/0"
+    #   events_channel: "phantomnet.events"
+    #   commands_channel: "phantomnet.commands"
+    # kafka:
+    #   bootstrap_servers: "localhost:9092"
+    #   events_topic: "phantomnet.events"
+    #   commands_topic: "phantomnet.commands"
+    #   consumer_group_id: "phantomnet-agent"
+    http:
+      endpoint: "http://dontknowyet123.wuaze.com"
+
+collectors:
+  process:
+    enabled: true
+    interval_seconds: 5
+  file:
+    enabled: true
+    interval_seconds: 60
+    paths:
+      - "/var/log"
+      - "/etc"
+  network:
+    enabled: true
+    interval_seconds: 10
+  dns:
+    enabled: false # Requires more specific log file paths
+    # log_files:
+    #   - "/var/log/syslog"
+    #   - "/var/log/messages"
+  logs:
+    enabled: true
+    interval_seconds: 5
+    files:
+      - "/var/log/auth.log"
+      # - "/var/log/nginx/access.log"
+  container:
+    enabled: true
+    interval_seconds: 10
+
+plugins:
+  enabled: true
+  paths:
+    - "./plugins/examples" # Relative to agent root
+  allowed_permissions:
+    - "network:scan"
+    - "filesystem:read"
+    - "exec:nmap" # Example permission, not implemented yet
+
+security:
+  tls:
+    enabled: false # Set to true and configure paths for real deployments
+    # ca_file: "/etc/phantomnet/ca.pem"
+    # cert_file: "/etc/phantomnet/agent.crt"
+    # key_file: "/etc/phantomnet/agent.key"
+  verify_config_signature: false

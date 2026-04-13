@@ -1,0 +1,27 @@
+# config/logging.yml
+# This file can be used for more advanced logging configuration using Python's
+# logging.config.dictConfig.
+# Currently, logging is configured directly in core/logging_config.py.
+# Example:
+# version: 1
+# formatters:
+#   json_formatter:
+#     class: pythonjsonlogger.jsonlogger.JsonFormatter
+#     format: '%(asctime)s %(name)s %(levelname)s %(message)s %(agent_id)s %(mode)s'
+#     rename_fields:
+#       asctime: timestamp
+#       levelname: level
+#       name: logger
+# handlers:
+#   console:
+#     class: logging.StreamHandler
+#     formatter: json_formatter
+#     stream: ext://sys.stdout
+# loggers:
+#   phantomnet_agent:
+#     handlers: [console]
+#     level: INFO
+#     propagate: false
+# root:
+#   handlers: [console]
+#   level: INFO

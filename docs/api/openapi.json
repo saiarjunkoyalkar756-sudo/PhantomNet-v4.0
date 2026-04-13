@@ -1,0 +1,495 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PhantomNet Gateway Service API",
+    "version": "1.0.0",
+    "description": "API Gateway for PhantomNet's Enterprise Cyber-Defense Platform. This documentation details the endpoints for managing alerts, sending agent commands, and user authentication/authorization."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8001",
+      "description": "Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Alerts",
+      "description": "Operations related to security alerts."
+    },
+    {
+      "name": "Agent Commands",
+      "description": "Operations for sending commands to agents."
+    },
+    {
+      "name": "Authentication",
+      "description": "User registration, login, and MFA management."
+    },
+    {
+      "name": "Health",
+      "description": "Service health checks."
+    },
+    {
+      "name": "Websockets",
+      "description": "Real-time event streaming."
+    }
+  ],
+  "paths": {
+    "/api/v1/alerts": {
+      "get": {
+        "summary": "Retrieve alerts from the database.",
+        "operationId": "get_alerts_api_v1_alerts_get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "title": "Offset",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "title": "Limit",
+              "default": 100,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "agent_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Alert"
+                  },
+                  "type": "array",
+                  "title": "Response Get Alerts Api V1 Alerts Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          },
+          "403": {
+            "description": "Not enough permissions",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/api/v1/agents/{agent_id}/command": {
+      "post": {
+        "summary": "Sends a command to a specific agent via the Kafka agent-commands topic.",
+        "operationId": "send_agent_command_api_v1_agents__agent_id__command_post",
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCommandPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Command accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "title": "Status"
+                    },
+                    "task_id": {
+                      "type": "string",
+                      "title": "Task Id"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          },
+          "403": {
+            "description": "Not enough permissions",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          },
+          "500": {
+            "description": "Failed to send command",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "tags": [
+          "Agent Commands"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register User",
+        "operationId": "register_user_api_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Username already registered",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          }
+        },
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/token": {
+      "post": {
+        "summary": "Login For Access Token",
+        "operationId": "login_for_access_token_api_auth_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuth2PasswordRequestForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect username or password",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}
+          }
+        },
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/ws/events": {
+      "get": {
+        "summary": "Websocket Endpoint",
+        "operationId": "websocket_endpoint_ws_events_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        },
+        "tags": [
+          "Websockets"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Get Health Status",
+        "operationId": "get_health_status_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "title": "Status"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "title": "Timestamp"
+                    },
+                    "services": {
+                      "type": "object",
+                      "title": "Services"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Alert": {
+        "title": "Alert",
+        "required": ["tenant_id", "alert_id", "rule_id", "agent_id", "triggered_at"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "alert_id": {
+            "type": "string",
+            "title": "Alert Id"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "rule_name": {
+            "type": "string",
+            "title": "Rule Name"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Triggered At"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "details": {
+            "type": "string",
+            "title": "Details"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          }
+        }
+      },
+      "AgentCommandPayload": {
+        "title": "AgentCommandPayload",
+        "required": ["command_type"],
+        "type": "object",
+        "properties": {
+          "command_type": {
+            "type": "string",
+            "title": "Command Type"
+          },
+          "arguments": {
+            "type": "object",
+            "title": "Arguments",
+            "default": {}
+          },
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          }
+        }
+      },
+      "UserCreate": {
+        "title": "UserCreate",
+        "required": ["username", "password"],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "default": "user"
+          }
+        }
+      },
+      "Token": {
+        "title": "Token",
+        "required": ["access_token", "token_type"],
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type"
+          }
+        }
+      },
+      "OAuth2PasswordRequestForm": {
+        "title": "OAuth2PasswordRequestForm",
+        "required": ["username", "password"],
+        "type": "object",
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "title": "Grant Type",
+            "pattern": "password",
+            "default": "password"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "type": "string",
+            "title": "Client Secret"
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": ["loc", "msg", "type"],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "api/auth/token"
+          }
+        },
+        "description": "OAuth2 Password Bearer Token"
+      }
+    }
+  }
+}

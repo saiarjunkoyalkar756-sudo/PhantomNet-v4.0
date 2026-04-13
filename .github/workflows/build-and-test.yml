@@ -1,0 +1,121 @@
+# .github/workflows/build-and-test.yml
+name: Build and Test PhantomNet Agent
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv_phantomnet
+          source .venv_phantomnet/bin/activate
+          pip install --upgrade pip wheel
+          pip install -r requirements-linux.txt
+          pip install pyinstaller # Install PyInstaller
+
+      - name: Build Linux Agent with PyInstaller
+        run: |
+          source .venv_phantomnet/bin/activate
+          pyinstaller phantomnet_agent/pyinstaller/agent-linux.spec
+        working-directory: .
+
+      - name: Run Unit Tests (Linux)
+        run: |
+          source .venv_phantomnet/bin/activate
+          pytest tests/unit/
+        # Placeholder for actual unit test command
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: phantomnet-agent-linux
+          path: dist/phantomnet-agent
+
+  build-and-test-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv_phantomnet
+          .\.venv_phantomnet\Scripts\activate
+          pip install --upgrade pip wheel
+          pip install -r requirements-windows.txt
+          pip install pyinstaller # Install PyInstaller
+        shell: powershell
+
+      - name: Build Windows Agent with PyInstaller
+        run: |
+          .\.venv_phantomnet\Scripts\activate
+          pyinstaller phantomnet_agent\pyinstaller\agent-windows.spec
+        working-directory: .
+        shell: powershell
+
+      - name: Run Unit Tests (Windows)
+        run: |
+          .\.venv_phantomnet\Scripts\activate
+          pytest tests\unit\
+        # Placeholder for actual unit test command
+        shell: powershell
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: phantomnet-agent-windows
+          path: dist\phantomnet-agent.exe
+
+  build-and-test-termux:
+    runs-on: ubuntu-latest # Using ubuntu-latest as a base for QEMU emulation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU for AArch64 emulation
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: all # Enables multi-architecture emulation
+
+      - name: Install Termux/AArch64 dependencies via Docker (Emulated)
+        run: |
+          # This is a conceptual step. Running Termux directly in GitHub Actions is complex.
+          # A common approach for AArch64 emulation is to use a Docker image with QEMU.
+          # For actual Termux environment, a self-hosted runner on AArch64 Android is ideal.
+          # Here, we simulate by using a aarch64 base image and installing basic build tools.
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker run --rm -v $(pwd):/workspace -w /workspace arm64v8/ubuntu:22.04 /bin/bash -c " 
+            apt update && apt install -y python3 python3-venv python3-pip git openssl clang make libpcap-dev libxml2-dev libxslt-dev rustc cargo && 
+            python3 -m venv .venv_phantomnet && 
+            source .venv_phantomnet/bin/activate && 
+            pip install --upgrade pip wheel && 
+            pip install -r requirements-termux.txt && 
+            pytest tests/unit/ # Placeholder for Termux unit tests
+          "
+        # Note: This step is a simplified emulation. Real Termux environment needs direct Android/Termux setup.
+        # It's challenging to produce a direct PyInstaller executable for Termux AArch64 via this method easily.
+        # The primary goal here is to run unit tests in a somewhat similar environment.
