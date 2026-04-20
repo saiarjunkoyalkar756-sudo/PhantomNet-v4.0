@@ -58,3 +58,91 @@ dashboard_frontend/node_modules/
 *.pid
 *.pids
 *.log.zip
+# Added by code-review-graph
+.code-review-graph/
+
+# Agent certificates (generated at runtime - never commit private keys)
+phantomnet_agent/certs/*.pem
+phantomnet_agent/certs/*.key
+
+# snapshot_recovery module runtime artifacts
+snapshots/
+*.pnbackup
+chrono_registry.json
+
+# Operational / runtime databases
+operational.db
+
+# Agent runtime artifacts
+nohup.out
+phantomnet_agent/nohup.out
+dummy_system_state.txt
+
+# Large auto-generated structure dump files
+structure.txt
+stucture.txt
+output.txt
+newstuture.txt
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+*.log.zip
+nohup.out
+
+# Archives in repo root
+*.zip
+*.tar.xz
+*.tar.gz
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Certs and keys
+*.key
+*.pem
+*.p12
+*.pfx
+certs/
+
+# Scratch files
+2.txt
+add.txt
+output.txt
+ls_errors.txt
+newstuture.txt
+stucture.txt
+structure.txt
+dummy_system_state.txt
+features.txt
+features_folders.txt
+create_review.txt
+gemini.md
+attack_data.csv
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Node
+node_modules/
+dist/
+build/
+
+# Python env
+venv/
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
