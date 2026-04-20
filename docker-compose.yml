@@ -12,7 +12,16 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
       SERVICE_NAME: 'telemetry-ingestor'
-      ENVIRONMENT: 'development'
+      ENVIRONMENT: 'production'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - phantom_internal
+    security_opt:
+      - no-new-privileges:true
 
   event-normalizer:
     build:
@@ -25,7 +34,16 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
       SERVICE_NAME: 'event-normalizer'
-      ENVIRONMENT: 'development'
+      ENVIRONMENT: 'production'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - phantom_internal
+    security_opt:
+      - no-new-privileges:true
       APP_PORT: '8000' # Internal port for uvicorn
 
   ai-behavioral-engine:
@@ -39,7 +57,16 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
       SERVICE_NAME: 'ai-behavioral-engine'
-      ENVIRONMENT: 'development'
+      ENVIRONMENT: 'production'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - phantom_internal
+    security_opt:
+      - no-new-privileges:true
       APP_PORT: '8000' # Internal port for uvicorn
 
   alert-storage:
@@ -65,8 +92,8 @@ services:
 
   gateway-service:
     build:
-      context: ./backend_api/gateway_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_api/gateway_service/Dockerfile
     ports:
       - "8001:8000"
     depends_on:
@@ -77,9 +104,17 @@ services:
       DB_USER: 'phantomnet'
       DB_PASSWORD: '${DB_PASSWORD}'
       SERVICE_NAME: 'gateway-service'
-      ENVIRONMENT: 'development'
-    env_file:
-      - .env
+      ENVIRONMENT: 'production'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    networks:
+      - phantom_frontend
+      - phantom_internal
+    security_opt:
+      - no-new-privileges:true
 
   command-dispatcher:
     build:
@@ -97,8 +132,8 @@ services:
 
   graph-intelligence-service:
     build:
-      context: ./backend_api/graph_intelligence_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_api/graph_intelligence_service/Dockerfile
     ports:
       - "8007:8000"
     depends_on:
@@ -112,8 +147,8 @@ services:
 
   vulnerability-management-service:
     build:
-      context: ./backend_api/vulnerability_management_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_api/vulnerability_management_service/Dockerfile
     ports:
       - "8019:8000"
     depends_on:
@@ -177,8 +212,8 @@ services:
 
   case-management-service:
     build:
-      context: ./backend_api/case_management_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_api/case_management_service/Dockerfile
     ports:
       - "8013:8000"
     depends_on:
@@ -207,8 +242,8 @@ services:
 
   threat-intelligence-service:
     build:
-      context: ./backend_api/threat_intelligence_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_api/threat_intelligence_service/Dockerfile
     ports:
       - "8015:8000"
     depends_on:
@@ -224,8 +259,8 @@ services:
 
   soar-playbook-engine:
     build:
-      context: ./backend_api/soar_playbook_engine
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_api/soar_playbook_engine/Dockerfile
     ports:
       - "8016:8000"
     depends_on:
@@ -301,8 +336,8 @@ services:
 
   phantomql-engine:
     build:
-      context: ./backend_api/phantomql_engine
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend_api/phantomql_engine/Dockerfile
     ports:
       - "8022:8000"
     depends_on:
@@ -399,6 +434,48 @@ services:
       DB_USER: 'phantomnet'
       DB_PASSWORD: '${DB_PASSWORD}'
       SERVICE_name: 'audit-log-collector'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  bas-engine:
+    build:
+      context: ./backend_api/bas_engine
+      dockerfile: Dockerfile
+    ports:
+      - "8028:8000"
+    environment:
+      SERVICE_NAME: 'bas-engine'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+
+  autonomous-blue-team:
+    build:
+      context: ./backend_api/autonomous_blue_team
+      dockerfile: Dockerfile
+    ports:
+      - "8029:8000"
+    depends_on:
+      - soar-playbook-engine
+    environment:
+      SERVICE_NAME: 'autonomous-blue-team'
+      ENVIRONMENT: 'development'
+      APP_PORT: '8000'
+    env_file:
+      - .env
+
+  ai-agent-orchestrator:
+    build:
+      context: .
+      dockerfile: backend_api/ai_agent_orchestrator/Dockerfile
+    ports:
+      - "8030:8000"
+    depends_on:
+      - soar-playbook-engine
+      - graph-intelligence-service
+    environment:
+      SERVICE_NAME: 'ai-agent-orchestrator'
       ENVIRONMENT: 'development'
       APP_PORT: '8000'
     env_file:

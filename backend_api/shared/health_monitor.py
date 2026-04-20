@@ -35,7 +35,7 @@ async def check_database_health():
 async def check_api_gateway_health():
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get("http://localhost:8000/")
+            response = await client.get("http://localhost:8000/health/")
             if response.status_code == 200:
                 logger.info("API Gateway health check: OK", status="healthy")
                 # Metrics: Increment api_gateway_health_status_ok_total

@@ -1,99 +1,98 @@
-import time
-from typing import Dict, Any
-# from backend_api.blockchain_service.blockchain import Blockchain # Import Blockchain - REMOVED TOP-LEVEL IMPORT
-from shared.database import get_db # Assuming get_db is the db_session_generator
+import logging
+import asyncio
+import hashlib
+from typing import Dict, Any, List, Set
 
+logger = logging.getLogger("phantom_exchange")
 
 class PhantomExchange:
     """
-    Global platform for AI-driven threat intelligence and detection modules.
-    Third-party developers earn rewards for validated contributions.
+    Phantom Exchange (AI Threat Marketplace):
+    A global decentralized platform for AI-driven threat intelligence and detection modules.
+    Analysts and developers can submit signatures, YARA rules, or ML models and earn 
+    reputational/monetary rewards upon validation by the Colony.
     """
 
-    def __init__(self, db_session_generator: callable):
-        self.developers = {}
-        self.modules = {}
-        self.validated_modules = set()
-        self.db_session_generator = db_session_generator
-        print("Initializing PhantomExchange (AI Threat Marketplace)...")
+    def __init__(self, colony_instance: Any):
+        self.developers: Dict[str, Dict[str, Any]] = {}
+        self.modules: Dict[str, Dict[str, Any]] = {}
+        self.validated_modules: Set[str] = set()
+        self.colony = colony_instance
+        logger.info("PhantomExchange (AI Threat Marketplace) initialized.")
 
-    def register_developer(self, developer_id: str):
+    def register_developer(self, developer_id: str) -> Dict[str, Any]:
         """
-        Registers a new developer on the platform.
+        Registers a researcher/developer into the exchange ecosystem.
         """
         if developer_id not in self.developers:
-            self.developers[developer_id] = {"reputation": 100, "submissions": []}
-            print(f"Developer {developer_id} registered successfully.")
+            self.developers[developer_id] = {
+                "reputation": 100,
+                "submissions": [],
+                "reward_balance": 0.0
+            }
+            logger.info(f"Researcher registered: {developer_id}")
             return {"status": "success", "developer_id": developer_id}
-        else:
-            print(f"Developer {developer_id} is already registered.")
-            return {"status": "error", "message": "Developer already registered"}
+        return {"status": "error", "message": "Already registered."}
 
-    def submit_module(self, developer_id: str, module_name: str, module_code: str):
+    def submit_detection_module(self, developer_id: str, module_name: str, logic_payload: str) -> Dict[str, Any]:
         """
-        Allows a registered developer to submit a new threat detection module.
+        Allows submission of new detection logic (YARA, Python, or SNORT-style).
         """
         if developer_id not in self.developers:
-            print("Developer not registered. Please register first.")
-            return {"status": "error", "message": "Developer not registered"}
+            return {"status": "error", "message": "Unknown developer."}
 
-        module_id = f"{developer_id}_{module_name}"
+        module_hash = hashlib.sha256(logic_payload.encode()).hexdigest()[:12]
+        module_id = f"MOD_{module_name}_{module_hash}"
+        
         self.modules[module_id] = {
-            "code": module_code,
-            "developer": developer_id,
+            "name": module_name,
+            "creator": developer_id,
+            "payload": logic_payload,
             "validated": False,
+            "downloads": 0
         }
         self.developers[developer_id]["submissions"].append(module_id)
-        print(f"Module {module_id} submitted successfully.")
-        return {"status": "success", "module_id": module_id}
+        
+        logger.info(f"New Detection Module submitted: {module_id} by {developer_id}")
+        return {"status": "submitted", "module_id": module_id}
 
-    async def validate_module(self, module_id: str): # Made async
+    async def validate_submission(self, module_id: str) -> Dict[str, Any]:
         """
-        Simulates the validation of a submitted module and records it on the PhantomChain.
+        Simulates peer-review and automated testing of the detection module.
+        On success, awards reputation and records the 'proof-of-contribution' on the colony ledger.
         """
         if module_id not in self.modules:
-            print("Module not found.")
-            return {"status": "error", "message": "Module not found"}
+            return {"status": "error", "message": "Module missing."}
 
-        print(f"Validating module {module_id}...")
-        await asyncio.sleep(1)  # Simulate validation time
+        module = self.modules[module_id]
+        logger.info(f"Validating module {module_id} via colony swarm nodes...")
+        
+        # Simulate validation time
+        await asyncio.sleep(0.5)
+        
+        # Logic verification (Simulated success)
+        module["validated"] = True
+        self.validated_modules.add(module_id)
+        
+        # Reward Logic
+        dev_id = module["creator"]
+        self.developers[dev_id]["reputation"] += 50
+        self.developers[dev_id]["reward_balance"] += 10.5 # Example credit
+        
+        # Blockchain/Colony Integration
+        if self.colony:
+            self.colony.propagate_learning(f"EXCH_{module_id}", {"type": "new_detection_module", "id": module_id})
+            
+        logger.info(f"Module {module_id} VALIDATED. Developer {dev_id} status upgraded.")
+        return {
+            "status": "validated",
+            "reward_issued": 10.5,
+            "new_reputation": self.developers[dev_id]["reputation"]
+        }
 
-        if self.modules[module_id]["code"]:
-            self.modules[module_id]["validated"] = True
-            self.validated_modules.add(module_id)
-            developer_id = self.modules[module_id]["developer"]
-            self.developers[developer_id]["reputation"] += 10
-            print(f"Module {module_id} validated successfully.")
-
-            # Add the validation event to the PhantomChain
-            from backend_api.blockchain_service.blockchain import Blockchain # IMPORT MOVED HERE
-
-            async with self.db_session_generator() as db:
-                blockchain = Blockchain(db)
-                transaction_data = {
-                    "type": "module_validation",
-                    "module_id": module_id,
-                    "developer": developer_id,
-                    "status": "validated",
-                    "reputation_reward": 10,
-                }
-                last_block_obj = blockchain.last_block
-                last_proof = (
-                    last_block_obj.proof if last_block_obj else 0
-                )
-                previous_hash = (
-                    blockchain.hash(last_block_obj.to_dict()) if last_block_obj else "1"
-                )
-                
-                # Placeholder for proof of work
-                proof = 123 # This would be calculated via PoW
-
-                new_block_obj = blockchain.new_block(proof, previous_hash, transactions=[transaction_data])
-                db.add(new_block_obj)
-                await db.commit() # Needs to be awaited
-                await db.refresh(new_block_obj) # Needs to be awaited
-
-            return {"status": "success", "message": f"Module {module_id} validated and recorded on chain"}
-        else:
-            print(f"Module {module_id} validation failed.")
-            return {"status": "error", "message": "Module validation failed"}
+    def browse_marketplace(self) -> List[Dict[str, Any]]:
+        """Returns the list of all validated detection modules available for deployment."""
+        return [
+            {"id": m_id, "name": m["name"], "creator": m["creator"]}
+            for m_id, m in self.modules.items() if m["validated"]
+        ]

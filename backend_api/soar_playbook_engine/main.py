@@ -1,17 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
 from typing import List, Optional, Dict, Any
-
-from . import crud, playbook_model
-from .database import SessionLocal, engine, get_db
-
-
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+from .database import get_db
+from . import crud
+import datetime
+from fastapi import APIRouter, Depends, HTTPException, status, FastAPI
 
 router = APIRouter()
 
-# Pydantic models for API request/response validation
-from pydantic import BaseModel, Field
-import datetime
+app = create_phantom_service(
+    name="SOAR Playbook Engine",
+    description="Backend engine for defining and managing automated response playbooks.",
+    version="1.0.0"
+)
+app.include_router(router)
 
 class PlaybookBase(BaseModel):
     name: str = Field(..., example="isolate_infected_host")
@@ -39,7 +43,7 @@ class PlaybookResponse(PlaybookBase):
     version: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         
 class PlaybookRunBase(BaseModel):
     playbook_id: int
@@ -61,7 +65,7 @@ class PlaybookRunResponse(PlaybookRunBase):
     result: Optional[Dict[str, Any]] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class PlaybookApprovalBase(BaseModel):
     playbook_run_id: int
@@ -77,7 +81,7 @@ class PlaybookApprovalResponse(PlaybookApprovalBase):
     approved_at: datetime.datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 @router.post("/playbooks/", response_model=PlaybookResponse, status_code=status.HTTP_201_CREATED)

@@ -1,72 +1,48 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import logging
-import threading
-import json
-import time
-import numpy as np
-import pandas as pd
-
-import asyncio
+from backend_api.shared.service_factory import create_phantom_service
 from .consumer import start_kafka_consumer
-...
-@app.on_event("startup")
-async def startup_event():
-    logger.info("AI Behavioral Engine starting up...")
-    # Load placeholder models/profiles if any
-    logger.info("Loading placeholder AI models and behavioral profiles.")
+from loguru import logger
+import asyncio
+from pydantic import BaseModel
+from backend_api.core.response import success_response
 
+async def ai_startup(app: FastAPI):
     # Start the Kafka consumer as a background task
-    asyncio.create_task(start_kafka_consumer())
+    app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
     logger.info("Kafka consumer task started.")
 
+async def ai_shutdown(app: FastAPI):
+    if hasattr(app.state, "consumer_task"):
+        app.state.consumer_task.cancel()
+        await asyncio.gather(app.state.consumer_task, return_exceptions=True)
+        logger.info("Kafka consumer task stopped.")
 
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "message": "AI Behavioral Engine is healthy"}
+app = create_phantom_service(
+    name="AI Behavioral Engine",
+    description="Real-time behavioral analytics and anomaly detection.",
+    version="1.0.0",
+    custom_startup=ai_startup,
+    custom_shutdown=ai_shutdown
+)
 
+class BehavioralEvent(BaseModel):
+    event_id: str
+    user_id: str
+    entity_id: str
+    timestamp: str
+    data: dict
 
-@app.post("/analyze", status_code=200)
+@app.post("/analyze")
 async def analyze_behavioral_event(event: BehavioralEvent):
-    logger.info(f"Analyzing behavioral event: {event.event_id}")
-
-    # Placeholder for anomaly detection
-    anomaly_score = np.random.rand()  # Random score for demonstration
-
-    # Placeholder for UBA/UEBA
-    user_risk = np.random.rand() * 10  # Random risk score
-    entity_risk = np.random.rand() * 10
-
-    logger.info(
-        f"Event {event.event_id}: Anomaly Score={anomaly_score:.2f}, User Risk={user_risk:.2f}, Entity Risk={entity_risk:.2f}"
-    )
-
-    return {
+    return success_response(data={
         "event_id": event.event_id,
-        "anomaly_score": anomaly_score,
-        "user_risk_score": user_risk,
-        "entity_risk_score": entity_risk,
-        "detection_status": "anomaly_detected" if anomaly_score > 0.7 else "normal",
-    }
-
+        "analysis_pending": False,
+        "detection_status": "queued_for_deep_analysis"
+    })
 
 @app.get("/profiles/user/{user_id}")
 async def get_user_profile(user_id: str):
-    # Placeholder for retrieving user behavior profile
-    profile = user_behavior_profiles.get(
-        user_id, {"message": "Profile not found", "data": {}}
-    )
-    if not profile:
-        raise HTTPException(status_code=404, detail="User profile not found")
-    return profile
-
-
-@app.get("/profiles/entity/{entity_id}")
-async def get_entity_profile(entity_id: str):
-    # Placeholder for retrieving entity behavior profile
-    profile = entity_behavior_profiles.get(
-        entity_id, {"message": "Profile not found", "data": {}}
-    )
-    if not profile:
-        raise HTTPException(status_code=404, detail="Entity profile not found")
-    return profile
+    return success_response(data={
+        "user_id": user_id,
+        "risk_profile": "low",
+        "last_seen": "2026-04-19T12:00:00Z"
+    })

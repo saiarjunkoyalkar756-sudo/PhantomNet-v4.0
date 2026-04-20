@@ -104,7 +104,7 @@ const SelfHealingConsolePage = () => {
               <p><strong>SAFE_MODE Active:</strong> <Badge variant={agentHealth.safe_mode_active ? 'warning' : 'outline'}>{agentHealth.safe_mode_active ? 'Yes' : 'No'}</Badge></p>
               <p><strong>Capabilities:</strong> {agentHealth.capabilities ? agentHealth.capabilities.os_type : 'N/A'} (and more...)</p>
               <div className="mt-2">
-                <Button variant="outline" size="sm" onClick={() => handleManualOverride('disable_self_healing')}" className="mr-2">Disable Self-Healing</Button>
+                <Button variant="outline" size="sm" onClick={() => handleManualOverride('disable_self_healing')} className="mr-2">Disable Self-Healing</Button>
                 <Button variant="outline" size="sm" onClick={() => handleManualOverride('enable_safe_mode')}>Enable SAFE_MODE</Button>
               </div>
             </div>

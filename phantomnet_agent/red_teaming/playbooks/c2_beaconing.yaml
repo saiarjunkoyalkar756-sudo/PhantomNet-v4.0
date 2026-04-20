@@ -1,0 +1,55 @@
+id: c2_beaconing
+description: >
+  MITRE ATT&CK T1071.001 – Application Layer Protocol: Web Protocols.
+  Emulates a Command & Control (C2) beacon using HTTP/S callbacks on randomised
+  jitter intervals — the classic pattern used by Cobalt Strike, Sliver, and Havoc.
+  The executor sends periodic outbound GET requests to a controlled domain with
+  encoded check-in payloads. No real malware is deployed. The purpose is to
+  validate that the network monitoring layer raises a C2 beaconing alert within
+  3 beacon cycles.
+type: c2_simulation
+
+target:
+  service: http
+  port: 443
+  endpoint: "https://phantomnet-c2-test.internal"
+
+parameters:
+  username_list: null
+  password_list: null
+  max_attempts_per_min: null
+  payload: "GET /?id=<base64_agent_id>&ts=<epoch>&jitter=15s"
+
+safety:
+  destructive: false
+  sandbox_required: true
+  allow_payloads: false
+
+beacon:
+  interval_seconds: 60
+  jitter_percent: 25        # randomise interval ±25% (45–75s)
+  max_cycles: 10            # run 10 beacon cycles then stop
+  protocol: https
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  encoding: base64
+  sleep_on_detection: true  # if any EDR alert fires, pause beaconing
+
+mitre:
+  tactic: Command and Control
+  technique: T1071
+  sub_technique: T1071.001
+
+mitre_secondary:
+  - technique: T1568     # Dynamic Resolution (domain fronting emulation)
+  - technique: T1573.001 # Symmetric Cryptography (encrypted channel simulation)
+
+expected_detection:
+  - alert_type: C2BeaconingDetected
+    source: network_monitor
+    indicator: "Periodic outbound HTTP with consistent jitter pattern to unknown domain"
+  - alert_type: DNSAnomalyDetected
+    source: dns_collector
+    indicator: "Repeated DNS queries for phantomnet-c2-test.internal"
+  - alert_type: UserAgentSpoofingDetected
+    source: network_monitor
+    indicator: "Mismatched browser User-Agent with non-browser process"

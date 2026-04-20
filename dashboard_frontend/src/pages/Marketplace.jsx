@@ -2,7 +2,7 @@ import React from 'react';
 import PageHeader from '@/components/shared/PageHeader';
 import { motion } from 'framer-motion';
 import { Puzzle, Store } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import MarketplaceGrid from '@/features/marketplace/components/MarketplaceGrid';
 
 const Marketplace = () => {

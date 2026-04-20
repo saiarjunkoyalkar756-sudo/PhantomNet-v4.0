@@ -1,0 +1,90 @@
+template_id: kubernetes_cluster_internal
+description: >
+  On-premises / self-hosted Kubernetes cluster deception environment.
+  Mimics a production k8s cluster with an exposed kubelet, kube-apiserver
+  dashboard, etcd endpoint, and a vulnerable pod running a debug container.
+  Highest-yield lure for attackers who gain internal network access:
+  unauthenticated kubelet API, etcd key dump, and RBAC misconfiguration traps.
+category: infrastructure
+platform: kubernetes
+deception_level: 5
+
+metadata:
+  org: "Beta Corp Engineering"
+  cluster_version: "v1.27.4"
+  node_count: 3
+  namespace: "prod"
+
+services:
+  - name: kubelet_api
+    description: "Unauthenticated kubelet API — T1613 Container Discovery"
+    image: phantomnet/fake-kubelet:latest
+    ports:
+      - "10250:10250"
+    fake_endpoints:
+      - "/pods"
+      - "/exec/prod/webapp-6d8f9/webapp"
+      - "/run/prod/webapp-6d8f9/webapp"
+      - "/metrics"
+    fake_responses:
+      "/pods": |
+        {
+          "kind": "PodList",
+          "items": [
+            {"metadata": {"name":"webapp-6d8f9","namespace":"prod"},
+             "spec":{"containers":[{"name":"webapp","image":"acmecorp/webapp:1.4.2"}]},
+             "status":{"phase":"Running","podIP":"10.244.1.5"}}
+          ]
+        }
+
+  - name: kube_dashboard
+    description: "Kubernetes Dashboard with RBAC bypass trap — T1078.001"
+    image: phantomnet/fake-kube-dashboard:latest
+    ports:
+      - "30080:80"
+    fake_endpoints:
+      - "/api/v1/namespace/prod/pods"
+      - "/api/v1/namespace/kube-system/secrets"
+      - "/proxy/namespaces/kube-system/services/https:kubernetes-dashboard:/api/v1"
+
+  - name: etcd_endpoint
+    description: "Exposed etcd endpoint — dumps cluster secrets T1552.007"
+    image: phantomnet/fake-etcd:latest
+    ports:
+      - "2379:2379"
+    fake_endpoints:
+      - "/v3/kv/range"
+    fake_responses:
+      "/v3/kv/range": |
+        {
+          "kvs": [
+            {"key": "/registry/secrets/prod/db-credentials",
+             "value": "eyJhcGlWZXJzaW9uIjoidjEiLCJkYXRhIjp7InBhc3N3b3JkIjoiRkFLRV9QQVNTV09SRF9UUkFQIn19"}
+          ]
+        }
+
+  - name: debug_pod
+    description: "Privileged debug container — escape-to-node trap T1611"
+    image: phantomnet/fake-debug-pod:latest
+    ports:
+      - "9999:9999"
+    environment:
+      PRIVILEGED: "true"
+      HOST_PATH_MOUNT: "/host"
+    fake_endpoints:
+      - "/exec"
+      - "/shell"
+
+detection_triggers:
+  - type: kubelet_api_access
+    description: "Any access to kubelet port 10250 — unauthenticated kubelet exploit attempt"
+    severity: CRITICAL
+  - type: etcd_key_dump
+    description: "Range query against etcd — cluster secret theft attempt"
+    severity: CRITICAL
+  - type: privileged_container_exec
+    description: "Exec into privileged debug pod — container escape attempt"
+    severity: CRITICAL
+  - type: dashboard_rbac_bypass
+    description: "Access to kube-system secrets via dashboard proxy"
+    severity: HIGH

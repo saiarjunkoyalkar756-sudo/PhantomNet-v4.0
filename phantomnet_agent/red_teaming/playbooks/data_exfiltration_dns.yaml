@@ -1,0 +1,33 @@
+id: data_exfiltration_dns
+description: >
+  MITRE ATT&CK T1048.003 – Exfiltration Over Alternative Protocol: DNS.
+  Emulates covert data exfiltration by encoding a simulated payload into DNS TXT
+  record queries. No real data is sent — the test validates whether the network
+  monitoring layer raises a DGA/tunneling alert within the detection window.
+type: exfiltration
+
+target:
+  service: dns
+  port: 53
+  endpoint: "phantomnet-test.local"
+
+parameters:
+  username_list: null
+  password_list: null
+  max_attempts_per_min: 30
+  payload: "base64_encoded_simulated_payload"
+
+safety:
+  destructive: false
+  sandbox_required: true
+  allow_payloads: false
+
+mitre:
+  tactic: Exfiltration
+  technique: T1048
+  sub_technique: T1048.003
+
+expected_detection:
+  - alert_type: DNSTunnelingDetected
+    source: network_monitor
+    indicator: "High-entropy subdomain queries to unknown resolver"

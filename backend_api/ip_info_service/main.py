@@ -1,14 +1,10 @@
-from fastapi import FastAPI
+from backend_api.shared.service_factory import create_phantom_service
 from .api import router as ip_info_router
 
-app = FastAPI(
-    title="IP Info Service",
-    description="Service for retrieving information about IP addresses.",
+app = create_phantom_service(
+    name="IP Info Service",
+    description="Enriches events with geolocation and reputation data for IP addresses.",
     version="1.0.0"
 )
 
 app.include_router(ip_info_router)
-
-@app.get("/")
-async def read_root():
-    return {"message": "IP Info Service is running"}

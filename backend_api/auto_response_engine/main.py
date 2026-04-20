@@ -1,17 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
+from loguru import logger
+from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any, Optional
 import asyncio
 import datetime
-
-# Assuming these imports from the soar_playbook_engine
-# In a real microservice architecture, these would be API calls
-# For now, we'll simulate direct access or use a shared database helper
-from ..soar_playbook_engine import crud as playbook_crud
-from ..soar_playbook_engine.database import get_db as get_playbook_db
-from ..soar_playbook_engine.playbook_model import PlaybookRun
+from fastapi import APIRouter, FastAPI, Depends, HTTPException, status, BackgroundTasks
 
 router = APIRouter()
+
+app = create_phantom_service(
+    name="Auto-Response Engine",
+    description="Orchestrates and executes automated response actions based on security playbooks.",
+    version="1.0.0"
+)
+app.include_router(router)
 
 async def execute_playbook_step(step: Dict[str, Any], playbook_run_id: int):
     """

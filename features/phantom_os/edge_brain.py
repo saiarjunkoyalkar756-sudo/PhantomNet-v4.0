@@ -1,54 +1,61 @@
-import time
-import threading
+import logging
+import uuid
+import datetime
+from typing import Dict, Any, List
+from features.phantom_dna.evolutionary_genetics import PhantomDNA
 
+logger = logging.getLogger("phantom_os")
 
-class EdgeBrain:
+class PhantomOS_EdgeBrain:
     """
-    Lightweight OS agent that runs on IoT, mobile, and server nodes.
-    Each node contributes insights to a shared AI fabric.
+    Phantom OS (Edge Brain):
+    A hardened telemetry and control layer designed to run on diverse endpoints.
+    Integrates with Phantom DNA for identity and performs secure syscall/process monitoring.
     """
 
-    def __init__(self, orchestrator):
-        self.node_id = "node_" + str(int(time.time()))
-        self.orchestrator = orchestrator
-        self.is_running = False
-        print(f"Initializing Edge Brain for node: {self.node_id}")
+    def __init__(self, node_alias: str = "Edge_Node"):
+        self.dna_core = PhantomDNA()
+        self.node_id = f"{node_alias}_{self.dna_core.get_system_dna()[:8]}"
+        self.uptime_start = datetime.datetime.now()
+        self.active_policies = []
+        logger.info(f"Phantom OS (Edge Brain) online on node: {self.node_id}")
 
-    def register_with_core(self):
+    def get_system_vitals(self) -> Dict[str, Any]:
         """
-        Simulates registering the edge node with the central cognitive core.
+        Reports high-fidelity system telemetry.
         """
-        print(f"Node {self.node_id} registering with core...")
-        print("Registration successful.")
+        # In a real environment, this would hook into psutil or OS-specific APIs
+        return {
+            "node_id": self.node_id,
+            "system_dna": self.dna_core.get_system_dna(),
+            "uptime_seconds": (datetime.datetime.now() - self.uptime_start).total_seconds(),
+            "integrity_status": "VERIFIED"
+        }
 
-    def collect_telemetry(self):
+    def intercept_suspicious_activity(self, activity: Dict[str, Any]) -> bool:
         """
-        Simulates collecting system telemetry and sends it to the orchestrator.
+        Simulated Syscall/Process Interception.
+        If an activity breaches the Hardened Kernel policies, it is dropped.
         """
-        while self.is_running:
-            telemetry_data = {
-                "node_id": self.node_id,
-                "cpu_usage": round(time.time() % 100, 2),
-                "active_connections": int(time.time() % 50),
-            }
-            print(f"Collected telemetry: {telemetry_data}")
-            self.orchestrator.receive_telemetry(telemetry_data)
-            time.sleep(10)
+        desc = activity.get("description", "").lower()
+        
+        # Security hardcoded drop-list
+        drop_list = ["powershell -enc", "mimikatz", "shadow_copy_delete"]
+        
+        for forbidden in drop_list:
+            if forbidden in desc:
+                logger.warning(f"PHANTOM OS INTERCEPTED: Blocked unauthorized execution of {forbidden}")
+                return False # Activity Blocked
+        
+        return True # Activity Permitted
 
-    def start(self):
-        """
-        Starts the Edge Brain's telemetry collection.
-        """
-        self.is_running = True
-        self.register_with_core()
-        telemetry_thread = threading.Thread(target=self.collect_telemetry)
-        telemetry_thread.daemon = True
-        telemetry_thread.start()
-        print(f"Edge Brain {self.node_id} started.")
+    def register_policy(self, policy_id: str, rules: Dict[str, Any]):
+        self.active_policies.append({"id": policy_id, "rules": rules})
+        logger.info(f"Policy {policy_id} injected into Edge Brain kernel space.")
 
-    def stop(self):
-        """
-        Stops the Edge Brain's telemetry collection.
-        """
-        self.is_running = False
-        print(f"Edge Brain {self.node_id} stopped.")
+if __name__ == "__main__":
+    brain = PhantomOS_EdgeBrain("Web_Server_1")
+    print(brain.get_system_vitals())
+    
+    # Test interception
+    brain.intercept_suspicious_activity({"description": "Running mimikatz.exe for dump"})

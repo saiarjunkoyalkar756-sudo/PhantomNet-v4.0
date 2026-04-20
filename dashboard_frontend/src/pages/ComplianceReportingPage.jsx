@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
 import { motion } from 'framer-motion';
-import { FileText, Download, BarChart2 } from 'lucide-react';
+import { FileText, Download, BarChart2, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
 const ComplianceReportingPage = () => {
   const [selectedStandard, setSelectedStandard] = useState('');
   const [generatedReports, setGeneratedReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
-
-  const commonHeaders = { 'Content-Type': 'application/json' };
 
   useEffect(() => {
     fetchReports();
@@ -26,12 +26,10 @@ const ComplianceReportingPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/compliance-reporting/reports');
-      if (!response.ok) throw new Error((await response.json()).detail || 'Failed to fetch reports');
-      const data = await response.json();
-      setGeneratedReports(data);
+      const data = await api.get('/compliance-reporting/reports');
+      setGeneratedReports(data || []);
     } catch (err) {
-      toast.error(`Error fetching reports: ${err.message}`);
+      console.error(`Error fetching reports: ${err.message}`);
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -39,142 +37,173 @@ const ComplianceReportingPage = () => {
   };
 
   const handleGenerateReport = async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsGenerating(true);
     try {
-      const response = await fetch('/api/compliance-reporting/reports/generate', {
-        method: 'POST',
-        headers: commonHeaders,
-        body: JSON.stringify({ standard: selectedStandard }),
-      });
-      if (!response.ok) throw new Error((await response.json()).detail || 'Failed to generate report');
-      toast.success('Report generated successfully!');
+      await api.post('/compliance-reporting/reports/generate', { standard: selectedStandard });
+      toast.success(`${selectedStandard.toUpperCase()} report generated successfully!`);
       fetchReports();
     } catch (err) {
-      toast.error(`Error generating report: ${err.message}`);
-      setError(err.message);
+      toast.error(`Generation failed: ${err.message}`);
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
   const handleViewReportDetails = async (reportId) => {
     try {
-      const response = await fetch(`/api/compliance-reporting/reports/${reportId}`);
-      if (!response.ok) throw new Error((await response.json()).detail || 'Failed to fetch report details');
-      const data = await response.json();
+      const data = await api.get(`/compliance-reporting/reports/${reportId}`);
       setSelectedReport(data);
     } catch (err) {
-      toast.error(`Error fetching report details: ${err.message}`);
-      setError(err.message);
+      toast.error(`Failed to load details: ${err.message}`);
     }
+  };
+
+  const handleDownloadPDF = (reportId) => {
+    // Construct the download URL - standard practice is to use a direct link for binary downloads
+    const downloadUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/compliance-reporting/reports/${reportId}/download`;
+    window.open(downloadUrl, '_blank');
+    toast.info("Downloading compliance report...");
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="font-sans h-full flex flex-col"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="p-6 space-y-6"
     >
       <PageHeader
-        title="COMPLIANCE & REPORTING"
-        subtitle="Generate automated compliance reports for various standards."
-        actions={
-          <div className="flex items-center space-x-2">
-            <BarChart2 className="text-primary" size={20} />
-          </div>
-        }
+        title="Compliance & SOC2"
+        subtitle="Automated audit evidence and regulatory reporting."
       />
 
       {error && (
-        <div className="p-4 text-red-500 bg-red-100 rounded-lg mb-4">
-          <strong>Error:</strong> {error}
+        <div className="flex items-center p-4 text-red-800 bg-red-50 rounded-lg border border-red-200">
+          <AlertCircle className="mr-2" />
+          <span>{error}</span>
+          <Button variant="ghost" size="sm" onClick={fetchReports} className="ml-auto">Retry</Button>
         </div>
       )}
 
-      <div className="p-4 bg-card rounded-lg shadow-sm mb-4">
-        <h3 className="text-lg font-semibold mb-2 flex items-center"><FileText className="mr-2" /> Generate New Report</h3>
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
-            <Label htmlFor="complianceStandard">Compliance Standard</Label>
+      {/* Generator Card */}
+      <div className="bg-card border rounded-xl p-6 shadow-sm">
+        <h3 className="text-lg font-bold mb-4 flex items-center">
+          <FileText className="mr-2 text-primary" /> Generate Compliance Evidence
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div className="space-y-2">
+            <Label>Standard</Label>
             <Select value={selectedStandard} onValueChange={setSelectedStandard}>
-              <SelectTrigger id="complianceStandard">
-                <SelectValue placeholder="Select Standard" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select Audit Standard" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="iso27001">ISO 27001</SelectItem>
-                <SelectItem value="soc2">SOC2</SelectItem>
-                <SelectItem value="pci_dss">PCI-DSS</SelectItem>
-                <SelectItem value="gdpr">GDPR</SelectItem>
+                <SelectItem value="soc2">SOC2 Type II</SelectItem>
+                <SelectItem value="iso27001">ISO 27001:2022</SelectItem>
+                <SelectItem value="hipaa">HIPAA Compliance</SelectItem>
+                <SelectItem value="pci-dss">PCI-DSS v4.0</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleGenerateReport} disabled={isLoading || !selectedStandard} className="mt-7">
-            Generate Report
+          <Button 
+            onClick={handleGenerateReport} 
+            disabled={isGenerating || !selectedStandard}
+            className="w-full md:w-auto"
+          >
+            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Generate PDF Report
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 mt-4">
-        <h3 className="text-lg font-semibold mb-2">Generated Reports</h3>
-        <div className="bg-card rounded-lg shadow-sm h-full overflow-y-auto">
-          <Table>
-            <TableHeader>
+      {/* Reports Table */}
+      <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+        <div className="p-4 bg-muted/50 border-b flex justify-between items-center">
+          <h3 className="font-bold">Recent Reports</h3>
+          <Button variant="ghost" size="sm" onClick={fetchReports}>Refresh</Button>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Standard</TableHead>
+              <TableHead>Report ID</TableHead>
+              <TableHead>Compliance Score</TableHead>
+              <TableHead>Generated At</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
               <TableRow>
-                <TableHead>Report ID</TableHead>
-                <TableHead>Standard</TableHead>
-                <TableHead>Generated At</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableCell colSpan={5} className="text-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {generatedReports.map((report) => (
+            ) : generatedReports.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                  No reports generated yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              generatedReports.map((report) => (
                 <TableRow key={report.report_id}>
-                  <TableCell>{report.report_id}</TableCell>
-                  <TableCell>{report.standard}</TableCell>
-                  <TableCell>{new Date(report.generated_at).toLocaleString()}</TableCell>
-                  <TableCell>{report.status}</TableCell>
+                  <TableCell className="font-medium text-primary">
+                    {report.standard.toUpperCase()}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{report.report_id}</TableCell>
                   <TableCell>
+                    <div className="flex items-center">
+                      <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                        <div 
+                          className={`h-1.5 rounded-full ${report.score > 90 ? 'bg-green-500' : 'bg-yellow-500'}`} 
+                          style={{ width: `${report.score}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-bold">{report.score}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{new Date(report.generated_at).toLocaleString()}</TableCell>
+                  <TableCell className="text-right space-x-2">
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" onClick={() => handleViewReportDetails(report.report_id)}>View Details</Button>
+                        <Button variant="outline" size="sm" onClick={() => handleViewReportDetails(report.report_id)}>Details</Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[800px]">
+                      <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                          <DialogTitle>Report Details: {selectedReport?.report_id}</DialogTitle>
+                          <DialogTitle>Audit Findings: {report.standard.toUpperCase()}</DialogTitle>
                         </DialogHeader>
                         {selectedReport && (
-                          <div className="grid gap-4 py-4">
-                            <p><strong>Standard:</strong> {selectedReport.standard}</p>
-                            <p><strong>Generated At:</strong> {new Date(selectedReport.generated_at).toLocaleString()}</p>
-                            <p><strong>Status:</strong> {selectedReport.status}</p>
-                            <p><strong>Summary:</strong> {selectedReport.summary}</p>
-                            <h4 className="font-semibold mt-2">Findings</h4>
-                            {selectedReport.details?.findings && selectedReport.details.findings.length > 0 ? (
-                                <ul className="list-disc pl-5">
-                                    {selectedReport.details.findings.map((finding, idx) => (
-                                        <li key={idx}>
-                                            <strong>{finding.control_id} ({finding.status}):</strong> {finding.description} (Severity: {finding.severity || 'N/A'})
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p>No specific findings reported.</p>
-                            )}
-                            <h4 className="font-semibold mt-2">Recommendations</h4>
-                            {selectedReport.details?.recommendations && selectedReport.details.recommendations.length > 0 ? (
-                                <ul className="list-disc pl-5">
-                                    {selectedReport.details.recommendations.map((rec, idx) => (
-                                        <li key={idx}>{rec}</li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p>No specific recommendations.</p>
-                            )}
-                            <Button className="mt-4" onClick={() => toast.info("Download simulated!")}>
-                              <Download className="mr-2 h-4 w-4" /> Download Report (Simulated)
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="p-3 bg-muted rounded-lg">
+                                <Label className="text-xs text-muted-foreground">Report ID</Label>
+                                <div className="font-mono">{selectedReport.report_id}</div>
+                              </div>
+                              <div className="p-3 bg-muted rounded-lg">
+                                <Label className="text-xs text-muted-foreground">Score</Label>
+                                <div className="font-bold text-lg">{selectedReport.details.compliance_score}%</div>
+                              </div>
+                            </div>
+                            
+                            <h4 className="font-bold text-sm">Security Controls Verified</h4>
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                              {selectedReport.details.findings.map((finding, idx) => (
+                                <div key={idx} className="p-3 border rounded-lg flex justify-between items-start gap-3">
+                                  <div>
+                                    <div className="font-bold text-xs">{finding.control_id}</div>
+                                    <div className="text-xs text-muted-foreground">{finding.description}</div>
+                                  </div>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                    finding.status === 'Compliant' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                  }`}>
+                                    {finding.status}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <Button className="w-full" onClick={() => handleDownloadPDF(report.report_id)}>
+                              <Download className="mr-2 h-4 w-4" /> Download PDF Artifact
                             </Button>
                           </div>
                         )}
@@ -182,10 +211,10 @@ const ComplianceReportingPage = () => {
                     </Dialog>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </motion.div>
   );

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import json
-from typing import Dict, Any, AsyncGenerator, Optional # Added Optional
+from typing import Dict, Any, AsyncGenerator, Optional, List
 
 import redis.asyncio as redis
 from redis.asyncio.client import Redis as RedisClient
@@ -14,8 +14,12 @@ class RedisTransport(Transport):
     """
     Redis Streams/PubSub transport for events and commands.
     Events are sent to a Redis Stream, commands are received via PubSub.
-    Implements graceful fallback if Redis is unavailable.
+    Implements graceful fallback + Dead Letter Queue if Redis is unavailable.
     """
+    MAX_RETRIES: int = 3
+    DLQ_LIST_KEY: str = "phantomnet:dlq"
+    DLQ_TTL_SECONDS: int = 86400  # 24 hours
+
     def __init__(self, url: str, events_channel: str, commands_channel: str, stream_max_len: int = 10000):
         self.logger = get_logger("phantomnet_agent.bus.redis")
         self.url = url
@@ -25,7 +29,8 @@ class RedisTransport(Transport):
         self.redis: Optional[RedisClient] = None
         self.pubsub = None
         self._listener_task: Optional[asyncio.Task] = None
-        self._command_queue: asyncio.Queue = asyncio.Queue() # Queue to hold incoming commands
+        self._command_queue: asyncio.Queue = asyncio.Queue()
+        self._local_dlq: List[Dict[str, Any]] = []  # Local fallback when Redis itself is down
         self.connected: bool = False
         self.logger.info(f"RedisTransport initialized for URL: {self.url}")
 
@@ -74,23 +79,112 @@ class RedisTransport(Transport):
         agent_state.update_component_health("bus_redis", "disconnected", {"url": self.url})
 
     async def send_event(self, event_data: Dict[str, Any]):
-        """Sends an event to the Redis Stream configured as events_channel."""
+        """Sends an event to the Redis Stream with retry and DLQ fallback."""
         if not self.connected or not self.redis:
-            self.logger.warning(f"Redis not connected. Event '{event_data.get('event_type', 'N/A')}' will not be sent.", extra={"event_data": event_data})
+            self.logger.warning(
+                f"Redis not connected. Event '{event_data.get('event_type', 'N/A')}' pushed to local DLQ.",
+                extra={"event_data": event_data}
+            )
+            self._local_dlq.append(event_data)
             return
 
+        last_exc: Optional[Exception] = None
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                await self.redis.xadd(
+                    self.events_channel,
+                    {"data": json.dumps(event_data)},
+                    maxlen=self.stream_max_len,
+                    approx=True
+                )
+                self.logger.debug(
+                    f"Event '{event_data.get('event_type', 'N/A')}' published to "
+                    f"Redis Stream '{self.events_channel}'.",
+                    extra={"event_data": event_data}
+                )
+                return  # success
+            except Exception as e:
+                last_exc = e
+                self.logger.warning(
+                    f"Redis send attempt {attempt}/{self.MAX_RETRIES} failed: {e}"
+                )
+                await asyncio.sleep(0.5 * attempt)
+
+        # All retries exhausted — push to DLQ Redis list (best-effort) + local fallback
+        dlq_record = {
+            "original_event": event_data,
+            "failure_reason": str(last_exc),
+            "retry_count": self.MAX_RETRIES,
+            "dlq_timestamp": __import__("datetime").datetime.utcnow().isoformat(),
+        }
         try:
-            await self.redis.xadd(
-                self.events_channel,
-                {'data': json.dumps(event_data)},
-                maxlen=self.stream_max_len,
-                approx=True
+            await self.redis.lpush(self.DLQ_LIST_KEY, json.dumps(dlq_record))
+            await self.redis.expire(self.DLQ_LIST_KEY, self.DLQ_TTL_SECONDS)
+            self.logger.error(
+                f"Event moved to Redis DLQ list '{self.DLQ_LIST_KEY}' after "
+                f"{self.MAX_RETRIES} retries."
             )
-            self.logger.debug(f"Event '{event_data.get('event_type', 'N/A')}' published to Redis Stream '{self.events_channel}'.", extra={"event_data": event_data})
-        except Exception as e:
-            self.logger.error(f"Error publishing event to Redis Stream '{self.events_channel}': {e}", exc_info=True, extra={"event_data": event_data})
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_redis", "degraded", {"reason": "Error sending event", "details": str(e)})
+        except Exception:
+            self._local_dlq.append(dlq_record)
+            self.logger.error(
+                f"Redis DLQ write also failed. Event stored in local memory DLQ. "
+                f"Local DLQ size: {len(self._local_dlq)}"
+            )
+        agent_state = get_agent_state()
+        agent_state.update_component_health(
+            "bus_redis", "degraded",
+            {"reason": "Event moved to DLQ", "details": str(last_exc)}
+        )
+
+    async def flush_dlq(self) -> int:
+        """
+        Replays all events from the Redis DLQ list + local fallback DLQ.
+        Should be called after successful reconnect.
+        Returns the total number of successfully replayed events.
+        """
+        flushed = 0
+
+        # Flush Redis DLQ list
+        if self.connected and self.redis:
+            try:
+                while True:
+                    raw = await self.redis.rpop(self.DLQ_LIST_KEY)
+                    if raw is None:
+                        break
+                    record = json.loads(raw)
+                    event = record.get("original_event", record)
+                    try:
+                        await self.redis.xadd(
+                            self.events_channel,
+                            {"data": json.dumps(event)},
+                            maxlen=self.stream_max_len,
+                            approx=True
+                        )
+                        flushed += 1
+                    except Exception as e:
+                        self.logger.error(f"DLQ flush failed for event: {e}")
+                        await self.redis.lpush(self.DLQ_LIST_KEY, raw)  # Put it back
+            except Exception as e:
+                self.logger.error(f"Error reading Redis DLQ list: {e}")
+
+        # Flush local memory DLQ
+        remaining: List[Dict[str, Any]] = []
+        for record in list(self._local_dlq):
+            event = record.get("original_event", record)
+            try:
+                await self.redis.xadd(
+                    self.events_channel,
+                    {"data": json.dumps(event)},
+                    maxlen=self.stream_max_len,
+                    approx=True
+                )
+                flushed += 1
+            except Exception:
+                remaining.append(record)
+        self._local_dlq = remaining
+
+        self.logger.info(f"Redis DLQ flush complete: {flushed} events replayed.")
+        return flushed
 
     async def _listen_for_commands(self):
         """Internal task to listen for commands via Redis PubSub and put them into a queue."""

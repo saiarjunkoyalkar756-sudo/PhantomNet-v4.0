@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
 import { motion } from 'framer-motion';
 import { BookCopy, Search } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import FormatSwitch from '@/features/log-viewer/components/FormatSwitch';
 import ActionBar from '@/features/log-viewer/components/ActionBar';
 import LogStreamViewer from '@/features/log-viewer/components/LogStreamViewer';

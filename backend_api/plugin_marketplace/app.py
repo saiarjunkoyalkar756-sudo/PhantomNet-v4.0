@@ -1,97 +1,74 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
-from pydantic import BaseModel
-import logging
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
+from .plugin_manager import PluginManager
+from loguru import logger
 import os
 import json
-import uuid
-import yaml
-
-from .plugin_manager import PluginManager
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-app = FastAPI()
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
+from pydantic import BaseModel
 
 PLUGIN_DIR = os.path.join(os.path.dirname(__file__), "plugins")
-os.makedirs(PLUGIN_DIR, exist_ok=True)
-
 plugin_manager = PluginManager(PLUGIN_DIR)
 
-
-class PluginUpload(BaseModel):
-    # This model is mostly for API documentation; file upload is handled by UploadFile
-    pass
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Plugin Marketplace service starting up...")
+async def plugin_marketplace_startup(app: FastAPI):
+    """
+    Handles startup events for the Plugin Marketplace.
+    """
+    os.makedirs(PLUGIN_DIR, exist_ok=True)
     plugin_manager.load_installed_plugins()
+    logger.info("Plugin Marketplace: Plugins loaded and directory ready.")
 
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "message": "Plugin Marketplace service is healthy"}
-
+app = create_phantom_service(
+    name="Plugin Marketplace Service",
+    description="Platform for managing and deploying security plug-ins.",
+    version="1.0.0",
+    custom_startup=plugin_marketplace_startup
+)
 
 @app.post("/plugins/upload", status_code=201)
 async def upload_plugin(file: UploadFile = File(...)):
-    # In a real scenario, this would involve unpacking a zip/tar, validating manifest, etc.
-    # For now, we'll just store the file and expect a manifest.json to be uploaded separately
     file_location = os.path.join(PLUGIN_DIR, file.filename)
     try:
+        content = await file.read()
         with open(file_location, "wb+") as file_object:
-            file_object.write(file.file.read())
-        logger.info(f"Plugin file uploaded to {file_location}")
-
-        # Attempt to load/parse as a manifest
+            file_object.write(content)
+        
         if file.filename.endswith(".json"):
-            with open(file_location, "r") as f:
-                manifest = json.load(f)
+            manifest = json.loads(content)
             plugin_manager.register_plugin(manifest, file.filename)
-            return {
+            return success_response(data={
                 "message": "Plugin manifest uploaded and registered",
                 "filename": file.filename,
-                "manifest": manifest,
-            }
+                "manifest": manifest
+            })
 
-        return {"message": "Plugin file uploaded", "filename": file.filename}
+        return success_response(data={"message": "Plugin file uploaded", "filename": file.filename})
     except Exception as e:
-        logger.error(f"Error uploading plugin file: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Could not upload plugin: {e}")
-
+        logger.error(f"Plugin upload failed: {e}")
+        return error_response(code="UPLOAD_FAILED", message=str(e), status_code=500)
 
 @app.get("/plugins")
 async def list_plugins():
-    return plugin_manager.list_plugins()
-
+    plugins = plugin_manager.list_plugins()
+    return success_response(data=plugins)
 
 @app.get("/plugins/{plugin_id}")
 async def get_plugin_details(plugin_id: str):
     plugin = plugin_manager.get_plugin(plugin_id)
     if not plugin:
-        raise HTTPException(status_code=404, detail="Plugin not found")
-    return plugin
-
+        return error_response(code="PLUGIN_NOT_FOUND", message="Plugin not found.", status_code=404)
+    return success_response(data=plugin)
 
 @app.post("/plugins/{plugin_id}/enable")
 async def enable_plugin(plugin_id: str):
     result = plugin_manager.enable_plugin(plugin_id)
     if not result:
-        raise HTTPException(
-            status_code=404, detail="Plugin not found or could not be enabled"
-        )
-    return {"message": f"Plugin {plugin_id} enabled", "status": result}
-
+        return error_response(code="ENABLE_FAILED", message="Plugin not found or could not be enabled.", status_code=404)
+    return success_response(message=f"Plugin {plugin_id} enabled.", data={"plugin_id": plugin_id, "status": "enabled"})
 
 @app.post("/plugins/{plugin_id}/disable")
 async def disable_plugin(plugin_id: str):
     result = plugin_manager.disable_plugin(plugin_id)
     if not result:
-        raise HTTPException(
-            status_code=404, detail="Plugin not found or could not be disabled"
-        )
-    return {"message": f"Plugin {plugin_id} disabled", "status": result}
+        return error_response(code="DISABLE_FAILED", message="Plugin not found or could not be disabled.", status_code=404)
+    return success_response(message=f"Plugin {plugin_id} disabled.", data={"plugin_id": plugin_id, "status": "disabled"})

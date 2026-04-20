@@ -17,6 +17,7 @@ from .clients.abuseipdb_client import AbuseIPDBClient
 from .clients.shodan_client import ShodanClient
 from .clients.censys_client import CensysClient
 from .clients.google_cloud_security_client import GoogleCloudSecurityClient
+from .clients.misp_client import MISPClient
 
 logger = logger
 
@@ -33,6 +34,7 @@ class ThreatIntelligenceEnricher:
             "shodan": ShodanClient(),
             "censys": CensysClient(),
             "google_cloud_security": GoogleCloudSecurityClient(), # Conceptual
+            "misp": MISPClient(),
         }
         self.cache = threat_intel_cache
         logger.info("ThreatIntelligenceEnricher initialized with all clients.")
@@ -387,6 +389,9 @@ class ThreatIntelligenceEnricher:
         if indicator_type == "cloud_id":
             tasks_with_names.append(("google_cloud_security", self.clients["google_cloud_security"].get_resource_security_posture(indicator_value)))
 
+        # MISP Integration
+        tasks_with_names.append(("misp", self.clients["misp"].search_indicator(indicator_value)))
+
         # Execute all API calls concurrently
         # Extract coroutines for asyncio.gather
         coroutines = [task[1] for task in tasks_with_names]
@@ -426,6 +431,14 @@ class ThreatIntelligenceEnricher:
                 normalized = await self._normalize_censys_report(indicator, response)
             elif client_name == "google_cloud_security":
                 normalized = await self._normalize_google_cloud_security_report(indicator, response)
+            elif client_name == "misp":
+                # Basic MISP normalization
+                normalized = UTMResult(indicator=indicator)
+                normalized.raw_responses["misp"] = response
+                if response and response.get("Attribute"):
+                    normalized.is_malicious = True
+                    normalized.reputation_score = 90
+                    normalized.threat_tags.append("misp_hit")
             
             # Merge results into final_utm_result
             final_utm_result.threat_scores.extend(normalized.threat_scores)

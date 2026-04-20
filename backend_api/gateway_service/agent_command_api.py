@@ -8,7 +8,7 @@ from uuid import UUID
 import logging
 
 from iam_service.auth_methods import get_current_user, has_role, UserRole
-from shared.database import User # Import User model
+from backend_api.shared.database import User # Import User model
 
 logger = logging.getLogger("phantomnet_gateway.agent_command_api")
 

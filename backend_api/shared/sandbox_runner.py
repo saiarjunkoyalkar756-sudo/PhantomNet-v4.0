@@ -1,5 +1,8 @@
-# backend_api/sandbox_runner.py
-import docker
+# backend_api/shared/sandbox_runner.py
+try:
+    import docker
+except ImportError:
+    docker = None
 import os
 import json
 import uuid

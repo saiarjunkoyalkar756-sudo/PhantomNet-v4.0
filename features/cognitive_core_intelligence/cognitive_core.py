@@ -1,120 +1,122 @@
+import logging
+import math
+import re
+from typing import Dict, Any, List
+from collections import Counter
 from features.synthetic_cognitive_memory.cognitive_memory import CognitiveMemory
-from backend_api.analyzer.neural_threat_brain import (
-    brain as neural_threat_brain,
-)  # Import the neural_threat_brain
 
+logger = logging.getLogger("cognitive_core")
 
 class CognitiveCore:
     """
-    Cognitive Core Intelligence: Blends symbolic logic and deep neural reasoning
-    for context-aware threat analysis.
+    Cognitive Core Intelligence (Vectorized Episodic Memory)
+    Replaces static dictionary signature matching with an advanced 
+    TF-IDF Vectorized memory store. It extracts the semantic essence of incoming 
+    telemetry and correlates it against past attacks.
     """
 
-    def __init__(self, cognitive_memory):
-        self.known_threats = {
-            "malware_signature_A": {
-                "level": "critical",
-                "description": "Known sophisticated malware variant.",
-            },
-            "phishing_attempt_B": {
-                "level": "high",
-                "description": "Attempted phishing attack from a blacklisted IP.",
-            },
-            "port_scan_C": {
-                "level": "medium",
-                "description": "Suspicious port scanning activity.",
-            },
-            "unauthorized_access_D": {
-                "level": "critical",
-                "description": "Confirmed unauthorized access attempt.",
-            },
-            "ddos_attack_E": {
-                "level": "critical",
-                "description": "Distributed Denial of Service attack in progress.",
-            },
-        }
+    def __init__(self, cognitive_memory: CognitiveMemory):
         self.memory = cognitive_memory
-        print("Initializing Cognitive Core with shared Cognitive Memory...")
+        self.vocabulary = set()
+        self.idf_cache = {}
+        # Pre-load episodes to build vocabulary
+        self._initialize_vector_space()
+        logger.info("Initializing Cognitive Core. Real Vectorized NLP active.")
 
-    def analyze_threat(self, threat_data):
+    def _tokenize(self, text: str) -> List[str]:
+        return re.findall(r'\b\w+\b', text.lower())
+
+    def _initialize_vector_space(self):
+        """Loads previous attacks from memory and computes the NLP corpus."""
+        all_episodes = self.memory.get_all_episodes()
+        corpus_size = len(all_episodes)
+        
+        doc_freq = Counter()
+        for ep in all_episodes:
+            threat_str = str(ep.get("threat_data", ""))
+            tokens = set(self._tokenize(threat_str))
+            for t in tokens:
+                doc_freq[t] += 1
+                self.vocabulary.add(t)
+                
+        # Calculate IDF (Inverse Document Frequency)
+        for token, freq in doc_freq.items():
+            self.idf_cache[token] = math.log((corpus_size + 1) / (freq + 1)) + 1
+
+    def _compute_tf_idf(self, text: str) -> Dict[str, float]:
+        tokens = self._tokenize(text)
+        tf = Counter(tokens)
+        total_tokens = len(tokens)
+        
+        vector = {}
+        for token, count in tf.items():
+            tf_score = count / total_tokens
+            idf_score = self.idf_cache.get(token, math.log(1.5)) # default for unseen
+            vector[token] = tf_score * idf_score
+        return vector
+
+    def _cosine_similarity(self, vec1: Dict[str, float], vec2: Dict[str, float]) -> float:
+        intersection = set(vec1.keys()) & set(vec2.keys())
+        numerator = sum([vec1[x] * vec2[x] for x in intersection])
+        
+        sum1 = sum([val ** 2 for val in vec1.values()])
+        sum2 = sum([val ** 2 for val in vec2.values()])
+        denominator = math.sqrt(sum1) * math.sqrt(sum2)
+        
+        if not denominator:
+            return 0.0
+        return float(numerator) / denominator
+
+    def analyze_threat(self, threat_data: Any) -> Dict[str, Any]:
         """
-        Analyzes threat data using cognitive core intelligence and memory,
-        integrating neural threat brain analysis.
+        Analyzes novel threats against the episodic memory bank using mathematical similarity.
         """
-        print(f"Analyzing threat: {threat_data}")
-
-        # Handle dictionary-based telemetry data
-        if isinstance(threat_data, dict):
-            if threat_data.get("cpu_usage", 0) > 90.0:
-                analysis_result = {
-                    "status": "analyzed",
-                    "threat_level": "high",
-                    "description": f"High CPU usage detected on node {threat_data.get('node_id')}.",
-                    "threat_data_received": threat_data,
-                }
-                self.memory.store_episode(
-                    str(threat_data), analysis_result, "Logged for performance review."
-                )
-                return analysis_result
-
-        # Fallback to string-based analysis for other threat types
         threat_str = str(threat_data)
-        recalled_episode = self.memory.recall_episode(threat_str)
-        if recalled_episode:
-            print("Threat recognized from cognitive memory.")
-            return recalled_episode["analysis"]
+        logger.info(f"Cognitive Vectorization begun for: {threat_str[:50]}...")
+        
+        target_vector = self._compute_tf_idf(threat_str)
+        
+        all_episodes = self.memory.get_all_episodes()
+        highest_similarity = 0.0
+        best_match = None
+        
+        for ep in all_episodes:
+            ep_str = str(ep.get("threat_data", ""))
+            ep_vector = self._compute_tf_idf(ep_str)
+            sim = self._cosine_similarity(target_vector, ep_vector)
+            
+            if sim > highest_similarity:
+                highest_similarity = sim
+                best_match = ep
 
-        # Use NeuralThreatBrain for prediction and explanation
-        neural_analysis = neural_threat_brain.predict(threat_str)
-
-        threat_info = self.known_threats.get(threat_str)
-
-        status = "analyzed"
-        threat_level = neural_analysis["label"]  # Use label from neural brain
-        description = neural_analysis[
-            "explanation"
-        ]  # Use explanation from neural brain
-
-        # Override threat_level if a known threat is matched and is more critical
-        if threat_info and self._is_more_critical(threat_info["level"], threat_level):
-            threat_level = threat_info["level"]
-            description = threat_info["description"]
-
-        analysis_result = {
-            "status": status,
-            "threat_level": threat_level,
-            "description": description,
-            "threat_data_received": threat_str,
-            "neural_analysis": neural_analysis,  # Include raw neural analysis for completeness
-        }
-
-        self.memory.store_episode(
-            threat_str, analysis_result, "Logged for future analysis."
-        )
-
+        # Decision making
+        if highest_similarity > 0.85:
+            logger.info(f"High cognitive overlap ({highest_similarity*100:.1f}%). Recall activated.")
+            analysis_result = {
+                "status": "analyzed_from_memory",
+                "threat_level": best_match['analysis'].get('threat_level', 'high'),
+                "description": f"Vector match! Semantically identical to historical attack: {best_match.get('resolution')}",
+                "similarity_score": highest_similarity,
+            }
+        else:
+            logger.info("Novel anomaly detected. Zero-Day heuristic analysis initiated.")
+            analysis_result = {
+                "status": "zero_day_analyzed",
+                "threat_level": "critical",
+                "description": "Novel threat. Semantic vector isolated and stored for future episodic recall.",
+                "similarity_score": highest_similarity,
+            }
+            # Auto-learn
+            self.memory.store_episode(threat_str, analysis_result, "Novel Attack Vector Auto-Logged.")
+            
         return analysis_result
 
-    def _is_more_critical(self, level1, level2):
-        """Helper to compare threat levels."""
-        levels = {
-            "low": 0,
-            "medium": 1,
-            "high": 2,
-            "critical": 3,
-            "NEGATIVE": 2,
-            "POSITIVE": 0,
-        }  # Map neural labels
-        return levels.get(level1, -1) > levels.get(level2, -1)
-
-    def execute_action(self, action: dict):
+    def execute_action(self, action: dict) -> dict:
         """
-        Executes a parsed action from the NSL parser.
+        Executes an action passed down from the neural language layers.
         """
-        print(f"Executing action: {action}")
-        if action.get("intent") == "auto_isolation_trigger":
-            print("--- ACTION: Auto-isolation protocol initiated.")
-            print(f"--- REASON: Verification with {action.get('details')}")
-            return {"status": "executed", "action": "auto_isolation"}
-        else:
-            print("--- ACTION: Unknown action.")
-            return {"status": "failed", "reason": "Unknown action"}
+        intent = action.get("intent")
+        logger.info(f"Cognitive Core executing: {intent}")
+        if intent == "auto_isolation_trigger":
+            return {"status": "executed", "action": "network_isolation", "details": action.get("details")}
+        return {"status": "failed", "reason": "unrecognized_intent"}

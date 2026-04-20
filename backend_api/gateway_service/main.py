@@ -15,8 +15,15 @@ from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
-from datetime import timedelta, datetime  # Import timedelta and datetime
+from datetime import timedelta, datetime
 import sys
+import uuid
+import time
+from typing import Optional, List, Dict, Any
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from backend_api.shared.plugin_manager import PluginManager
 import pyotp  # Ensure pyotp is imported for 2FA setup
 from backend_api.shared.blue_team_ai import BlueTeamAI  # Import BlueTeamAI
@@ -122,15 +129,8 @@ from uuid import uuid4  # Import uuid4
 from backend_api.shared.email_service import send_reset_email  # Import send_reset_email
 from backend_api.shared.health_monitor import monitor_health  # Import health monitor
 from jose import jwt, JWTError  # Import jwt for token decoding in logout
-from backend_api.gateway_service.routes.default import router as default_router
-from backend_api.gateway_service.websocket_api import router as websocket_api_router # Import the new WebSocket API router
-from backend_api.gateway_service.routes.health import router as health_router
 
-
-from backend_api.shared.services import start_services, stop_services
-
-from contextlib import asynccontextmanager
-
+from backend_api.shared.service_factory import create_phantom_service
 from backend_api.shared.audit_log import AUDIT_LOG_QUEUE
 # from blockchain_layer.blockchain import BlockchainNotary
 
@@ -181,67 +181,38 @@ NOTARIZATION_BATCH_TIMEOUT = 60  # seconds
 #             await asyncio.sleep(30)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup logic
-    db_session = SessionLocal()
-    logging_task = asyncio.create_task(async_log_sink())
-    log_broadcast_task = asyncio.create_task(broadcast_logs_from_queue(log_queue))
-        # notarization_task = asyncio.create_task(notarization_worker(db_session)) # Start the new worker
-    # logger.info("Asynchronous logging, broadcasting, and notarization tasks started (conceptual blockchain).")
-
-    # create_db_and_tables("operational") # Removed: Use Alembic for schema management
-    logger.info("Database tables will be managed by Alembic. Ensure migrations are applied.")
+async def gateway_startup(app: FastAPI):
+    # startup background tasks
     asyncio.create_task(monitor_health())
     logger.info("Health monitoring started in background.")
     
     await manager.start_consumer()
     logger.info("WebSocket event consumer started.")
-
-    # These services are now expected to be run independently
-    # await threat_intel_startup()
-    # logger.info("Threat Intelligence Service startup event executed.")
     
-    # await siem_startup()
-    # logger.info("SIEM Integration Service startup event executed.")
-    
-    # await soar_startup()
-    # logger.info("SOAR Engine startup event executed.")
-    
-    yield
+    # Broadcast logs from queue
+    asyncio.create_task(broadcast_logs_from_queue(log_queue))
+    logger.info("Log broadcasting started.")
 
-    # Shutdown logic
-    # These services are now expected to be run independently
-    # await threat_intel_shutdown()
-    # logger.info("Threat Intelligence Service shutdown event executed.")
+async def gateway_shutdown(app: FastAPI):
+    logger.info("Gateway service is cleaning up resources...")
+    # Add any specific cleanup here if needed
 
-    # await siem_shutdown()
-    # logger.info("SIEM Integration Service shutdown event executed.")
+# Initialize slowapi limiter
+limiter = Limiter(key_func=get_remote_address)
 
-    # Cancel and await the background tasks to ensure graceful shutdown
-    logging_task.cancel()
-    log_broadcast_task.cancel()
-        # notarization_task.cancel()
-    try:
-        await logging_task
-    except asyncio.CancelledError:
-        logger.info("Asynchronous logging task stopped.")
-    try:
-        await log_broadcast_task
-    except asyncio.CancelledError:
-        logger.info("Log broadcasting task stopped.")
-        # try:
-    #     await notarization_task
-    # except asyncio.CancelledError:
-    #     logger.info("Notarization worker task stopped (conceptual blockchain).")
-    
-    db_session.close()
-    logger.info("Shutting down application.")
+app = create_phantom_service(
+    name="Gateway Service",
+    description="Main entry point for the PhantomNet platform.",
+    version="1.0.0",
+    custom_startup=gateway_startup,
+    custom_shutdown=gateway_shutdown,
+    cors_origins=["https://phantomnet.io", "http://localhost:3000"]
+)
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-from shared.redis_client import redis_client
-
-app = FastAPI(lifespan=lifespan)
+# Initialize Redis client (from previous implementation)
 
 # @app.middleware("http")
 # async def zero_trust_middleware(request: Request, call_next):
@@ -303,14 +274,18 @@ async def write_merkle_root_to_contract(merkle_root: str, block_index: int):
     # In a real scenario, this would interact with a blockchain smart contract
     return None
 
-# CORS middleware to allow frontend to connect
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost", "http://localhost:3000"],  # Allow frontend dev servers
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# --- Phase 10: Secure Headers Middleware ---
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    return response
+
+# CORS middleware is already handled by the factory
 
 RATE_LIMIT_THRESHOLD = 100  # requests
 RATE_LIMIT_WINDOW = 60  # seconds
@@ -438,3 +413,37 @@ app.include_router(health_router, tags=["Health"])
 
 
 
+from backend_api.shared.pqc_wrapper import PQCWrapper
+pqc_engine = PQCWrapper()
+
+@app.post("/api/security/pqc-handshake")
+async def pqc_handshake(request: Request):
+    """
+    Feature 18: Post-Quantum Cryptography Handshake.
+    Exchanges ML-KEM (Kyber) encapsulated keys for quantum-resistant session integrity.
+    """
+    body = await request.json()
+    peer_pub_key_id = body.get("public_key_id")
+    if not peer_pub_key_id:
+        raise HTTPException(status_code=400, detail="Missing public_key_id for PQC handshake")
+    
+    # Perform Lattice-based key encapsulation
+    result = pqc_engine.encapsulate_key(peer_pub_key_id)
+    logger.info(f"PQC_HANDSHAKE: Quantum-resistant key encapsulated for {peer_pub_key_id[:8]}...")
+    
+    return result
+
+from backend_api.iam_service.auth_methods import get_current_user
+
+@app.get("/api/security/audit-crypto-agility")
+async def audit_crypto_agility(current_user: User = Depends(get_current_user)):
+    """
+    Zero-Trust check for Shor-vulnerable algorithms across services.
+    """
+    # Simulate a check across multiple stacks
+    audit_results = {
+        "gateway": pqc_engine.apply_cryptographic_agility_check("PQC-Kyber-Dilithium"),
+        "iam_service": pqc_engine.apply_cryptographic_agility_check("RSA-4096"), # This will fail
+        "agent_protocol": pqc_engine.apply_cryptographic_agility_check("ECDSA-P384") # This will fail
+    }
+    return audit_results

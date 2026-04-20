@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { LoaderCircle, CheckCircle, XCircle } from 'lucide-react';
 import QRCode from 'qrcode.react'; // You might need to install 'qrcode.react' (npm install qrcode.react)
 
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import api from '@/services/api';

@@ -1,45 +1,51 @@
-import time
+import logging
+from typing import Dict, Any, List
 
+logger = logging.getLogger("seamless_defense")
 
-class SeamlessDefense:
+class InvisibleSecurityExperience:
     """
-    Builds a seamless, quiet defense UX where users feel protection, not alerts.
-    PhantomNet adapts silently, maintaining system harmony.
+    Invisible Security Experience:
+    Ensures security operations are ambient and non-disruptive (Zero-Friction).
+    It manages low-risk remediations in the background and only surfaces 
+    critical interruptions to the user/analyst when absolutely necessary.
     """
 
-    def __init__(self, cognitive_core):
-        self.cognitive_core = cognitive_core
-        self.harmony_threshold = 0.9
-        self.current_harmony_score = 1.0
-        print("Initializing Invisible Security Experience (Seamless Defense)...")
+    def __init__(self, friction_threshold: float = 0.3):
+        self.friction_threshold = friction_threshold
+        self.background_remediations: List[Dict[str, Any]] = []
+        logger.info("Initializing Invisible Security Experience (Zero-Friction Engine)...")
 
-    def monitor_system_harmony(self):
+    def process_telemetry_ambiently(self, alert_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Simulates the continuous monitoring of system harmony.
+        Processes alert telemetry without interrupting the user.
+        If the risk is below the friction threshold, it resolves automatically in secret.
         """
-        print("System harmony monitoring started.")
-        while True:
-            # In a real system, this would be a complex calculation based on system metrics.
-            # For this simulation, we'll just slightly degrade the harmony score over time.
-            self.current_harmony_score -= 0.05
-            print(f"Current system harmony score: {self.current_harmony_score:.2f}")
+        risk_score = alert_data.get("risk_score", 0.0)
+        action = alert_data.get("recommended_action", "log")
 
-            if self.current_harmony_score < self.harmony_threshold:
-                self.silently_adapt()
-
-            time.sleep(5)
-
-    def silently_adapt(self):
-        """
-        Simulates a silent adaptation to a minor anomaly.
-        """
-        print("System harmony below threshold. Initiating silent adaptation...")
-        # This could involve actions like rerouting traffic, optimizing resource usage, etc.
-        # We'll simulate this by asking the cognitive core to analyze a low-level threat.
-        result = self.cognitive_core.analyze_threat("minor_performance_degradation")
-
-        if result["threat_level"] == "low":
-            print("Silent adaptation successful. System harmony restored.")
-            self.current_harmony_score = 1.0
+        if risk_score <= self.friction_threshold:
+            # Silent Remediation
+            resolution = {
+                "alert_id": alert_data.get("alert_id"),
+                "action": action,
+                "mode": "INVISIBLE",
+                "status": "Auto-Resolved"
+            }
+            self.background_remediations.append(resolution)
+            logger.info(f"AMB-DEFENSE: Silently resolved {alert_data.get('alert_id')} using {action}")
+            return resolution
         else:
-            print("Silent adaptation failed. Escalating to a higher-level response.")
+            # Surface to User
+            logger.warning(f"FRICTION REQUIRED: Elevating alert {alert_data.get('alert_id')} to User UI.")
+            return {
+                "alert_id": alert_data.get("alert_id"),
+                "mode": "VISIBLE",
+                "status": "Pending_Interaction"
+            }
+
+    def get_silent_metrics(self) -> Dict[str, Any]:
+        return {
+            "total_invisible_resolutions": len(self.background_remediations),
+            "friction_saved_index": len(self.background_remediations) * 1.5 # Simulated metric
+        }

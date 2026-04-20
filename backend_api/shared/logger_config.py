@@ -4,21 +4,40 @@ import json
 from datetime import datetime, timezone
 import os
 import sys
+from typing import Any
 from loguru import logger
 
 # 1. Create a queue for inter-thread/inter-process communication
 log_queue = asyncio.Queue()
 
 # 2. Define the JSON log format
+import re
+
+SENSITIVE_KEYS = re.compile(r"(password|token|key|secret|auth|bearer|credential|ssn|credit_card)", re.IGNORECASE)
+
+def mask_sensitive_data(data: Any) -> Any:
+    """Recursively masks sensitive values in strings or dictionaries."""
+    if isinstance(data, dict):
+        return {k: mask_sensitive_data(v) if not SENSITIVE_KEYS.search(k) else "********" for k, v in data.items()}
+    elif isinstance(data, str):
+        # Mask things like 'password=xyz' or 'Authorization: Bearer xyz'
+        # This is a basic pattern to catch common sensitive strings
+        data = re.sub(r"(password|token|key|secret)=[^&\s]+", r"\1=********", data, flags=re.IGNORECASE)
+        data = re.sub(r"(Bearer|Token|Basic)\s+\S+", r"\1 ********", data, flags=re.IGNORECASE)
+        return data
+    return data
+
 def serialize(record):
-    """Custom serializer to format log records as JSON."""
+    """Custom serializer to format log records as JSON with sensitive data masking."""
+    message = mask_sensitive_data(record["message"])
+    
     subset = {
         "timestamp": datetime.fromtimestamp(record["time"].timestamp(), tz=timezone.utc).isoformat(),
         "level": record["level"].name,
         "name": record["name"],
-        "message": record["message"],
+        "message": message,
         "service_name": os.getenv("SERVICE_NAME", "unknown_service"),
-        "environment": os.getenv("ENVIRONMENT", "development"),
+        "environment": os.getenv("ENVIRONMENT", "production"), # Hardened default
     }
     # Add exception details if present
     if record["exception"]:
@@ -40,8 +59,8 @@ async def async_log_sink():
     while True:
         try:
             log_record = await log_queue.get()
-            sys.stdout.write(log_record)
-            sys.stdout.flush()
+            sys.stdout.buffer.write(log_record.encode('utf-8'))
+            sys.stdout.buffer.flush()
         except asyncio.CancelledError:
             break
         except Exception as e:
@@ -82,6 +101,11 @@ def setup_logging(name: str = "phantomnet_backend", level: str = "INFO"):
 
     # Configure the main logger to use the queue sink
     # This ensures that all logging calls are non-blocking and thread-safe.
+    # Standardize level type to string
+    if not isinstance(level, str):
+        import logging
+        level = logging.getLevelName(level)
+
     logger.add(
         queue_sink,
         level=level.upper(),

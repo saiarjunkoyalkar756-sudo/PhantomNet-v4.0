@@ -1,14 +1,14 @@
-# 📝 Pull Request Template – PhantomNet
+# Pull Request Template - PhantomNet
 
-## 📌 Summary
+## Summary
 Explain the purpose of this PR. What does it add, fix, or improve?
 
-## 🔍 Related Issues
+## Related Issues
 Closes #<issue-number>  
 or  
 References #<issue-number>
 
-## ✅ Changes
+## Changes
 - [ ] New feature  
 - [ ] Bug fix  
 - [ ] Refactor  
@@ -16,15 +16,15 @@ References #<issue-number>
 - [ ] Security improvement  
 - [ ] Deployment changes  
 
-## 🧪 Testing
+## Testing
 Describe how you tested this PR. Steps for reviewers to verify.
 
-## 📷 Screenshots (if applicable)
+## Screenshots (if applicable)
 
-## 🚀 Additional Notes
+## Additional Notes
 Anything else reviewers need to know.
 
-## ✔ Checklist
+## Checklist
 - [ ] Code builds without errors  
 - [ ] Tests pass  
 - [ ] Updated documentation if needed  

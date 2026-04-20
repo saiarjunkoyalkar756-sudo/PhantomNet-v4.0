@@ -1,43 +1,33 @@
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.shared.health_utils import check_kafka_health, check_postgres_health, check_kafka_consumer_health, perform_full_health_check
+from backend_api.shared.logger_config import setup_logging
+from backend_api.core.response import success_response, error_response
+from .api import router as alerts_router
+from loguru import logger
+from uuid import UUID
 import json
 import os
-import signal
-import time
+import asyncio
 import psycopg2
+import time
 from psycopg2 import OperationalError
 from kafka import KafkaConsumer
-from uuid import UUID # Import UUID
-import logging # Import standard logging module
-from fastapi import FastAPI, HTTPException
-from contextlib import asynccontextmanager
-import asyncio
-from typing import Optional # For Kafka consumer/producer Optional type hint
-
-from backend_api.shared.logger_config import setup_logging # Import shared logger setup
-from backend_api.shared.health_utils import check_kafka_health, check_postgres_health, check_kafka_consumer_health, perform_full_health_check # Import health_utils
+from typing import Optional, Dict, Any, List
+from fastapi import FastAPI, HTTPException, Request, Depends, status
 
 # --- Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
 KAFKA_TOPIC = 'alerts'
 KAFKA_GROUP_ID = 'alert-storage-group'
-APP_PORT = int(os.environ.get('APP_PORT', '8004')) # New port for this service
 
 DB_HOST = os.environ.get('DB_HOST', 'postgres')
 DB_NAME = os.environ.get('DB_NAME', 'phantomnet_db')
 DB_USER = os.environ.get('DB_USER', 'phantomnet')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 
-# Default tenant ID for alerts if not specified in the message
-# In a real system, this would come from context provided by the ingestor/agent
 DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001") 
 
-# --- Setup Logging ---
-logger = setup_logging(name="alert_storage", level=logging.INFO)
-
-# --- Global Kafka and DB Instances ---
-consumer: Optional[KafkaConsumer] = None
-db_conn: Optional[psycopg2.extensions.connection] = None
-db_cursor: Optional[psycopg2.extensions.cursor] = None
-processing_task: Optional[asyncio.Task] = None
+# --- Global State ---
 stop_processing_event = asyncio.Event()
 
 def get_db_connection():
@@ -57,11 +47,8 @@ def get_db_connection():
             time.sleep(5)
 
 async def consume_and_process_kafka_messages():
-    global consumer, db_conn, db_cursor
     logger.info("Starting Kafka consumer for Alert Storage...")
-
-    # It can take a few seconds for Kafka to be ready
-    await asyncio.sleep(20) # Give Redpanda and Postgres time to start
+    await asyncio.sleep(20) # Startup delay
 
     try:
         consumer = KafkaConsumer(
@@ -73,7 +60,7 @@ async def consume_and_process_kafka_messages():
         )
         logger.info("Kafka consumer initialized successfully.")
     except Exception as e:
-        logger.error(f"Could not connect to Kafka: {e}", exc_info=True)
+        logger.error(f"Could not connect to Kafka: {e}")
         return
 
     db_conn = get_db_connection()
@@ -85,22 +72,18 @@ async def consume_and_process_kafka_messages():
         ON CONFLICT (alert_id) DO NOTHING;
     """
 
-    logger.info("Alert Storage service started. Polling for alert messages...")
     try:
         for message in consumer:
             if stop_processing_event.is_set():
-                break # Exit loop if shutdown is requested
+                break
 
             try:
                 alert = message.value
-                logger.debug(f"Received alert: {alert.get('alert_id')}")
-
-                # Extract tenant_id from alert, or use default
                 tenant_id_str = alert.get('tenant_id')
                 parsed_tenant_id = UUID(tenant_id_str) if tenant_id_str else DEFAULT_TENANT_ID
 
                 db_cursor.execute(INSERT_STMT, (
-                    str(parsed_tenant_id), # Ensure UUID is passed as string
+                    str(parsed_tenant_id),
                     alert.get('alert_id'),
                     alert.get('rule_id'),
                     alert.get('rule_name'),
@@ -110,72 +93,44 @@ async def consume_and_process_kafka_messages():
                     alert.get('details')
                 ))
                 db_conn.commit()
-                logger.info(f"Successfully stored alert: {alert.get('alert_id')} for tenant {str(parsed_tenant_id)}", extra=alert)
-
-            except (psycopg2.Error, json.JSONDecodeError) as e:
-                logger.error(f"An error occurred while processing message: {e}", exc_info=True, extra={"message_value": message.value})
-                db_conn.rollback() # Rollback the failed transaction
+                logger.info(f"Stored alert: {alert.get('alert_id')} for tenant {parsed_tenant_id}")
             except Exception as e:
-                logger.critical(f"A critical error occurred: {e}", exc_info=True, extra={"message_value": message.value})
-                # Attempt graceful shutdown here only if critical and unrecoverable
-                stop_processing_event.set() # Signal main loop to stop
+                logger.error(f"Error processing alert message: {e}")
+                db_conn.rollback()
 
     except asyncio.CancelledError:
-        logger.info("Kafka consumer loop cancelled.")
-    except Exception as e:
-        logger.critical(f"Critical error in Kafka consumer loop: {e}", exc_info=True)
+        logger.info("Consumer loop cancelled.")
     finally:
-        logger.info("Kafka consumer loop finished.")
-        if consumer is not None:
-            consumer.close()
-            logger.info("Kafka consumer closed.")
-        if db_cursor is not None:
-            db_cursor.close()
-        if db_conn is not None:
-            db_conn.close()
-            logger.info("Database connection closed.")
+        consumer.close()
+        db_cursor.close()
+        db_conn.close()
+        logger.info("Alert Storage backend resources closed.")
 
+async def alert_storage_startup(app: FastAPI):
+    app.state.processing_task = asyncio.create_task(consume_and_process_kafka_messages())
+    logger.info("Alert Storage: Background consumer task started.")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup logic
-    logger.info("Alert Storage service starting up...")
-    global processing_task
-    processing_task = asyncio.create_task(consume_and_process_kafka_messages())
-    logger.info("Kafka consumer background task initiated.")
-    
-    yield
-    
-    # Shutdown logic
-    logger.info("Alert Storage service shutting down.")
-    stop_processing_event.set() # Signal consumer to stop
-    if processing_task:
-        processing_task.cancel()
-        try:
-            await processing_task
-        except asyncio.CancelledError:
-            logger.info("Kafka consumer task cancelled during shutdown.")
-    
-    logger.info("Alert Storage service stopped.")
+async def alert_storage_shutdown(app: FastAPI):
+    if hasattr(app.state, "processing_task"):
+        stop_processing_event.set()
+        app.state.processing_task.cancel()
+        await asyncio.gather(app.state.processing_task, return_exceptions=True)
+        logger.info("Alert Storage: Background consumer task stopped.")
 
-
-from .api import router as alerts_router
-...
-
-app = FastAPI(
-    title="Alert Storage Service",
+app = create_phantom_service(
+    name="Alert Storage Service",
     description="Consumes alerts from Kafka and stores them in PostgreSQL.",
     version="1.0.0",
-    lifespan=lifespan
+    custom_startup=alert_storage_startup,
+    custom_shutdown=alert_storage_shutdown
 )
 
 app.include_router(alerts_router)
 
-@app.get("/health")
-...
-async def health_check():
+@app.get("/health_detailed")
+async def health_detailed():
     """
-    Returns the comprehensive health status of the Alert Storage service and its dependencies (Kafka, PostgreSQL).
+    Returns the comprehensive health status of the Alert Storage service.
     """
     kafka_status = await check_kafka_health()
     kafka_consumer_status = await check_kafka_consumer_health(KAFKA_TOPIC, KAFKA_GROUP_ID)
@@ -187,9 +142,4 @@ async def health_check():
         "postgres_db": postgres_status
     })
     
-    if full_status["status"] == "healthy":
-        logger.info("Alert Storage service is healthy.", extra=full_status)
-    else:
-        logger.warning("Alert Storage service is in a degraded state.", extra=full_status)
-        
-    return full_status
+    return success_response(data=full_status)

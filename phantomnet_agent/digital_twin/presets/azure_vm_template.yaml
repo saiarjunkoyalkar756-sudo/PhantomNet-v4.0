@@ -1,0 +1,68 @@
+template_id: azure_vm_corporate
+description: >
+  Azure VM + Azure Active Directory + Key Vault deception environment.
+  Mimics a corporate Azure subscription with a Windows Server VM, an AAD-backed
+  admin panel, and a Key Vault endpoint. High-yield lure for cloud-focused attackers
+  targeting Azure credential theft, SSRF to IMDS, and Key Vault secret enumeration.
+category: cloud
+cloud_provider: azure
+deception_level: 4
+
+metadata:
+  org: "Contoso Ltd."
+  subscription_id: "fakesubid-0000-0000-0000-contoso0001"
+  tenant_id: "faketenant-aaaa-bbbb-cccc-contoso0002"
+  region: "eastus"
+
+services:
+  - name: azure_imds
+    description: "Azure Instance Metadata Service (IMDS) — primary SSRF target"
+    image: phantomnet/fake-imds-azure:latest
+    ports:
+      - "169.254.169.254:80"
+    fake_endpoints:
+      - "/metadata/instance?api-version=2021-02-01"
+      - "/metadata/identity/oauth2/token?resource=https://vault.azure.net"
+    fake_responses:
+      "/metadata/instance?api-version=2021-02-01": |
+        {"compute":{"subscriptionId":"fakesubid-0000","resourceGroupName":"rg-contoso","location":"eastus",
+        "vmId":"vm-fake-001","osType":"Windows"},"network":{"interface":[{"ipv4":{"ipAddress":[{"privateIpAddress":"10.0.1.4"}]}}]}}
+      "/metadata/identity/oauth2/token": |
+        {"access_token":"eyFAKETOKENfakebase64==","token_type":"Bearer","expires_in":"3600",
+        "resource":"https://vault.azure.net","client_id":"msi-fake-clientid"}
+
+  - name: azure_key_vault
+    description: "Fake Azure Key Vault — traps secret enumeration"
+    image: phantomnet/fake-keyvault:latest
+    ports:
+      - "8443:443"
+    fake_endpoints:
+      - "/secrets?api-version=7.3"
+      - "/secrets/db-password/current"
+      - "/secrets/stripe-api-key/current"
+    fake_responses:
+      "/secrets?api-version=7.3": |
+        {"value":[{"id":"https://contoso-kv.vault.azure.net/secrets/db-password","attributes":{"enabled":true}},
+        {"id":"https://contoso-kv.vault.azure.net/secrets/stripe-api-key","attributes":{"enabled":true}}]}
+      "/secrets/db-password/current": |
+        {"value":"FAKE_DB_PASSWORD_TRAP","id":"https://contoso-kv.vault.azure.net/secrets/db-password/abc123","attributes":{"enabled":true}}
+
+  - name: azure_admin_portal
+    description: "Fake Azure portal login page — credential harvester"
+    image: phantomnet/fake-azure-portal:latest
+    ports:
+      - "8080:80"
+    fake_endpoints:
+      - "/login"
+      - "/organizations/contoso.onmicrosoft.com"
+
+detection_triggers:
+  - type: imds_access
+    description: "Any access to 169.254.169.254 indicates SSRF vulnerability or internal recon"
+    severity: HIGH
+  - type: key_vault_enumeration
+    description: "Listing or reading Key Vault secrets"
+    severity: CRITICAL
+  - type: credential_submission
+    description: "POST to /login with credentials"
+    severity: HIGH

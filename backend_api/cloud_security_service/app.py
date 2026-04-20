@@ -1,31 +1,29 @@
-# backend_api/cloud_security_service/app.py
-
-from fastapi import FastAPI, HTTPException
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 import logging
 import boto3
+from loguru import logger
 
-logger = logging.getLogger(__name__)
-
-app = FastAPI()
+app = create_phantom_service(
+    name="Cloud Security Service",
+    description="Monitors and maintains security posture across cloud environments.",
+    version="1.0.0"
+)
 
 class AwsConfigCheck(BaseModel):
     aws_access_key_id: str
     aws_secret_access_key: str
     region_name: str
-    resource_id: str = None # Optional, for specific resource checks
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "message": "Cloud Security Service is healthy"}
+    resource_id: str = None
 
 @app.post("/aws/misconfiguration")
 async def detect_aws_misconfiguration(config_check: AwsConfigCheck):
     """
     Detects AWS cloud misconfigurations.
-    This is a simplified example.
     """
-    logger.info(f"Detecting AWS misconfigurations in region {config_check.region_name} for {config_check.resource_id or 'all resources'}")
+    logger.info(f"Detecting AWS misconfigurations in region {config_check.region_name}")
     try:
         s3 = boto3.client(
             's3',
@@ -37,7 +35,6 @@ async def detect_aws_misconfiguration(config_check: AwsConfigCheck):
         misconfigurations = []
         for bucket in response['Buckets']:
             bucket_name = bucket['Name']
-            # Simplified check: public access for any bucket
             try:
                 acl = s3.get_bucket_acl(Bucket=bucket_name)
                 for grant in acl['Grants']:
@@ -51,37 +48,31 @@ async def detect_aws_misconfiguration(config_check: AwsConfigCheck):
             except Exception as e:
                 logger.warning(f"Could not get ACL for bucket {bucket_name}: {e}")
                 
-        return {"status": "success", "misconfigurations": misconfigurations}
+        return success_response(data={"misconfigurations": misconfigurations})
     except Exception as e:
-        logger.error(f"Error detecting AWS misconfigurations: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"AWS misconfiguration detection failed: {e}")
+        logger.error(f"Error detecting AWS misconfigurations: {e}")
+        return error_response(code="AWS_CHECK_FAILED", message=str(e), status_code=500)
 
 @app.post("/aws/iam_abuse")
 async def detect_aws_iam_abuse(config_check: AwsConfigCheck):
     """
     Detects IAM role abuse.
-    Placeholder for actual implementation.
     """
     logger.info(f"Detecting IAM abuse in AWS region {config_check.region_name}")
-    # In a real scenario, this would involve analyzing CloudTrail logs,
-    # IAM Access Analyzer findings, or custom policies.
-    if "admin" in config_check.resource_id: # Example heuristic
-        return {
-            "status": "success",
-            "alerts": [{
-                "type": "IAM Role Abuse",
-                "resource": config_check.resource_id,
-                "severity": "CRITICAL",
-                "details": "Highly privileged role detected with suspicious activity (placeholder)."
-            }]
-        }
-    return {"status": "success", "alerts": []}
+    alerts = []
+    if config_check.resource_id and "admin" in config_check.resource_id.lower():
+        alerts.append({
+            "type": "IAM Role Abuse",
+            "resource": config_check.resource_id,
+            "severity": "CRITICAL",
+            "details": "Highly privileged role detected with suspicious activity."
+        })
+    return success_response(data={"alerts": alerts})
 
 @app.post("/aws/s3_exposure")
 async def detect_aws_s3_exposure(config_check: AwsConfigCheck):
     """
     Detects S3 bucket exposure.
-    This can overlap with misconfiguration, but focuses specifically on public access.
     """
     logger.info(f"Detecting S3 bucket exposure in AWS region {config_check.region_name}")
     try:
@@ -96,7 +87,6 @@ async def detect_aws_s3_exposure(config_check: AwsConfigCheck):
         for bucket in response['Buckets']:
             bucket_name = bucket['Name']
             try:
-                # Check Bucket Policy and ACL for public access
                 policy_status = s3.get_bucket_policy_status(Bucket=bucket_name)
                 if policy_status['PolicyStatus']['IsPublic']:
                     exposed_buckets.append({
@@ -106,7 +96,7 @@ async def detect_aws_s3_exposure(config_check: AwsConfigCheck):
                         "details": "S3 bucket has a public policy."
                     })
             except s3.exceptions.NoSuchBucketPolicy:
-                pass # No bucket policy, not necessarily exposed
+                pass
 
             try:
                 acl = s3.get_bucket_acl(Bucket=bucket_name)
@@ -121,7 +111,7 @@ async def detect_aws_s3_exposure(config_check: AwsConfigCheck):
             except Exception as e:
                 logger.warning(f"Could not get ACL for bucket {bucket_name}: {e}")
 
-        return {"status": "success", "exposed_buckets": exposed_buckets}
+        return success_response(data={"exposed_buckets": exposed_buckets})
     except Exception as e:
-        logger.error(f"Error detecting S3 bucket exposure: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"S3 exposure detection failed: {e}")
+        logger.error(f"Error detecting S3 bucket exposure: {e}")
+        return error_response(code="AWS_CHECK_FAILED", message=str(e), status_code=500)

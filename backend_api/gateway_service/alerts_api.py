@@ -4,7 +4,7 @@ from typing import List
 from .db import Alert, get_session
 from uuid import UUID # Import UUID
 from iam_service.auth_methods import get_current_user, has_role, UserRole
-from shared.database import User # Import User model to type hint current_user
+from backend_api.shared.database import User # Import User model to type hint current_user
 
 # Default tenant ID for filtering (for now, until JWT integration) - This is no longer used directly but kept for context if needed elsewhere.
 # DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")

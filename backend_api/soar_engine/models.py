@@ -30,6 +30,8 @@ class RemediationAction(str, Enum):
     ENRICH_INDICATOR = "enrich_indicator" # From Threat Intel Service
     CUSTOM_SCRIPT = "custom_script"
     DISPATCH_AGENT_COMMAND = "dispatch_agent_command"
+    TEMPORAL_ROLLBACK = "temporal_rollback"
+    TEMPORAL_SNAPSHOT = "temporal_snapshot"
 
 class PlaybookStep(BaseModel):
     """Defines a single step within a SOAR playbook."""

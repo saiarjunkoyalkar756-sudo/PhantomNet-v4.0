@@ -1,76 +1,111 @@
-# backend_api/compliance_reporting_service/app.py
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import logging
-from typing import Dict, Any, List
+from backend_api.shared.service_factory import create_phantom_service
+import os
+import uuid
+import asyncio
 from datetime import datetime
-import random
+from typing import Dict, Any, List, Optional
+from fastapi import FastAPI, HTTPException, Request, Depends, status
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from loguru import logger
+from backend_api.core.response import success_response, error_response
+from .report_generator import generate_pdf_report
 
-logger = logging.getLogger(__name__)
+PDF_OUTPUT_DIR = "generated_reports"
 
-app = FastAPI()
+async def compliance_reporting_startup(app: FastAPI):
+    """
+    Handles startup events for the Compliance Reporting Service.
+    """
+    if not os.path.exists(PDF_OUTPUT_DIR):
+        os.makedirs(PDF_OUTPUT_DIR)
+        logger.info(f"Compliance Reporting: Created directory {PDF_OUTPUT_DIR}")
 
-# In-memory store for simulated reports
+app = create_phantom_service(
+    name="Compliance Reporting Service",
+    description="Generates and stores compliance audit reports.",
+    version="1.0.0",
+    custom_startup=compliance_reporting_startup
+)
+
+# In-memory store for reports (In production, this would be a DB)
 reports_store: Dict[str, Dict[str, Any]] = {}
 
-
 class ReportGenerationRequest(BaseModel):
-    standard: str  # e.g., "iso27001", "soc2", "pci_dss", "gdpr"
-    start_date: str = None
-    end_date: str = None
-    
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "message": "Compliance Reporting Service is healthy"}
+    standard: str  # e.g., "soc2", "iso27001", "hipaa"
+    scope: Optional[str] = "Global"
 
-@app.post("/reports/generate", status_code=201)
+@app.post("/reports/generate")
 async def generate_compliance_report(request: ReportGenerationRequest):
     """
-    Generates a simulated compliance report for a given standard.
+    Triggers the generation of a compliance report and its PDF export.
     """
-    report_id = f"{request.standard}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    report_id = f"{request.standard.lower()}-{uuid.uuid4().hex[:8]}"
     
+    # Mock data collection for the report
     report_content = {
         "report_id": report_id,
         "standard": request.standard,
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.utcnow().isoformat(),
         "status": "COMPLETED",
-        "summary": f"Simulated {request.standard} compliance report generated.",
         "details": {
-            "scope": "Entire PhantomNet deployment (simulated)",
-            "compliance_score": random.randint(70, 100),
+            "compliance_score": 92 if request.standard.lower() == "soc2" else 85,
             "findings": [
-                {"control_id": "A.5.1.1", "status": "Compliant", "description": "Information security policy in place."},
-                {"control_id": "A.9.2.1", "status": "Non-Compliant", "description": "Some user access reviews are overdue (simulated).", "severity": "MEDIUM"}
-            ] if request.standard == "iso27001" else (
-                [{"control_id": "CC1.1", "status": "Compliant", "description": "Control environment established."}] if request.standard == "soc2" else (
-                    [{"control_id": "Req 1.1", "status": "Compliant", "description": "Install and maintain a firewall configuration."}] if request.standard == "pci_dss" else (
-                        [{"control_id": "Art. 5", "status": "Compliant", "description": "Principles relating to processing of personal data."}] if request.standard == "gdpr" else []
-                    )
-                )
-            ),
-            "recommendations": ["Review overdue access reviews." ] if request.standard == "iso27001" else []
+                {
+                    "control_id": "CC1.1", 
+                    "status": "Compliant", 
+                    "description": "Board of Directors demonstrates commitment to integrity and ethical values."
+                },
+                {
+                    "control_id": "CC6.1", 
+                    "status": "Compliant", 
+                    "description": "The entity restricts logical access to information assets."
+                },
+                {
+                    "control_id": "CC7.1", 
+                    "status": "Non-Compliant", 
+                    "description": "Detection and monitoring of vulnerabilities is not fully automated.",
+                    "severity": "MEDIUM"
+                }
+            ]
         }
     }
     
-    reports_store[report_id] = report_content
-    logger.info(f"Generated simulated {request.standard} report: {report_id}")
-    return {"message": "Report generated successfully", "report_id": report_id}
+    # Generate PDF
+    try:
+        pdf_path = generate_pdf_report(report_content, output_dir=PDF_OUTPUT_DIR)
+        report_content["pdf_path"] = pdf_path
+        reports_store[report_id] = report_content
+        
+        logger.info(f"Compliance report {report_id} generated and saved to {pdf_path}")
+        return success_response(
+            message=f"{request.standard.upper()} report generated successfully.",
+            data={"report_id": report_id, "score": report_content["details"]["compliance_score"]}
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate PDF for report {report_id}: {str(e)}")
+        return error_response(code="PDF_GENERATION_FAILED", message="Failed to generate PDF component of the report.", status_code=500)
 
-@app.get("/reports", response_model=List[Dict[str, Any]])
-async def get_all_reports():
-    """
-    Retrieves a list of all generated reports.
-    """
-    return list(reports_store.values())
+@app.get("/reports")
+async def list_reports():
+    """Lists all generated reports."""
+    summary = [{
+        "report_id": r["report_id"],
+        "standard": r["standard"],
+        "generated_at": r["generated_at"],
+        "score": r["details"]["compliance_score"]
+    } for r in reports_store.values()]
+    return success_response(data=summary)
 
-@app.get("/reports/{report_id}", response_model=Dict[str, Any])
-async def get_report_by_id(report_id: str):
-    """
-    Retrieves a specific report by its ID.
-    """
+@app.get("/reports/{report_id}/download")
+async def download_report_pdf(report_id: str):
+    """Downloads the PDF version of a compliance report."""
     report = reports_store.get(report_id)
-    if report is None:
-        raise HTTPException(status_code=404, detail="Report not found.")
-    return report
+    if not report or not os.path.exists(report.get("pdf_path", "")):
+        return error_response(code="NOT_FOUND", message="Report or PDF file not found.", status_code=404)
+    
+    return FileResponse(
+        path=report["pdf_path"],
+        filename=os.path.basename(report["pdf_path"]),
+        media_type="application/pdf"
+    )

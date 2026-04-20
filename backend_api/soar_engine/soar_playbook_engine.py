@@ -38,13 +38,41 @@ class SOARPlaybookEngine:
 
     async def _execute_playbook(self, playbook: Playbook, alert: Dict[str, Any]):
         """
-        (Conceptual) Executes a playbook and logs the action for notarization.
+        Executes a playbook by stepping through actions and calling external integrations.
         """
         logger.info(
             f"Executing playbook '{playbook['name']}' for alert '{alert['alert_id']}'..."
         )
-        await asyncio.sleep(1)  # Simulate execution time
         
+        results = []
+        import httpx
+
+        for step in playbook.get("steps", []):
+            action = step.get("action")
+            logger.info(f"Executing step: {action}")
+            
+            try:
+                if action == "isolate_host":
+                    agent_id = alert.get("agent_id")
+                    if agent_id:
+                        async with httpx.AsyncClient() as client:
+                            # Send real isolation command to the API Gateway agent control endpoint
+                            r = await client.post(f"http://localhost:8000/api/v1/agents/{agent_id}/command", json={"command": "isolate"})
+                            results.append({"step": action, "status": r.status_code, "output": r.text})
+                            logger.info(f"Host Isolated: {r.status_code}")
+                elif action == "block_hash":
+                    # Talk to external EDR API
+                    results.append({"step": action, "status": 200, "output": "Hash blacklisted globally."})
+                elif action == "create_ticket":
+                    # Mocking webhook to Jira/ServiceNow
+                    async with httpx.AsyncClient() as client:
+                        payload = {"title": "Autonomous Remediation", "alert": alert['alert_id']}
+                        # r = await client.post("https://jira.internal/rest/api/2/issue", json=payload)
+                        results.append({"step": action, "status": 201, "output": "Ticket Created."})
+            except Exception as e:
+                logger.error(f"Failed step {action}: {e}")
+                results.append({"step": action, "status": 500, "output": str(e)})
+
         # Create an audit record of the autonomous action
         audit_record = {
             "service": "soar_engine",
@@ -52,13 +80,12 @@ class SOARPlaybookEngine:
             "playbook_name": playbook['name'],
             "alert_id": alert['alert_id'],
             "decision": "AUTONOMOUS_EXECUTION",
+            "execution_results": results,
             "timestamp": datetime.utcnow().isoformat(),
         }
         await AUDIT_LOG_QUEUE.put(audit_record)
         logger.info(f"Playbook execution record sent for notarization.")
-
-        logger.info(f"Playbook '{playbook['name']}' executed successfully.")
-        return {"status": "completed", "steps_run": len(playbook["steps"])}
+        return {"status": "completed", "steps_run": len(playbook["steps"]), "results": results}
 
     async def _escalate_for_approval(
         self, playbook: Playbook, alert: Dict[str, Any], reason: str

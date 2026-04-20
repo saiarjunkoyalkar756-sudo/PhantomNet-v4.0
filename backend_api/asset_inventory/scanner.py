@@ -3,6 +3,7 @@ import json
 import logging
 from datetime import datetime
 from .database import upsert_asset
+from .cve_mapper import CVEMapper
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,9 @@ def run_scan(target: str):
             if 'addresses' in nm[host] and 'mac' in nm[host]['addresses']:
                 mac_address = nm[host]['addresses']['mac']
 
+            cve_mapper = CVEMapper()
+            total_vulnerabilities = []
+            
             ports_info = {}
             for proto in nm[host].all_protocols():
                 ports_info[proto] = {"ports": []}
@@ -58,6 +62,13 @@ def run_scan(target: str):
                             "extra_info": nm[host][proto][port]["extrainfo"],
                         }
                     )
+                    
+                    # Dynamically map the discovered application to Attack Surface Vulns
+                    detected_vulns = cve_mapper.determine_vulnerabilities(
+                        nm[host][proto][port]["product"], 
+                        nm[host][proto][port]["version"]
+                    )
+                    total_vulnerabilities.extend(detected_vulns)
             
             asset_type = determine_asset_type(ports_info)
 
@@ -68,6 +79,8 @@ def run_scan(target: str):
                 "os": os_guess,
                 "asset_type": asset_type,
                 "last_seen": datetime.now().isoformat(),
+                "vulnerabilities": total_vulnerabilities,
+                "risk_level": "CRITICAL" if any(v["severity"] == "CRITICAL" for v in total_vulnerabilities) else "LOW",
                 "details": {
                     "scan_status": nm[host].state(),
                     "ports_info": ports_info,

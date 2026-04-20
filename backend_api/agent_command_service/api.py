@@ -5,13 +5,8 @@ from kafka import KafkaProducer
 import json
 import os
 from uuid import UUID
-import logging
-from datetime import datetime
-
-from iam_service.auth_methods import get_current_user, has_role, UserRole
-from shared.database import User # Import User model
-
-logger = logging.getLogger("phantomnet_gateway.agent_command_api")
+from loguru import logger
+from backend_api.core.response import success_response
 
 router = APIRouter(
     prefix="/api/v1/agents",
@@ -72,7 +67,7 @@ async def send_network_action(
         kafka_producer = get_kafka_producer()
         kafka_producer.send(AGENT_COMMANDS_TOPIC, command_data)
         logger.info(f"Network action '{command_data['command_type']}' for agent {payload.agent_id} issued by {current_user.username}", extra=command_data)
-        return {"status": "Network action accepted"}
+        return success_response(data={"message": "Network action accepted"})
     except Exception as e:
         logger.error(f"Failed to send network action to agent {payload.agent_id}: {e}", exc_info=True, extra=command_data)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send network action")

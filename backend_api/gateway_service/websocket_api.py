@@ -1,19 +1,40 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, status
 from .websocket_manager import manager
-from .log_broadcaster import log_broadcaster # Import the new log broadcaster
+from .log_broadcaster import log_broadcaster
 import logging
+from jose import JWTError, jwt
+from backend_api.shared.secret_manager import get_secret
+import os
 
 logger = logging.getLogger("phantomnet_gateway.websocket_api")
 
+SECRET_KEY = get_secret("JWT_SECRET_KEY")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+
 router = APIRouter()
+
+async def verify_ws_token(websocket: WebSocket) -> bool:
+    """Verifies the JWT token from query parameters."""
+    token = websocket.query_params.get("token")
+    if not token:
+        logger.warning(f"WebSocket connection attempt without token from {websocket.client.host}")
+        return False
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return True
+    except JWTError:
+        logger.error(f"WebSocket JWT validation failed for {websocket.client.host}")
+        return False
 
 @router.websocket("/ws/events")
 async def websocket_endpoint(websocket: WebSocket):
+    if not await verify_ws_token(websocket):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await manager.connect(websocket)
     try:
         while True:
-            # Keep the connection open. We don't expect messages from client for this stream.
-            # If client sends anything, just log or ignore.
             data = await websocket.receive_text()
             logger.debug(f"Received message from client {websocket.client.host}: {data}")
     except WebSocketDisconnect:
@@ -25,11 +46,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @router.websocket("/ws/logs")
 async def logs_websocket_endpoint(websocket: WebSocket):
+    if not await verify_ws_token(websocket):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await log_broadcaster.connect(websocket)
     try:
         while True:
-            # Keep the connection open and listen for client messages if needed
-            # For a pure broadcast, we just keep it alive
             await websocket.receive_text()
     except WebSocketDisconnect:
         log_broadcaster.disconnect(websocket)

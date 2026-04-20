@@ -1,0 +1,35 @@
+id: lateral_movement_psexec
+description: >
+  MITRE ATT&CK T1021.002 – Remote Services: SMB/Windows Admin Shares.
+  Emulates PsExec-style lateral movement by authenticating to ADMIN$ share and
+  dropping a service binary. Runs in safe emulation mode — no actual binary is deployed.
+type: lateral_movement
+
+target:
+  service: smb
+  port: 445
+  endpoint: null
+
+parameters:
+  username_list:
+    - Administrator
+    - svc_backup
+  password_list: null
+  max_attempts_per_min: 3
+  payload: "emulated_service_binary"
+
+safety:
+  destructive: false
+  sandbox_required: true
+  allow_payloads: false   # payload field is emulation metadata only
+
+mitre:
+  tactic: Lateral Movement
+  technique: T1021
+  sub_technique: T1021.002
+
+expected_detection:
+  - alert_type: LateralMovementDetected
+    source: windows_security_event_log
+    event_id: 4624
+    indicator: "Logon Type 3 from unexpected source IP"

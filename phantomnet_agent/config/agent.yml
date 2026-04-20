@@ -1,5 +1,5 @@
 agent:
-  id: "agent-{{autogen}}"
+  id: "agent-local-dev"  # Override at deploy time via AGENT_ID env var or generate_certs.py
   mode: "collector-only"
   backend_env: "dev"
   log_level: "DEBUG"

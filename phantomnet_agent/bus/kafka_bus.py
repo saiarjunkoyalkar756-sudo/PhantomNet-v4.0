@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import json
-from typing import Dict, Any, AsyncGenerator, Optional
+from typing import Dict, Any, AsyncGenerator, Optional, List
 
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from aiokafka.errors import KafkaError, NoBrokersAvailable
@@ -16,6 +16,9 @@ class KafkaTransport(Transport):
     Events are sent to a Kafka topic, commands are received from another Kafka topic.
     Implements graceful fallback if Kafka is unavailable.
     """
+    MAX_RETRIES: int = 3
+    DLQ_TOPIC: str = "phantomnet.events.dlq"
+
     def __init__(self, bootstrap_servers: str, events_topic: str, commands_topic: str, consumer_group_id: str):
         self.logger = get_logger("phantomnet_agent.bus.kafka")
         self.bootstrap_servers = bootstrap_servers
@@ -25,7 +28,8 @@ class KafkaTransport(Transport):
         self.producer: Optional[AIOKafkaProducer] = None
         self.consumer: Optional[AIOKafkaConsumer] = None
         self._listener_task: Optional[asyncio.Task] = None
-        self._command_queue: asyncio.Queue = asyncio.Queue() # Queue to hold incoming commands
+        self._command_queue: asyncio.Queue = asyncio.Queue()
+        self._dead_letter_queue: List[Dict[str, Any]] = []  # In-memory DLQ for reconnect replay
         self.connected: bool = False
         self.logger.info(f"KafkaTransport initialized for bootstrap_servers: {self.bootstrap_servers}")
 
@@ -74,18 +78,83 @@ class KafkaTransport(Transport):
         agent_state.update_component_health("bus_kafka", "disconnected", {"bootstrap_servers": self.bootstrap_servers})
 
     async def send_event(self, event_data: Dict[str, Any]):
-        """Sends an event to the configured Kafka events topic."""
+        """Sends an event to the configured Kafka events topic with retry + DLQ fallback."""
         if not self.connected or not self.producer:
-            self.logger.warning(f"Kafka not connected. Event '{event_data.get('event_type', 'N/A')}' will not be sent.", extra={"event_data": event_data})
+            self.logger.warning(
+                f"Kafka not connected. Event '{event_data.get('event_type', 'N/A')}' queued to DLQ.",
+                extra={"event_data": event_data}
+            )
+            self._dead_letter_queue.append(event_data)
             return
 
+        last_exc: Optional[Exception] = None
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                await self.producer.send_and_wait(
+                    self.events_topic, json.dumps(event_data).encode("utf-8")
+                )
+                self.logger.debug(
+                    f"Event '{event_data.get('event_type', 'N/A')}' published to "
+                    f"Kafka topic '{self.events_topic}'.",
+                    extra={"event_data": event_data}
+                )
+                return  # success — exit retry loop
+            except Exception as e:
+                last_exc = e
+                self.logger.warning(
+                    f"Kafka send attempt {attempt}/{self.MAX_RETRIES} failed: {e}"
+                )
+                await asyncio.sleep(0.5 * attempt)  # exponential backoff
+
+        # All retries exhausted — push to DLQ
+        dlq_record = {
+            "original_event": event_data,
+            "failure_reason": str(last_exc),
+            "retry_count": self.MAX_RETRIES,
+            "dlq_timestamp": __import__("datetime").datetime.utcnow().isoformat(),
+        }
+        self._dead_letter_queue.append(dlq_record)
+        self.logger.error(
+            f"Event '{event_data.get('event_type', 'N/A')}' moved to DLQ after "
+            f"{self.MAX_RETRIES} failed attempts. DLQ size: {len(self._dead_letter_queue)}",
+            extra={"dlq_record": dlq_record}
+        )
+        # Also attempt to publish DLQ notice to dedicated topic (best-effort)
         try:
-            await self.producer.send_and_wait(self.events_topic, json.dumps(event_data).encode('utf-8'))
-            self.logger.debug(f"Event '{event_data.get('event_type', 'N/A')}' published to Kafka topic '{self.events_topic}'.", extra={"event_data": event_data})
-        except Exception as e:
-            self.logger.error(f"Error publishing event to Kafka topic '{self.events_topic}': {e}", exc_info=True, extra={"event_data": event_data})
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_kafka", "degraded", {"reason": "Error sending event", "details": str(e)})
+            if self.producer and self.connected:
+                await self.producer.send_and_wait(
+                    self.DLQ_TOPIC, json.dumps(dlq_record).encode("utf-8")
+                )
+        except Exception:
+            pass  # DLQ topic publish is best-effort
+        agent_state = get_agent_state()
+        agent_state.update_component_health(
+            "bus_kafka", "degraded",
+            {"reason": "Event moved to DLQ", "dlq_size": len(self._dead_letter_queue)}
+        )
+
+    async def flush_dlq(self) -> int:
+        """
+        Replays all events in the in-memory DLQ back to the events topic.
+        Called automatically on reconnect. Returns count of successfully flushed events.
+        """
+        if not self._dead_letter_queue:
+            return 0
+        flushed = 0
+        remaining: List[Dict[str, Any]] = []
+        for record in list(self._dead_letter_queue):
+            event = record.get("original_event", record)  # handle both formats
+            try:
+                await self.producer.send_and_wait(
+                    self.events_topic, json.dumps(event).encode("utf-8")
+                )
+                flushed += 1
+            except Exception as e:
+                self.logger.error(f"DLQ flush failed for event: {e}")
+                remaining.append(record)
+        self._dead_letter_queue = remaining
+        self.logger.info(f"DLQ flush complete: {flushed} events replayed, {len(remaining)} remaining.")
+        return flushed
 
     async def _listen_for_commands(self):
         """Internal task to listen for commands from Kafka topic and put them into a queue."""

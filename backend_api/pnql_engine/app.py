@@ -1,27 +1,19 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import logging
-import json
-
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
 from .parser import parse_query
 from .executor import execute_query
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-app = FastAPI()
-
+from loguru import logger
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
 
 class PNQLQuery(BaseModel):
     query: str
 
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "message": "PNQL Engine service is healthy"}
-
+app = create_phantom_service(
+    name="PNQL Engine Service",
+    description="Parser and executor for the PhantomNet Query Language.",
+    version="1.0.0"
+)
 
 @app.post("/query")
 async def execute_pnql_query(pnql_query: PNQLQuery):
@@ -29,11 +21,12 @@ async def execute_pnql_query(pnql_query: PNQLQuery):
     try:
         parsed_query = parse_query(pnql_query.query)
         results = await execute_query(parsed_query)
-        return {"status": "success", "query": pnql_query.query, "results": results}
+        return success_response(data={
+            "query": pnql_query.query,
+            "results": results
+        })
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return error_response(code="PARSING_ERROR", message=str(e), status_code=400)
     except Exception as e:
-        logger.error(f"Error executing PNQL query: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="Internal server error during query execution."
-        )
+        logger.error(f"Error executing PNQL query: {e}")
+        return error_response(code="EXECUTION_ERROR", message="Internal server error during query execution.", status_code=500)

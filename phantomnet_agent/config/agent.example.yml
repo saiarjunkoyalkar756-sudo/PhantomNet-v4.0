@@ -1,5 +1,5 @@
 agent:
-  id: "agent-{{autogen}}"
+  id: "agent-{{AGENT_ID}}"  # Set AGENT_ID env var, or run generate_certs.py to auto-provision
   mode: "full"
   backend_env: "dev"
   log_level: "DEBUG"

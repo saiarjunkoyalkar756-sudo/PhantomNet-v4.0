@@ -1,1 +1,65 @@
-alembic
+# --- Unified PhantomNet Backend Requirements (Python 3.13 / Windows Absolute manifest) ---
+
+# Core Framework & ASGI
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.9.0
+pydantic-settings>=2.4.0
+python-dotenv>=1.0.1
+loguru>=0.7.2
+starlette>=0.41.0
+
+# Database & Persistence
+sqlalchemy>=2.0.35
+psycopg2-binary>=2.9.9
+asyncpg>=0.29.0
+greenlet>=3.1.1
+alembic>=1.13.3
+redis>=5.1.0
+sqlmodel>=0.0.22
+neo4j>=5.25.0
+cassandra-driver>=3.29.2
+
+# Security & Identity
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+pyotp>=2.9.0
+python-multipart>=0.0.12
+cryptography>=43.0.0
+PyJWT>=2.9.0
+jose>=1.0.0
+yara-python>=4.5.1
+python-nmap>=0.7.1
+
+# AI, Defense & Analysis
+numpy>=2.1.0
+pandas>=2.2.2
+scikit-learn>=1.5.2
+scipy>=1.14.0
+joblib>=1.4.2
+networkx>=3.4.1
+transformers>=4.45.0
+stix2>=3.0.1
+
+# Messaging & Orchestration
+aiokafka>=0.11.0
+kafka-python>=2.0.2
+pika>=1.3.2
+
+# Blockchain & Audit
+web3>=6.11.0
+py-solc-x>=2.0.2
+
+# General# Networking & Web
+websockets==12.0
+httpx==0.27.0
+requests==2.31.0
+slowapi==0.1.9
+fpdf2==2.7.9
+PyYAML>=6.0.2
+Jinja2>=3.1.4
+docker>=7.1.0
+aiofiles>=24.1.0
+fpdf>=1.7.2
+lark>=1.2.2
+pytest>=8.3.3

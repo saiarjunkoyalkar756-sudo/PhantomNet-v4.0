@@ -6,36 +6,12 @@ networks:
 
 services:
   # --------------------------------------------------------------------------
-  #  API Gateway Service
-  # --------------------------------------------------------------------------
-  gateway:
-    build:
-      context: ./gateway_service
-      dockerfile: Dockerfile
-    container_name: api-gateway
-    ports:
-      - "8000:8000"
-    networks:
-      - backend-net
-    depends_on:
-      - postgres
-      - redis
-    environment:
-      - LOG_LEVEL=DEBUG
-      - LOG_FORMAT=json
-      - OPERATIONAL_DB_URL=postgresql://phantomnet:${DB_PASSWORD}@postgres:5432/${DB_NAME}
-      - POLICY_DB_URL=postgresql://phantomnet:${DB_PASSWORD}@postgres:5432/${DB_NAME} # Example: using same db
-      - REDIS_HOST=${REDIS_HOST}
-      - SECRET_KEY=${JWT_SECRET_KEY}
-    env_file:
-      - .env
-
-  # --------------------------------------------------------------------------
   #  Core Infrastructure Services
   # --------------------------------------------------------------------------
   postgres:
     image: postgres:15-alpine
     container_name: postgres-db
+    restart: unless-stopped
     ports:
       - "5432:5432"
     networks:
@@ -44,6 +20,11 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
@@ -52,19 +33,61 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis-cache
+    restart: unless-stopped
     ports:
       - "6379:6379"
     networks:
       - backend-net
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - redis_data:/data
     env_file:
       - .env
 
   # --------------------------------------------------------------------------
-  #  Example Microservices (add others following this pattern)
+  #  API Gateway Service
+  # --------------------------------------------------------------------------
+  gateway:
+    build:
+      context: ./gateway_service
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - backend-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=json
+      - OPERATIONAL_DB_URL=postgresql://phantomnet:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - POLICY_DB_URL=postgresql://phantomnet:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SECRET_KEY=${JWT_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-v", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    env_file:
+      - .env
+
+  # --------------------------------------------------------------------------
+  #  Microservices Grid
   # --------------------------------------------------------------------------
   analyzer:
     build:
@@ -74,11 +97,13 @@ services:
     networks:
       - backend-net
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
       - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
 
   asset_inventory:
     build:
@@ -88,103 +113,12 @@ services:
     networks:
       - backend-net
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
-      - DATABASE_URL=postgresql://user:password@postgres:5432/maindb
-    env_file:
-      - .env
-
-  graph_intelligence:
-    build:
-      context: ./graph_intelligence_service
-      dockerfile: Dockerfile
-    container_name: graph-intelligence-service
-    networks:
-      - backend-net
-    depends_on:
-      - neo4j
-    environment:
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-      - NEO4J_URI=bolt://neo4j:7687
-      - NEO4J_USER=neo4j
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
-    env_file:
-      - .env
-
-  vulnerability_scanner:
-    build:
-      context: ./vulnerability_scanner_service
-      dockerfile: Dockerfile
-    container_name: vulnerability-scanner-service
-    networks:
-      - backend-net
-    environment:
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-
-  mitre_attack_mapper:
-    build:
-      context: ./mitre_attack_mapper
-      dockerfile: Dockerfile
-    container_name: mitre-attack-mapper-service
-    networks:
-      - backend-net
-    environment:
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-
-  cloud_security:
-    build:
-      context: ./cloud_security_service
-      dockerfile: Dockerfile
-    container_name: cloud-security-service
-    networks:
-      - backend-net
-    environment:
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-
-  siem_integration:
-    build:
-      context: ./siem_integration_service
-      dockerfile: Dockerfile
-    container_name: siem-integration-service
-    networks:
-      - backend-net
-    environment:
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-
-  sandbox:
-    build:
-      context: ./sandbox_service
-      dockerfile: Dockerfile
-    container_name: sandbox-service
-    networks:
-      - backend-net
-    environment:
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-
-  case_management:
-    build:
-      context: ./case_management_service
-      dockerfile: Dockerfile
-    container_name: case-management-service
-    networks:
-      - backend-net
-    depends_on:
-      - postgres
-    environment:
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-      - DB_HOST=postgres
-      - DB_NAME=phantomnet_db
-      - DB_USER=phantomnet
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
     env_file:
       - .env
 
@@ -198,6 +132,25 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
+    env_file:
+      - .env
+
+  case_management:
+    build:
+      context: ./case_management_service
+      dockerfile: Dockerfile
+    container_name: case-management-service
+    networks:
+      - backend-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+    env_file:
+      - .env
 
   threat_intelligence:
     build:
@@ -207,12 +160,13 @@ services:
     networks:
       - backend-net
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
       - REDIS_HOST=redis
-      # API Keys will be pulled from the .env file
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     env_file:
       - .env
 

@@ -1,46 +1,37 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException
-from pydantic import BaseModel
-import logging
-import json
-import os
-from datetime import datetime
-
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
 from .scanner import run_scan
 from .database import create_assets_table, get_all_assets
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-app = FastAPI()
-
+from loguru import logger
+import os
+from datetime import datetime
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Request
+from pydantic import BaseModel
 
 class ScanRequest(BaseModel):
-    target: str  # e.g., "192.168.1.0/24"
+    target: str
 
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Asset Inventory service starting up...")
+async def asset_inventory_startup(app: FastAPI):
+    """
+    Handles startup events for the Asset Inventory service.
+    """
     create_assets_table()
+    logger.info("Asset Inventory: Database tables initialized.")
 
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "message": "Asset Inventory service is healthy"}
-
+app = create_phantom_service(
+    name="Asset Inventory Service",
+    description="Maintains a record of discovered assets.",
+    version="1.0.0",
+    custom_startup=asset_inventory_startup
+)
 
 @app.post("/scan")
-async def start_asset_scan(
-    scan_request: ScanRequest, background_tasks: BackgroundTasks
-):
+async def start_asset_scan(scan_request: ScanRequest, background_tasks: BackgroundTasks):
     logger.info(f"Starting scan for target: {scan_request.target}")
     background_tasks.add_task(run_scan, scan_request.target)
-    return {"message": "Scan initiated in the background."}
-
+    return success_response(message="Scan initiated in the background.")
 
 @app.get("/assets")
 async def get_assets():
     assets = get_all_assets()
-    return {"assets": assets}
+    return success_response(data=assets)

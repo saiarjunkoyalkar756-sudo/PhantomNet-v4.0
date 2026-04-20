@@ -1,32 +1,41 @@
-from fastapi import FastAPI, Depends, Request
-from datetime import datetime
-import logging
-import threading
+from backend_api.shared.service_factory import create_phantom_service
 from .consumer import start_kafka_consumer
+from .database import get_db_connection
+from loguru import logger
 import asyncio
-...
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Event Stream Processor starting up...")
+from datetime import datetime
+from typing import Optional
+import psycopg2.extras
+from backend_api.core.response import success_response, error_response
+from fastapi import Request, FastAPI
+
+async def stream_startup(app: FastAPI):
     # Start the Kafka consumer as a background task
-    asyncio.create_task(start_kafka_consumer())
+    app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
     logger.info("Kafka consumer for Event Stream Processor started.")
 
+async def stream_shutdown(app: FastAPI):
+    if hasattr(app.state, "consumer_task"):
+        app.state.consumer_task.cancel()
+        await asyncio.gather(app.state.consumer_task, return_exceptions=True)
+        logger.info("Kafka consumer task stopped.")
 
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "message": "Event Stream Processor is healthy"}
+app = create_phantom_service(
+    name="Event Stream Processor",
+    description="Real-time event processing and archiving.",
+    version="1.0.0",
+    custom_startup=stream_startup,
+    custom_shutdown=stream_shutdown
+)
 
 @app.get("/logs")
 async def get_logs(request: Request, start_time: Optional[datetime] = None, end_time: Optional[datetime] = None):
     """
     Retrieves logs from the database, with filtering.
-    This is a simplified version. A production implementation should have
-    pagination, filtering, and error handling.
     """
     conn = get_db_connection()
     if conn is None:
-        return {"error": "Could not connect to the database."}
+        return error_response(code="DATABASE_ERROR", message="Could not connect to the database.", status_code=500)
 
     # Build WHERE clause from query parameters
     query_params = request.query_params
@@ -59,9 +68,9 @@ async def get_logs(request: Request, start_time: Optional[datetime] = None, end_
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(query, tuple(values))
             logs = cur.fetchall()
-            return {"logs": logs}
-    except psycopg2.Error as e:
+            return success_response(data={"logs": logs})
+    except Exception as e:
         logger.error(f"Error querying logs: {e}")
-        return {"error": "Error querying logs."}
+        return error_response(code="QUERY_ERROR", message="Error querying logs.", status_code=500)
     finally:
         conn.close()

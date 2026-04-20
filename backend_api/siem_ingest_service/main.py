@@ -1,24 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
-import datetime
-
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
 from . import crud, models
-from .database import SessionLocal, engine, get_db
-
-
+from .database import engine, get_db
+from loguru import logger
+import datetime
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, status, FastAPI
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
-# Pydantic models for API request/response validation
-from pydantic import BaseModel, Field
-
 class RawLogEventBase(BaseModel):
     raw_log_data: str = Field(..., example="<13>Jan 1 00:00:00 hostname program: Message content")
-    source_type: str = Field(..., example="syslog", description="Type of log source (e.g., 'syslog', 'windows_event', 'firewall_log', 'agent_telemetry').")
-    host_identifier: Optional[str] = Field(None, example="server-prod-01", description="Identifier for the host originating the log.")
-    timestamp: Optional[datetime.datetime] = Field(None, description="Timestamp of the event from the log itself. If not provided, server time will be used.")
-    initial_metadata: Optional[Dict[str, Any]] = Field(None, description="Any initial metadata from the ingestion agent.")
+    source_type: str = Field(..., example="syslog")
+    host_identifier: Optional[str] = None
+    timestamp: Optional[datetime.datetime] = None
+    initial_metadata: Optional[Dict[str, Any]] = None
 
 class RawLogEventCreate(RawLogEventBase):
     pass
@@ -28,30 +26,14 @@ class RawLogEventResponse(RawLogEventBase):
     ingested_at: datetime.datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @router.post("/ingest/", response_model=RawLogEventResponse, status_code=status.HTTP_201_CREATED)
 def ingest_single_log_event(log_event: RawLogEventCreate, db: Session = Depends(get_db)):
     """
     Ingest a single raw log event into the SIEM.
     """
-    db_log = crud.create_raw_log_event(
-        db=db,
-        raw_log_data=log_event.raw_log_data,
-        source_type=log_event.source_type,
-        host_identifier=log_event.host_identifier,
-        timestamp=log_event.timestamp,
-        initial_metadata=log_event.initial_metadata
-    )
-    return db_log
-
-@router.post("/ingest/batch", response_model=List[RawLogEventResponse], status_code=status.HTTP_201_CREATED)
-def ingest_batch_log_events(log_events: List[RawLogEventCreate], db: Session = Depends(get_db)):
-    """
-    Ingest multiple raw log events into the SIEM in a single batch.
-    """
-    created_logs = []
-    for log_event in log_events:
+    try:
         db_log = crud.create_raw_log_event(
             db=db,
             raw_log_data=log_event.raw_log_data,
@@ -60,18 +42,39 @@ def ingest_batch_log_events(log_events: List[RawLogEventCreate], db: Session = D
             timestamp=log_event.timestamp,
             initial_metadata=log_event.initial_metadata
         )
-        created_logs.append(db_log)
-    return created_logs
+        return success_response(data=db_log)
+    except Exception as e:
+        logger.error(f"Failed to ingest log: {e}")
+        return error_response(code="INGEST_FAILED", message=str(e), status_code=500)
+
+@router.post("/ingest/batch", response_model=List[RawLogEventResponse], status_code=status.HTTP_201_CREATED)
+def ingest_batch_log_events(log_events: List[RawLogEventCreate], db: Session = Depends(get_db)):
+    """
+    Ingest multiple raw log events in a single batch.
+    """
+    try:
+        created_logs = []
+        for log_event in log_events:
+            db_log = crud.create_raw_log_event(
+                db=db,
+                raw_log_data=log_event.raw_log_data,
+                source_type=log_event.source_type,
+                host_identifier=log_event.host_identifier,
+                timestamp=log_event.timestamp,
+                initial_metadata=log_event.initial_metadata
+            )
+            created_logs.append(db_log)
+        return success_response(data=created_logs)
+    except Exception as e:
+        logger.error(f"Batch ingestion failed: {e}")
+        return error_response(code="BATCH_INGEST_FAILED", message=str(e), status_code=500)
 
 @router.get("/logs/{log_id}", response_model=RawLogEventResponse)
 def get_log_event_by_id(log_id: int, db: Session = Depends(get_db)):
-    """
-    Retrieve a specific raw log event by its ID.
-    """
     db_log = crud.get_raw_log_event(db, log_id=log_id)
     if db_log is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Log event not found")
-    return db_log
+        return error_response(code="NOT_FOUND", message="Log event not found", status_code=404)
+    return success_response(data=db_log)
 
 @router.get("/logs/", response_model=List[RawLogEventResponse])
 def get_log_events(
@@ -83,16 +86,24 @@ def get_log_events(
     end_time: Optional[datetime.datetime] = None,
     db: Session = Depends(get_db)
 ):
-    """
-    Retrieve raw log events with optional filters.
-    """
     logs = crud.get_raw_log_events(
-        db=db,
-        skip=skip,
-        limit=limit,
-        source_type=source_type,
-        host_identifier=host_identifier,
-        start_time=start_time,
-        end_time=end_time
+        db=db, skip=skip, limit=limit, source_type=source_type,
+        host_identifier=host_identifier, start_time=start_time, end_time=end_time
     )
-    return logs
+    return success_response(data=logs)
+
+async def siem_ingest_startup(app: FastAPI):
+    """
+    Handles startup events for the SIEM Ingest Service.
+    """
+    models.Base.metadata.create_all(bind=engine)
+    logger.info("SIEM Ingest Service: Database tables initialized.")
+
+app = create_phantom_service(
+    name="SIEM Ingest Service",
+    description="High-throughput raw log ingestion engine for SIEM integration.",
+    version="1.0.0",
+    custom_startup=siem_ingest_startup
+)
+
+app.include_router(router, prefix="/api/v1/siem")

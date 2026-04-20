@@ -1,104 +1,138 @@
+# backend_api/iam_service/api.py
+import os
+import uuid
+import secrets
+import pyotp
+import jwt
+from datetime import timedelta, datetime
+from typing import Optional, List, Dict, Any
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse
-from datetime import timedelta, datetime
-from typing import Optional
-import os
-import pyotp
-import uuid # For JTI generation
-import secrets # For recovery codes
-from loguru import logger
-from uuid import UUID # Import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 
-# Default tenant ID for new users (until multi-tenant registration is fully implemented)
-DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
-
-from shared.database import User, SessionLocal, SessionToken, PasswordResetToken, RecoveryCode # Import RecoveryCode
-from shared.schemas import (
-    UserCreate, UserInDB, Token, TokenData,
-    PasswordResetRequest, PasswordResetConfirm, RecoveryCodeResponse, TwoFACode, TwoFAChallenge, MFARequiredResponse, LoginRequest
+from backend_api.shared.database import (
+    get_db, 
+    User, 
+    SessionToken, 
+    PasswordResetToken, 
+    RecoveryCode
+)
+from backend_api.shared.schemas import (
+    UserCreate, 
+    UserInDB, 
+    Token, 
+    TokenData,
+    PasswordResetRequest, 
+    PasswordResetConfirm, 
+    RecoveryCodeResponse, 
+    TwoFACode, 
+    TwoFAChallenge, 
+    MFARequiredResponse, 
+    LoginRequest
 )
 from .auth_methods import (
-    generate_totp_secret, verify_totp_code, authenticate_user,
-    get_current_user, get_password_hash, create_access_token, get_user,
-    UserRole, has_role, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES,
-    generate_recovery_code, hash_recovery_code, verify_recovery_code, RECOVERY_CODE_COUNT, calculate_anomaly_score
+    generate_totp_secret, 
+    verify_totp_code, 
+    authenticate_user,
+    get_current_user, 
+    get_password_hash, 
+    create_access_token, 
+    get_user,
+    UserRole, 
+    has_role, 
+    SECRET_KEY, 
+    ALGORITHM, 
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    generate_recovery_code, 
+    hash_recovery_code, 
+    verify_recovery_code, 
+    RECOVERY_CODE_COUNT, 
+    calculate_anomaly_score
 )
-from shared.database import get_db # Import get_db from shared.database
+from backend_api.core.logging import logger as pn_logger
+from backend_api.core.response import success_response, error_response
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
-@router.post("/register", response_model=UserInDB)
-async def register_user(
-    user: UserCreate, db: Session = Depends(lambda: get_db("operational")), request: Request = None
-):
-    db_user = get_user(db, username=user.username)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    hashed_password = get_password_hash(user.password)
-    db_user = User(
-        username=user.username,
-        hashed_password=hashed_password,
-        role=user.role,
-        tenant_id=DEFAULT_TENANT_ID # Assign default tenant ID
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+# Default tenant ID
+DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 
-    logger.info(f"User {db_user.username} (ID: {db_user.id}) registered successfully.")
+@router.post("/register")
+async def register_user(
+    user_data: UserCreate, 
+    db: AsyncSession = Depends(get_db), 
+    request: Request = None
+):
+    """Registers a new user and returns an access token."""
+    existing_user = await get_user(db, username=user_data.username)
+    if existing_user:
+        return error_response(code="ALREADY_EXISTS", message="Username already registered", status_code=400)
+    
+    hashed_password = get_password_hash(user_data.password)
+    new_user = User(
+        username=user_data.username,
+        hashed_password=hashed_password,
+        role=user_data.role or "user",
+        tenant_id=DEFAULT_TENANT_ID
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+
+    pn_logger.info(f"User {new_user.username} registered successfully.")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
     jwt_data = {
-        "sub": str(db_user.id),
-        "username": db_user.username,
-        "role": db_user.role,
-        "twofa_enabled": db_user.totp_secret is not None,
-        "twofa_enforced": db_user.twofa_enforced,
-        "tenant_id": str(db_user.tenant_id) # Include tenant ID in JWT
+        "sub": str(new_user.id),
+        "username": new_user.username,
+        "role": new_user.role,
+        "twofa_enabled": False,
+        "twofa_enforced": False,
+        "tenant_id": str(new_user.tenant_id)
     }
-    access_token = create_access_token(
+    
+    access_token = await create_access_token(
         db,
-        user_id=db_user.id,
+        user_id=new_user.id,
         data=jwt_data,
         expires_delta=access_token_expires,
         request=request,
     )
-    response = JSONResponse(content={"access_token": access_token, "token_type": "bearer", "user": {"username": db_user.username, "role": db_user.role}})
-    response.set_cookie(
-        key="access_token", value=access_token, httponly=True, expires=access_token_expires.total_seconds()
-    )
-    return response
+    
+    return success_response(data={
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {"username": new_user.username, "role": new_user.role}
+    })
 
-@router.post("/token", response_model=Token)
+@router.post("/token")
 async def login_for_access_token(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(lambda: get_db("operational")),
+    db: AsyncSession = Depends(get_db),
     x_device_fingerprint: Optional[str] = Header(None, alias="X-Device-Fingerprint"),
     x_2fa_code: Optional[str] = Header(None, alias="X-2FA-Code"),
     x_recovery_code: Optional[str] = Header(None, alias="X-Recovery-Code"),
 ):
+    """Authenticates a user and returns an access token."""
     ip_address = request.client.host if request.client else "unknown"
-    user_agent = request.headers.get("User-Agent", "unknown")
-
-    user = get_user(db, form_data.username)
+    
+    user = await get_user(db, form_data.username)
+    anomaly_score = 0.0
     if user:
-        anomaly_score = calculate_anomaly_score(
+        anomaly_score = await calculate_anomaly_score(
             db, user.id, ip_address, x_device_fingerprint, None, None
         )
-
         if anomaly_score > 0.5:
-            logger.warning(
-                f"Anomaly detected for user {user.username} (score: {anomaly_score})"
-            )
+            pn_logger.warning(f"Anomaly detected for user {user.username} (score: {anomaly_score})")
 
-    user, auth_status = authenticate_user(
+    user, auth_status = await authenticate_user(
         db,
         form_data.username,
         form_data.password,
@@ -107,31 +141,29 @@ async def login_for_access_token(
     )
 
     if auth_status == "2FA_REQUIRED":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="2FA required",
-            headers={"WWW-Authenticate": "Bearer", "X-2FA-Required": "true"},
+        return error_response(
+            code="2FA_REQUIRED", 
+            message="2FA required", 
+            status_code=401,
+            headers={"WWW-Authenticate": "Bearer", "X-2FA-Required": "true"}
         )
+    
     if not user:
-        logger.warning(f"Failed login attempt for user {form_data.username}.")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        pn_logger.warning(f"Failed login attempt for user {form_data.username}.")
+        return error_response(code="UNAUTHORIZED", message="Incorrect username or password", status_code=401)
 
-    logger.info(f"User {user.username} (ID: {user.id}) logged in successfully.")
+    pn_logger.info(f"User {user.username} logged in successfully.")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
     jwt_data = {
         "sub": user.username,
         "role": user.role,
         "twofa_enabled": user.totp_secret is not None,
         "twofa_enforced": user.twofa_enforced,
-        "tenant_id": str(user.tenant_id) # Include tenant ID in JWT
+        "tenant_id": str(user.tenant_id)
     }
-    access_token = create_access_token(
+    
+    access_token = await create_access_token(
         db,
         user_id=user.id,
         data=jwt_data,
@@ -140,110 +172,118 @@ async def login_for_access_token(
         device_fingerprint=x_device_fingerprint,
         anomaly_score=anomaly_score,
     )
-    response = JSONResponse(content={"access_token": access_token, "token_type": "bearer", "user": {"username": user.username, "role": user.role}})
-    response.set_cookie(
-        key="access_token", value=access_token, httponly=True, expires=access_token_expires.total_seconds()
-    )
-    return response
+    
+    return success_response(data={
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {"username": user.username, "role": user.role}
+    })
 
-@router.get("/users/me/", response_model=UserInDB)
+@router.get("/users/me")
 async def read_users_me(current_user: User = Depends(get_current_user)):
-    return current_user
+    """Returns the current authenticated user's profile."""
+    return success_response(data={
+        "id": current_user.id,
+        "username": current_user.username,
+        "role": current_user.role,
+        "tenant_id": str(current_user.tenant_id)
+    })
 
 @router.post("/request-password-reset")
 async def request_password_reset(
     request: Request,
     reset_request: PasswordResetRequest,
-    db: Session = Depends(lambda: get_db("operational")),
+    db: AsyncSession = Depends(get_db),
 ):
-    user = get_user(db, username=reset_request.username)
+    """Generates a password reset token and 'sends' an email."""
+    user = await get_user(db, username=reset_request.username)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        return error_response(code="NOT_FOUND", message="User not found", status_code=404)
 
-    token_db = (
-        db.query(PasswordResetToken)
-        .filter(PasswordResetToken.user_id == user.id)
-        .first()
-    )
-    if token_db:
-        db.delete(token_db)
-        db.commit()
-
-    token = create_access_token(
+    # Clean old tokens
+    await db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
+    
+    token = await create_access_token(
         db,
         user_id=user.id,
-        data={"sub": user.username},
+        data={"sub": user.username, "type": "password_reset"},
         expires_delta=timedelta(hours=1),
         request=request,
     )
+    
     new_token_db = PasswordResetToken(user_id=user.id, token=token)
     db.add(new_token_db)
-    db.commit()
+    await db.commit()
 
-    logger.info(f"Password reset email sent to {user.username}.")
-    return {"message": "Password reset email sent"}
+    pn_logger.info(f"Password reset token generated for {user.username}.")
+    return success_response(message="Password reset email sent (simulated).", data={"token": token})
 
 @router.post("/confirm-password-reset")
 async def confirm_password_reset(
-    confirm_request: PasswordResetConfirm, db: Session = Depends(lambda: get_db("operational"))
+    confirm_request: PasswordResetConfirm, 
+    db: AsyncSession = Depends(get_db)
 ):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
-    )
+    """Uses a reset token to update the user's password."""
     try:
         payload = jwt.decode(confirm_request.token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
+        username = payload.get("sub")
+        if not username:
+            raise Exception("Invalid payload")
+    except Exception:
+        return error_response(code="INVALID_TOKEN", message="Invalid or expired token", status_code=401)
 
-    user = get_user(db, username=username)
-    if user is None:
-        raise credentials_exception
+    user = await get_user(db, username=username)
+    if not user:
+        return error_response(code="INVALID_TOKEN", message="Invalid or expired token", status_code=401)
 
-    token_db = (
-        db.query(PasswordResetToken)
-        .filter(
-            PasswordResetToken.user_id == user.id,
-            PasswordResetToken.token == confirm_request.token,
-        )
-        .first()
+    stmt = select(PasswordResetToken).where(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.token == confirm_request.token
     )
-    if token_db is None or token_db.expires_at < datetime.utcnow():
-        raise credentials_exception
+    result = await db.execute(stmt)
+    token_obj = result.scalar_one_or_none()
+    
+    if not token_obj or token_obj.expires_at < datetime.utcnow():
+        return error_response(code="INVALID_TOKEN", message="Invalid or expired token", status_code=401)
 
     user.hashed_password = get_password_hash(confirm_request.new_password)
-    db.delete(token_db)
-    db.commit()
+    await db.delete(token_obj)
+    await db.commit()
 
-    logger.info(f"Password reset successfully.")
-    return {"message": "Password has been reset successfully"}
+    pn_logger.info("Password reset successfully via token.")
+    return success_response(message="Password has been reset successfully")
 
 @router.post("/enable-2fa")
-async def enable_2fa(current_user: User = Depends(get_current_user), db: Session = Depends(lambda: get_db("operational"))):
+async def enable_2fa(
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    """Enables 2FA by generating a TOTP secret."""
     if current_user.totp_secret:
-        raise HTTPException(status_code=400, detail="2FA is already enabled.")
+        return error_response(code="ALREADY_ENABLED", message="2FA is already enabled.", status_code=400)
 
     secret = generate_totp_secret()
     current_user.totp_secret = secret
-    db.commit()
+    await db.commit()
 
-    logger.info(f"User {current_user.username} (ID: {current_user.id}) enabled 2FA.")
-
-    return {"secret": secret, "message": "2FA enabled. Please verify with a TOTP code."}
+    pn_logger.info(f"User {current_user.username} generated 2FA secret.")
+    return success_response(data={"secret": secret}, message="2FA secret generated. Please verify.")
 
 @router.post("/verify-2fa")
 async def verify_2fa(
-    twofa_code: TwoFACode, current_user: User = Depends(get_current_user), db: Session = Depends(lambda: get_db("operational"))
+    twofa_code: TwoFACode, 
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
 ):
+    """Verifies a TOTP code and enforcements 2FA, returning recovery codes."""
     if not current_user.totp_secret:
-        raise HTTPException(status_code=400, detail="2FA is not enabled for this user.")
+        return error_response(code="NOT_ENABLED", message="2FA is not enabled.", status_code=400)
 
     if not verify_totp_code(current_user.totp_secret, twofa_code.code):
-        logger.warning(f"User {current_user.username} (ID: {current_user.id}) failed 2FA verification.")
-        raise HTTPException(status_code=401, detail="Invalid 2FA code.")
+        pn_logger.warning(f"User {current_user.username} failed 2FA verification.")
+        return error_response(code="INVALID_CODE", message="Invalid 2FA code.", status_code=401)
 
+    # Generate recovery codes
     recovery_codes = [generate_recovery_code() for _ in range(RECOVERY_CODE_COUNT)]
     for code in recovery_codes:
         hashed_code = hash_recovery_code(code)
@@ -251,77 +291,57 @@ async def verify_2fa(
         db.add(db_recovery_code)
     
     current_user.twofa_enforced = True
-    db.commit()
-    db.refresh(current_user)
+    await db.commit()
 
-    logger.info(f"User {current_user.username} (ID: {current_user.id}) successfully verified 2FA.")
-
-    return RecoveryCodeResponse(message="2FA verified successfully. Save your recovery codes.", recovery_codes=recovery_codes)
+    pn_logger.info(f"User {current_user.username} verified 2FA and received recovery codes.")
+    return success_response(data={"recovery_codes": recovery_codes}, message="2FA verified successfully.")
 
 @router.post("/disable-2fa")
 async def disable_2fa(
-    twofa_code: TwoFACode, current_user: User = Depends(get_current_user), db: Session = Depends(lambda: get_db("operational"))
+    twofa_code: TwoFACode, 
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
 ):
+    """Disables 2FA given a valid code."""
     if not current_user.totp_secret:
-        raise HTTPException(status_code=400, detail="2FA is not enabled for this user.")
+        return error_response(code="NOT_ENABLED", message="2FA is not enabled.", status_code=400)
 
     if not verify_totp_code(current_user.totp_secret, twofa_code.code):
-        logger.warning(f"User {current_user.username} (ID: {current_user.id}) failed to disable 2FA.")
-        raise HTTPException(status_code=401, detail="Invalid 2FA code.")
+        pn_logger.warning(f"User {current_user.username} failed to disable 2FA.")
+        return error_response(code="INVALID_CODE", message="Invalid 2FA code.", status_code=401)
 
     current_user.totp_secret = None
     current_user.twofa_enforced = False
-    db.query(RecoveryCode).filter(RecoveryCode.user_id == current_user.id).delete()
-    db.commit()
-
-    logger.info(f"User {current_user.username} (ID: {current_user.id}) disabled 2FA.")
-
-    return {"message": "2FA disabled successfully."}
-
-@router.get("/recovery-codes", response_model=RecoveryCodeResponse)
-async def get_recovery_codes(current_user: User = Depends(get_current_user), db: Session = Depends(lambda: get_db("operational"))):
-    if not current_user.totp_secret:
-        raise HTTPException(status_code=400, detail="2FA is not enabled, no recovery codes available.")
     
-    recovery_codes_db = db.query(RecoveryCode).filter(
-        RecoveryCode.user_id == current_user.id,
-        RecoveryCode.used_at == None
-    ).all()
+    await db.execute(delete(RecoveryCode).where(RecoveryCode.user_id == current_user.id))
+    await db.commit()
 
-    if not recovery_codes_db:
-        recovery_codes = [generate_recovery_code() for _ in range(RECOVERY_CODE_COUNT)]
-        for code in recovery_codes:
-            hashed_code = hash_recovery_code(code)
-            db_recovery_code = RecoveryCode(user_id=current_user.id, code_hash=hashed_code)
-            db.add(db_recovery_code)
-        db.commit()
-        logger.info(f"User {current_user.username} (ID: {current_user.id}) generated new recovery codes.")
-        return RecoveryCodeResponse(message="New recovery codes generated. Save them securely.", recovery_codes=recovery_codes)
-    else:
-        raise HTTPException(status_code=400, detail="Recovery codes already exist and should have been saved during 2FA setup. For security, existing codes cannot be retrieved. You can disable and re-enable 2FA to generate new ones.")
+    pn_logger.info(f"User {current_user.username} disabled 2FA.")
+    return success_response(message="2FA disabled successfully.")
 
 @router.post("/logout")
-async def logout(response: Response, current_user: User = Depends(get_current_user), db: Session = Depends(lambda: get_db("operational"))):
-    token = response.cookies.get("access_token")
-
-    if not token:
-        auth_header = response.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
-
-    if token:
+async def logout(
+    request: Request,
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    """Invalidates the current session token."""
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            jti: str = payload.get("jti")
+            jti = payload.get("jti")
             if jti:
-                session_record = db.query(SessionToken).filter(SessionToken.jti == jti).first()
+                stmt = select(SessionToken).where(SessionToken.jti == jti)
+                result = await db.execute(stmt)
+                session_record = result.scalar_one_or_none()
                 if session_record:
                     session_record.is_valid = False
                     session_record.revoked_at = datetime.utcnow()
-                    db.commit()
-                    logger.info(f"User {current_user.username} (ID: {current_user.id}) logged out successfully, session {jti} invalidated.")
-        except JWTError:
-            logger.warning(f"Invalid JWT during logout attempt for user {current_user.username}. Token: {token}")
+                    await db.commit()
+                    pn_logger.info(f"User {current_user.username} logged out, session {jti} invalidated.")
+        except Exception:
+            pass
 
-    response.delete_cookie(key="access_token")
-    return {"message": "Logged out successfully"}
+    return success_response(message="Logged out successfully")

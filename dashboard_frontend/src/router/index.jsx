@@ -1,6 +1,5 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import LoginPage from '../pages/Login';
-import UserDashboard from '../pages/UserDashboard';
+import Dashboard from '../pages/Dashboard';
 import AdminDashboard from '../pages/AdminDashboard';
 import EventStreamViewer from '../pages/EventStreamViewer';
 import AgentsManagementPage from '../pages/AgentsManagementPage';
@@ -40,7 +39,7 @@ const router = createBrowserRouter([
         path: 'dashboard',
         element: (
           <ProtectedRoute>
-            <UserDashboard />
+            <Dashboard />
           </ProtectedRoute>
         ),
       },

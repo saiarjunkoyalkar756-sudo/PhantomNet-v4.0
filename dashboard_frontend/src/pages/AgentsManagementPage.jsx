@@ -2,7 +2,7 @@ import React from 'react';
 import PageHeader from '@/components/shared/PageHeader';
 import { motion } from 'framer-motion';
 import { Users, PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import AgentsTable from '@/features/agents/components/AgentsTable';
 
 const AgentsManagementPage = () => {

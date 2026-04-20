@@ -6,7 +6,10 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from shared.logger_config import logger
+from backend_api.shared.chrono_engine import ChronoEngine
 from .models import PlaybookRun, PlaybookStatus, RemediationAction # Import relevant models
+
+chrono_engine = ChronoEngine()
 
 logger = logger
 
@@ -73,8 +76,28 @@ class AutoResponseEngine:
                     else:
                         resolved_parameters[k] = v
 
-                # Execute external tool (mocked)
-                result = await engine._execute_external_tool(step.tool_name, step.action, resolved_parameters)
+                # Execute external tool (mocked for standard tools, real for futuristic ones)
+                if step.action == RemediationAction.TEMPORAL_ROLLBACK:
+                    # Feature 14: Autonomous Rollback
+                    host_id = resolved_parameters.get("host_id")
+                    discovery_time = datetime.fromisoformat(resolved_parameters.get("threat_time", datetime.now().isoformat()))
+                    rollback_state = await chrono_engine.propose_rollback(host_id, discovery_time)
+                    if rollback_state:
+                        success = await chrono_engine.execute_temporal_reset(host_id, rollback_state["id"])
+                        result = {"status": "success" if success else "failed", "snapshot": rollback_state}
+                    else:
+                        result = {"status": "failed", "message": "No valid snapshot found for rollback."}
+                
+                elif step.action == RemediationAction.TEMPORAL_SNAPSHOT:
+                    # Feature 14: State Capture
+                    host_id = resolved_parameters.get("host_id")
+                    state_data = resolved_parameters.get("state_data", {})
+                    await chrono_engine.capture_snapshot(host_id, state_data)
+                    result = {"status": "success", "message": f"Snapshot captured for {host_id}"}
+                
+                else:
+                    # Standard tool execution
+                    result = await engine._execute_external_tool(step.tool_name, step.action, resolved_parameters)
                 
                 log_entry_data["output"] = result
                 if result.get("status") == "success":

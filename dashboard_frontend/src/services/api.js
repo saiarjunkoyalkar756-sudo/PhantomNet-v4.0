@@ -1,11 +1,16 @@
+// dashboard_frontend/src/services/api.js
 import axios from 'axios';
 import useAuthStore from '../store/authStore';
 
+/**
+ * Standardized API Client for PhantomNet.
+ * Handles the unified response envelope: { success, data, error, request_id }
+ */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api', // Set your backend URL in .env
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
 });
 
-// Request interceptor to add the access token to headers
+// Request interceptor for Auth
 api.interceptors.request.use(
   (config) => {
     const { accessToken } = useAuthStore.getState();
@@ -17,7 +22,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor for Envelope Handling & Token Refresh
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -33,11 +38,27 @@ const processQueue = (error, token = null) => {
 };
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Handle successful response envelope
+    const { success, data, error, request_id } = response.data;
+    
+    if (success) {
+      // Unpack the data for the application
+      return data;
+    } else {
+      // If success is false, it's a domain error handled by the backend
+      const customError = new Error(error?.message || 'API Error');
+      customError.code = error?.code;
+      customError.details = error?.details;
+      customError.request_id = request_id;
+      return Promise.reject(customError);
+    }
+  },
   async (error) => {
     const originalRequest = error.config;
     const { refreshToken, setTokens, logout } = useAuthStore.getState();
 
+    // 1. Handle HTTP 401 Unauthorized (Token Expired)
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -45,22 +66,27 @@ api.interceptors.response.use(
         })
           .then(token => {
             originalRequest.headers['Authorization'] = 'Bearer ' + token;
-            return axios(originalRequest);
+            return api(originalRequest);
           })
-          .catch(err => {
-            return Promise.reject(err);
-          });
+          .catch(err => Promise.reject(err));
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post(`${api.defaults.baseURL}/auth/refresh`, { refreshToken });
-        setTokens(data);
-        originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
-        processQueue(null, data.access_token);
-        return api(originalRequest);
+        // Refresh token endpoint returns the same envelope
+        const refreshResponse = await axios.post(`${api.defaults.baseURL}/auth/refresh`, { refreshToken });
+        const { success, data } = refreshResponse.data;
+        
+        if (success && data.access_token) {
+          setTokens(data);
+          originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
+          processQueue(null, data.access_token);
+          return api(originalRequest);
+        } else {
+          throw new Error('Refresh failed');
+        }
       } catch (refreshError) {
         processQueue(refreshError, null);
         logout();
@@ -71,7 +97,14 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error);
+    // 2. Handle fallback for non-envelope errors (e.g. Network errors)
+    const normalizedError = {
+      message: error.response?.data?.error?.message || error.message || 'Network error',
+      code: error.response?.data?.error?.code || 'NETWORK_ERROR',
+      request_id: error.response?.data?.request_id || null
+    };
+
+    return Promise.reject(normalizedError);
   }
 );
 

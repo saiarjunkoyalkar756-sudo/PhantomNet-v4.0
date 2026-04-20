@@ -1,88 +1,66 @@
-from fastapi import Request, HTTPException
-from typing import Optional
+# backend_api/security/zero_trust_manager.py
 
-class ZeroTrustManager:
+from fastapi import Request, HTTPException
+from typing import Optional, Dict, Any
+from shared.logger_config import logger
+from shared.zero_trust_engine import ZeroTrustEngine, Identity, AccessRequest
+
+class IntegratedZeroTrustManager:
     """
-    Enforces Zero-Trust security principles for all incoming requests.
+    Enforces Zero-Trust security principles for all incoming requests,
+    utilizing the core ZeroTrustEngine.
     """
 
     def __init__(self):
-        # In a real application, you would load identity providers, device posture data, etc.
-        pass
+        self.engine = ZeroTrustEngine()
+        logger.info("IntegratedZeroTrustManager initialized with core engine.")
 
-    async def verify_request(self, request: Request):
+    async def verify_request(self, request: Request) -> Dict[str, Any]:
         """
         Verifies a request based on identity, device posture, and other signals.
         """
-        # 1. Verify mTLS connection
-        if not self._verify_mtls(request):
-            raise HTTPException(status_code=401, detail="mTLS verification failed")
-
-        # 2. Evaluate JWT
-        jwt_payload = await self._evaluate_jwt(request)
-        if not jwt_payload:
-            raise HTTPException(status_code=401, detail="Invalid JWT")
-
-        # 3. Score device posture
-        device_posture_score = await self._score_device_posture(request)
-        if device_posture_score < 0.7:
-            raise HTTPException(status_code=403, detail="Device posture too risky")
-
-        # 4. Implement risk-based adaptive access (placeholder)
-        if self._is_risky_action(request):
-            # Restrict access or require step-up authentication
-            pass
-
-        return jwt_payload
-
-    def _verify_mtls(self, request: Request) -> bool:
-        # Placeholder for mTLS verification logic.
-        # In a real implementation, you would inspect the client certificate.
-        return "client-cert-fingerprint" in request.headers
-
-    async def _evaluate_jwt(self, request: Request) -> Optional[dict]:
-        # Placeholder for JWT evaluation logic.
-        # This would involve validating the signature, expiration, and claims.
+        # 1. Verify mTLS connection (Signal 1)
+        client_cert = request.headers.get("X-Client-Cert-Fingerprint")
+        if not client_cert:
+            logger.warning("ZeroTrust: Missing mTLS fingerprint.")
+            # In production, this might be a hard fail. For audit, we'll mark as low-trust.
+        
+        # 2. Evaluate Identity (Signal 2)
         auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
-            # In a real app, you'd use a library like PyJWT to decode and verify.
-            if token == "valid-token":
-                return {"user_id": "user-123", "roles": ["user"]}
-        return None
+        if not auth_header or not auth_header.startswith("Bearer "):
+            logger.error("ZeroTrust: Missing or invalid Authorization header.")
+            raise HTTPException(status_code=401, detail="Authentication required")
+        
+        token = auth_header.split(" ")[1]
+        # Real JWT validation happens in IAM service, but we'll simulate the identity extraction here
+        # In a real grid, this service would call the IAM verifier or check a local JTI cache.
+        identity_id = "user_placeholder" # Extracted from token
+        
+        # 3. Build Access Request
+        access_req = AccessRequest(
+            identity=Identity(id=identity_id, type="user"),
+            resource=str(request.url.path),
+            action=request.method,
+            context={
+                "source_ip": request.client.host if request.client else "unknown",
+                "user_agent": request.headers.get("user-agent", "unknown"),
+                "device_health": request.headers.get("X-Device-Health", "unknown"),
+                "mtls_verified": client_cert is not None
+            }
+        )
 
-    async def _score_device_posture(self, request: Request) -> float:
-        # Placeholder for device posture scoring.
-        # This would integrate with an EDR or MDM solution.
-        # Factors could include OS version, patch level, running processes, etc.
-        return self._calculate_device_posture_score(request)
+        # 4. Evaluate through Engine
+        enforcement = await self.engine.evaluate_access_request(access_req)
+        
+        if enforcement.enforced_action != "allowed":
+            logger.critical(f"ZeroTrust: Access DENIED for {identity_id}. Reason: {enforcement.enforced_action}")
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Zero-Trust Policy Violation: {enforcement.enforced_action}"
+            )
 
-    def _calculate_device_posture_score(self, request: Request) -> float:
-        """
-        Calculates a device posture score based on heuristics.
-        """
-        score = 1.0
+        logger.info(f"ZeroTrust: Access GRANTED for {identity_id}. Score: {enforcement.details.get('trust_score_at_request')}")
+        return {"user_id": identity_id, "trust_score": enforcement.details.get("trust_score_at_request")}
 
-        # Example heuristics:
-        # - Check for a known vulnerable user agent
-        user_agent = request.headers.get("user-agent", "").lower()
-        if "vulnerable-browser/1.0" in user_agent:
-            score -= 0.3
-
-        # - Check if the request is coming from a non-standard port
-        if request.client and request.client.port > 1024:
-            score -= 0.1
-
-        # - Check for a custom header that indicates a healthy device
-        if "X-Device-Health" not in request.headers or request.headers["X-Device-Health"] != "ok":
-            score -= 0.4
-
-        return max(0.0, score)
-
-
-    def _is_risky_action(self, request: Request) -> bool:
-        # Placeholder for risk-based access logic.
-        # e.g., blocking a critical port, changing a firewall rule
-        return False
-
-zero_trust_manager = ZeroTrustManager()
+# Export as zero_trust_manager for compatibility
+zero_trust_manager = IntegratedZeroTrustManager()

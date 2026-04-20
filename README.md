@@ -9,7 +9,7 @@
 
 ---
 
-📘 PhantomNet — v2.0
+# PhantomNet - v2.0
 
 AI-Driven Autonomous Cybersecurity Framework
 
@@ -24,7 +24,7 @@ For API details and specifications, refer to the [API Documentation](docs/API_DO
 
 ---
 ---
-🚀 Agent Installation
+Agent Installation
 
 The PhantomNet Agent can be installed on Windows, mainstream Linux distributions (Debian/Ubuntu/CentOS/Arch), and Termux (Android aarch64).
 
@@ -94,7 +94,7 @@ The PhantomNet Agent can be installed on Windows, mainstream Linux distributions
 
 ---
 ---
-🤖 CI / CD (GitHub Actions)
+CI / CD (GitHub Actions)
 
 Your repo includes:
 
@@ -125,4 +125,4 @@ To cross-build Linux executables from a Docker environment (e.g., on a Windows/m
 
 ---
 
-🔐 Security Practices
+Security Practices

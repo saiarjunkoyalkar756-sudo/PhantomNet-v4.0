@@ -1,29 +1,33 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from backend_api.shared.service_factory import create_phantom_service
+from backend_api.core.response import success_response, error_response
+from fastapi import APIRouter, FastAPI, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
+from sqlalchemy.orm import Session
+from .database import get_db
+from . import crud
 import datetime
-
-from . import crud, models
-from .database import SessionLocal, engine, get_db
-
-
 
 router = APIRouter()
 
-# Pydantic models for API request/response validation
-from pydantic import BaseModel, Field
+app = create_phantom_service(
+    name="Audit Log Collector",
+    description="Centralized audit log collection and indexing service.",
+    version="1.0.0"
+)
+app.include_router(router)
 
 class AuditLogBase(BaseModel):
     raw_log_data: str = Field(..., example="User 'admin' logged in from 192.168.1.100")
-    action: str = Field(..., example="login", description="The action performed (e.g., 'login', 'file_access', 'config_change').")
-    timestamp: Optional[datetime.datetime] = Field(None, description="Timestamp of the audit event. Defaults to server ingestion time.")
-    event_id: Optional[str] = Field(None, example="4624", description="Event ID from the source system (e.g., Windows Event ID).")
-    actor_id: Optional[str] = Field(None, example="admin", description="Identifier of the user or process performing the action.")
-    resource: Optional[str] = Field(None, example="/var/log/syslog", description="The resource affected by the action.")
-    status: Optional[str] = Field(None, example="success", description="Outcome of the action ('success' or 'failure').")
-    source_ip: Optional[str] = Field(None, example="192.168.1.100", description="Source IP address related to the action.")
-    host_identifier: Optional[str] = Field(None, example="server-prod-01", description="Host where the audit event occurred.")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional structured metadata from the audit event.")
+    action: str = Field(..., example="login")
+    timestamp: Optional[datetime.datetime] = None
+    event_id: Optional[str] = None
+    actor_id: Optional[str] = None
+    resource: Optional[str] = None
+    status: Optional[str] = None
+    source_ip: Optional[str] = None
+    host_identifier: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 class AuditLogCreate(AuditLogBase):
     pass
@@ -33,77 +37,28 @@ class AuditLogResponse(AuditLogBase):
     ingested_at: datetime.datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
-@router.post("/ingest/", response_model=AuditLogResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/ingest/", status_code=status.HTTP_201_CREATED)
 def ingest_single_audit_log(audit_log: AuditLogCreate, db: Session = Depends(get_db)):
-    """
-    Ingest a single audit log event into the collector.
-    """
-    db_audit = crud.create_audit_log(
-        db=db,
-        raw_log_data=audit_log.raw_log_data,
-        action=audit_log.action,
-        timestamp=audit_log.timestamp,
-        event_id=audit_log.event_id,
-        actor_id=audit_log.actor_id,
-        resource=audit_log.resource,
-        status=audit_log.status,
-        source_ip=audit_log.source_ip,
-        host_identifier=audit_log.host_identifier,
-        metadata=audit_log.metadata
-    )
-    return db_audit
+    db_audit = crud.create_audit_log(db=db, **audit_log.dict())
+    return success_response(data=db_audit)
 
-@router.post("/ingest/batch", response_model=List[AuditLogResponse], status_code=status.HTTP_201_CREATED)
+@router.post("/ingest/batch", status_code=status.HTTP_201_CREATED)
 def ingest_batch_audit_logs(audit_logs: List[AuditLogCreate], db: Session = Depends(get_db)):
-    """
-    Ingest multiple audit log events into the collector in a single batch.
-    """
     created_logs = []
     for audit_log in audit_logs:
-        db_audit = crud.create_audit_log(
-            db=db,
-            raw_log_data=audit_log.raw_log_data,
-            action=audit_log.action,
-            timestamp=audit_log.timestamp,
-            event_id=audit_log.event_id,
-            actor_id=audit_log.actor_id,
-            resource=audit_log.resource,
-            status=audit_log.status,
-            source_ip=audit_log.source_ip,
-            host_identifier=audit_log.host_identifier,
-            metadata=audit_log.metadata
-        )
+        db_audit = crud.create_audit_log(db=db, **audit_log.dict())
         created_logs.append(db_audit)
-    return created_logs
+    return success_response(data=created_logs)
 
-@router.get("/logs/", response_model=List[AuditLogResponse])
+@router.get("/logs/")
 def get_audit_logs(
     skip: int = 0,
     limit: int = 100,
-    start_time: Optional[datetime.datetime] = None,
-    end_time: Optional[datetime.datetime] = None,
     actor_id: Optional[str] = None,
     action: Optional[str] = None,
-    resource: Optional[str] = None,
-    host_identifier: Optional[str] = None,
-    status_filter: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """
-    Retrieve audit log events with optional filters.
-    """
-    logs = crud.get_audit_logs(
-        db=db,
-        skip=skip,
-        limit=limit,
-        start_time=start_time,
-        end_time=end_time,
-        actor_id=actor_id,
-        action=action,
-        resource=resource,
-        host_identifier=host_identifier,
-        status_filter=status_filter
-    )
-    return logs
+    logs = crud.get_audit_logs(db=db, skip=skip, limit=limit, actor_id=actor_id, action=action)
+    return success_response(data=logs)

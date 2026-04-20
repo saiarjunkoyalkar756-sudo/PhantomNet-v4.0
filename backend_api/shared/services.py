@@ -9,7 +9,7 @@ from .compliance_engine import ComplianceEngine
 from .bas_simulator import BASSimulator
 from .telemetry_ingest import TelemetryIngestService, TelemetryIngestConfig
 from .database import get_db, SessionLocal, AttackLog
-from log_streaming.websocket_broadcaster import broadcaster
+from backend_api.log_streaming.websocket_broadcaster import broadcaster
 
 from typing import Dict, Any
 from sqlalchemy.orm import Session

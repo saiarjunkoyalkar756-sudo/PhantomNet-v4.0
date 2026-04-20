@@ -1,0 +1,67 @@
+template_id: gcp_gke_workload
+description: >
+  GCP GKE cluster + Cloud Storage + Workload Identity deception environment.
+  Mimics a Google Cloud Kubernetes deployment with exposed GKE metadata endpoint,
+  fake GCS bucket, and a Cloud SQL proxy. Targets attacker techniques:
+  GKE IMDS abuse, GCS bucket enumeration, and service account token theft.
+category: cloud
+cloud_provider: gcp
+deception_level: 4
+
+metadata:
+  org: "Acme Analytics"
+  project_id: "acme-analytics-prod-fake"
+  project_number: "123456789000"
+  region: "us-central1"
+  cluster_name: "acme-gke-prod"
+
+services:
+  - name: gcp_metadata_server
+    description: "GCP Compute Engine Metadata Server — primary SSRF target in GKE"
+    image: phantomnet/fake-gcp-metadata:latest
+    ports:
+      - "169.254.169.254:80"
+    fake_endpoints:
+      - "/computeMetadata/v1/"
+      - "/computeMetadata/v1/instance/service-accounts/default/token"
+      - "/computeMetadata/v1/project/project-id"
+      - "/computeMetadata/v1/instance/attributes/kube-env"
+    fake_responses:
+      "/computeMetadata/v1/project/project-id": "acme-analytics-prod-fake"
+      "/computeMetadata/v1/instance/service-accounts/default/token": |
+        {"access_token":"ya29.FAKE_GCP_TOKEN_TRAP_abc123","expires_in":3599,"token_type":"Bearer"}
+      "/computeMetadata/v1/instance/attributes/kube-env": |
+        FAKE_KUBE_CA_DATA: LSBhbHdheXMtZmFrZS1kYXRh
+        KUBE_MASTER_IP: https://10.0.0.1
+
+  - name: gcs_bucket
+    description: "Fake GCS bucket exposing sensitive-looking objects"
+    image: phantomnet/fake-gcs:latest
+    ports:
+      - "9001:9001"
+    fake_endpoints:
+      - "/storage/v1/b/acme-backups/o"
+      - "/storage/v1/b/acme-backups/o/db_dump_2024-01-01.sql.gz"
+      - "/storage/v1/b/acme-analytics-exports/o"
+    files:
+      /data/acme-backups/db_dump_2024-01-01.sql.gz: "FAKE BACKUP — DECEPTION ASSET"
+      /data/acme-analytics-exports/customers.csv: "id,email,stripe_id\n1,trap@acme.com,cus_fake"
+
+  - name: workload_identity_webhook
+    description: "GKE Workload Identity webhook — service account impersonation trap"
+    image: phantomnet/fake-wi-webhook:latest
+    ports:
+      - "8443:8443"
+    fake_endpoints:
+      - "/apis/authentication.k8s.io/v1/tokenreviews"
+
+detection_triggers:
+  - type: metadata_server_access
+    description: "Any access to GCP metadata endpoint indicates SSRF or pod escape"
+    severity: CRITICAL
+  - type: service_account_token_theft
+    description: "Retrieval of the default service account OAuth token"
+    severity: CRITICAL
+  - type: gcs_bucket_enumeration
+    description: "Listing or downloading objects from GCS bucket"
+    severity: HIGH

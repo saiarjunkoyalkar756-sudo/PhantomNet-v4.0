@@ -1,7 +1,7 @@
 import redis
 from loguru import logger
 from unittest.mock import MagicMock
-from core_config import SAFE_MODE
+from backend_api.core_config import SAFE_MODE
 
 def get_redis_client():
     """
