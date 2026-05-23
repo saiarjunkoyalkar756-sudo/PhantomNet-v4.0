@@ -12,7 +12,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   backend-tests:
     name: Backend & Agent Tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    runs-on: tenki-standard-medium-4c-8g
     strategy:
       fail-fast: false
       matrix:
@@ -60,7 +60,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   security-audit:
     name: Dependency Security Audit
-    runs-on: ubuntu-latest
+    runs-on: tenki-standard-medium-4c-8g
 
     steps:
       - name: Checkout
@@ -100,7 +100,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   frontend-build:
     name: Frontend Build
-    runs-on: ubuntu-latest
+    runs-on: tenki-standard-medium-4c-8g
 
     steps:
       - name: Checkout
@@ -126,7 +126,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   playbook-smoke-test:
     name: Red Team Playbook Loader
-    runs-on: ubuntu-latest
+    runs-on: tenki-standard-medium-4c-8g
 
     steps:
       - name: Checkout
