@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-and-test-linux:
-    runs-on: ubuntu-latest
+    runs-on: tenki-standard-medium-4c-8g
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -50,7 +50,7 @@ jobs:
           path: dist/phantomnet-agent
 
   build-and-test-windows:
-    runs-on: windows-latest
+    runs-on: tenki-standard-medium-4c-8g
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -91,7 +91,7 @@ jobs:
           path: dist\phantomnet-agent.exe
 
   build-and-test-termux:
-    runs-on: ubuntu-latest # Using ubuntu-latest as a base for QEMU emulation
+    runs-on: tenki-standard-medium-4c-8g
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
