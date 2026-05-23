@@ -2,13 +2,13 @@ name: Cross-Platform CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
-    runs-on: ${{ matrix.os }}
+    runs-on: tenki-standard-medium-4c-8g
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -79,7 +79,7 @@ jobs:
 
     # --- Termux/aarch64 specific job (conceptual/future) ---
   termux-test:
-    runs-on: ubuntu-latest # Use ubuntu to run an emulator or container for aarch64
+    runs-on: tenki-standard-medium-4c-8g
     if: false # Disable for now, enable when aarch64 emulation/container setup is ready
     steps:
     - name: Checkout code
@@ -91,6 +91,7 @@ jobs:
         # Example: docker run --rm -it --privileged multiarch/qemu-user-static --reset -p yes
         # docker run -it --platform linux/arm64 termux/termux-docker-image bash
         
+
     - name: Run Termux Tests (Conceptual)
       run: |
         echo "Run Termux specific tests using the Termux install script and test_agent_termux.py"
