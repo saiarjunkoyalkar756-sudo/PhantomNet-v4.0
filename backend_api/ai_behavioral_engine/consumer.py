@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # --- Kafka Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-KAFKA_TOPIC = os.getenv('BEHAVIORAL_KAFKA_TOPIC', TOPICS["NORMALIZED_EVENTS"])
+KAFKA_TOPIC = os.getenv('BEHAVIORAL_KAFKA_TOPIC', TOPICS["ENRICHED_EVENTS"])
 GROUP_ID = os.getenv('BEHAVIORAL_KAFKA_GROUP_ID', 'behavioral-engine-group')
 
 

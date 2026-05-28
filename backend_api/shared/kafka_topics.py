@@ -6,6 +6,7 @@ Ensures zero hardcoded strings and unified topic structures.
 
 RAW_TELEMETRY = "phantomnet.raw_telemetry"
 NORMALIZED_EVENTS = "phantomnet.normalized_events"
+ENRICHED_EVENTS = "phantomnet.enriched_events"
 ALERTS = "phantomnet.alerts"
 COMMANDS = "phantomnet.commands"
 THREAT_INTEL = "phantomnet.threat_intel"
@@ -16,6 +17,7 @@ COMPLIANCE_EVENTS = "phantomnet.compliance_events"
 TOPICS = {
     "RAW_TELEMETRY": RAW_TELEMETRY,
     "NORMALIZED_EVENTS": NORMALIZED_EVENTS,
+    "ENRICHED_EVENTS": ENRICHED_EVENTS,
     "ALERTS": ALERTS,
     "COMMANDS": COMMANDS,
     "THREAT_INTEL": THREAT_INTEL,

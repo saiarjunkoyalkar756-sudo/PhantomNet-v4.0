@@ -147,11 +147,19 @@ def create_phantom_service(
     # Default health check
     @app.get("/health", tags=["Infrastructure"])
     async def health_check():
-        return success_response(data={
-            "status": "online",
-            "service": name,
-            "version": version
-        })
+        try:
+            from backend_api.shared.health import run_standard_health_check
+            health_details = await run_standard_health_check()
+            health_details["service"] = name
+            health_details["version"] = version
+            return success_response(data=health_details)
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return error_response(
+                code="HEALTH_CHECK_FAILED",
+                message=f"Health check diagnostics failed: {e}",
+                status_code=500
+            )
 
     # Global Exception Handlers
     @app.exception_handler(HTTPException)
