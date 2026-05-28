@@ -6,7 +6,11 @@ import uuid # Import uuid
 import time
 
 
-class UserBase(BaseModel):
+class StrictBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class UserBase(StrictBaseModel):
     username: str
 
 
@@ -21,22 +25,22 @@ class UserInDB(UserBase):
     hashed_password: str
     role: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
 
 
-class Token(BaseModel):
+class Token(StrictBaseModel):
     access_token: str
     token_type: str
 
 
-class TokenData(BaseModel):
+class TokenData(StrictBaseModel):
     username: Optional[str] = None
     role: Optional[str] = None
     twofa_enabled: bool = False
     twofa_enforced: bool = False
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(StrictBaseModel):
     username: str
     password: str
     totp_code: Optional[str] = None
@@ -44,24 +48,24 @@ class LoginRequest(BaseModel):
     device_fingerprint: Optional[str] = None  # Add device_fingerprint
 
 
-class PasswordResetRequest(BaseModel):
+class PasswordResetRequest(StrictBaseModel):
     username: str
 
 
-class PasswordResetConfirm(BaseModel):
+class PasswordResetConfirm(StrictBaseModel):
     token: str
     new_password: str
 
 
-class RecoveryCodeResponse(BaseModel):
+class RecoveryCodeResponse(StrictBaseModel):
     codes: list[str]
 
 
-class TwoFACode(BaseModel):
+class TwoFACode(StrictBaseModel):
     code: str
 
 
-class TwoFAChallenge(BaseModel):
+class TwoFAChallenge(StrictBaseModel):
     challenge_id: str
     code: Optional[str] = None
     recovery_code: Optional[str] = None
@@ -204,7 +208,7 @@ class NormalizedEvent(BaseModel):
     src_ip: Optional[str] = None
 
 
-class TransactionData(BaseModel):
+class TransactionData(StrictBaseModel):
     ip: str = Field(..., description="IP address of the attacking entity")
     port: int = Field(
         ..., ge=1, le=65535, description="Port number involved in the attack"
@@ -224,12 +228,12 @@ class TransactionData(BaseModel):
         return v
 
 
-class HoneypotControl(BaseModel):
+class HoneypotControl(StrictBaseModel):
     action: str = Field(..., description="Action to perform: 'start' or 'stop'")
     port: int = Field(..., ge=1, le=65535, description="Port number for the honeypot")
 
 
-class SimulateAttack(BaseModel):
+class SimulateAttack(StrictBaseModel):
     ip: str = Field(..., description="IP address for simulation")
     port: int = Field(..., ge=1, le=65535, description="Port for simulation")
     data: str = Field(..., min_length=1, description="Raw data for simulation")

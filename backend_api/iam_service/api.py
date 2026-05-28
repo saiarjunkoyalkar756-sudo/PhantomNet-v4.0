@@ -55,6 +55,7 @@ from .auth_methods import (
 )
 from backend_api.core.logging import logger as pn_logger
 from backend_api.core.response import success_response, error_response
+from backend_api.shared.rate_limiter import limit_auth_endpoint, log_failed_auth_attempt
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -70,6 +71,8 @@ async def register_user(
     request: Request = None
 ):
     """Registers a new user and returns an access token."""
+    if request:
+        await limit_auth_endpoint(request, 3, 60, "register")
     existing_user = await get_user(db, username=user_data.username)
     if existing_user:
         return error_response(code="ALREADY_EXISTS", message="Username already registered", status_code=400)
@@ -121,6 +124,8 @@ async def login_for_access_token(
     x_recovery_code: Optional[str] = Header(None, alias="X-Recovery-Code"),
 ):
     """Authenticates a user and returns an access token."""
+    if request:
+        await limit_auth_endpoint(request, 5, 60, "login")
     ip_address = request.client.host if request.client else "unknown"
     
     user = await get_user(db, form_data.username)
@@ -150,6 +155,8 @@ async def login_for_access_token(
     
     if not user:
         pn_logger.warning(f"Failed login attempt for user {form_data.username}.")
+        if request:
+            log_failed_auth_attempt(ip_address)
         return error_response(code="UNAUTHORIZED", message="Incorrect username or password", status_code=401)
 
     pn_logger.info(f"User {user.username} logged in successfully.")
@@ -341,6 +348,31 @@ async def logout(
                     session_record.revoked_at = datetime.utcnow()
                     await db.commit()
                     pn_logger.info(f"User {current_user.username} logged out, session {jti} invalidated.")
+                    
+                    # Store in Redis blacklist (Phase 1.7)
+                    try:
+                        from backend_api.shared.redis_client import redis_client
+                        if redis_client:
+                            # Calculate time-to-live
+                            now = datetime.utcnow()
+                            if session_record.expires_at:
+                                expires_at = session_record.expires_at
+                                if isinstance(expires_at, (int, float)):
+                                    expires_at = datetime.utcfromtimestamp(expires_at)
+                                elif isinstance(expires_at, str):
+                                    expires_at = datetime.fromisoformat(expires_at.replace(" ", "T"))
+                                    
+                                if hasattr(expires_at, "tzinfo") and expires_at.tzinfo is not None:
+                                    expires_at = expires_at.replace(tzinfo=None)
+                                remaining_seconds = int((expires_at - now).total_seconds())
+                            else:
+                                remaining_seconds = 3600
+                                
+                            if remaining_seconds > 0:
+                                redis_client.setex(f"blacklist_jti:{jti}", remaining_seconds, "1")
+                                pn_logger.info(f"JTI {jti} blacklisted in Redis for {remaining_seconds}s.")
+                    except Exception as redis_err:
+                        pn_logger.error(f"Failed to blacklist JTI {jti} in Redis: {redis_err}")
         except Exception:
             pass
 

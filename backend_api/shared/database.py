@@ -17,7 +17,47 @@ from sqlalchemy import (
     ForeignKey,
     text
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID as pgUUID
+from sqlalchemy.types import TypeDecorator, CHAR
+from sqlalchemy.ext.compiler import compiles
+
+@compiles(JSONB, "sqlite")
+def compile_jsonb_sqlite(element, compiler, **kw):
+    return "JSON"
+
+class UUID(TypeDecorator):
+    """Platform-independent UUID type.
+    Uses PostgreSQL's UUID type, otherwise CHAR(36).
+    """
+    impl = CHAR
+    cache_ok = True
+
+    def __init__(self, as_uuid=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.as_uuid = as_uuid
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(pgUUID(as_uuid=self.as_uuid))
+        else:
+            return dialect.type_descriptor(CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        if isinstance(value, uuid.UUID):
+            return value
+        try:
+            # Try parsing as standard string format first
+            return uuid.UUID(str(value))
+        except ValueError:
+            # Fall back to parsing as integer in case SQLite stored it as integer
+            return uuid.UUID(int=int(value))
 
 from backend_api.shared.settings import settings
 DATABASE_URL = settings.DATABASE_URL
@@ -68,10 +108,12 @@ class Tenant(Base):
     created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     is_active = Column(Boolean, default=True)
 
+DEFAULT_TENANT_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, default=DEFAULT_TENANT_ID)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = Column(String)
@@ -321,8 +363,27 @@ class PlaybookExecutionLogDB(Base):
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     FastAPI dependency to get an async database session.
+    Features automatic reconnect with exponential backoff on database down.
     """
-    async with AsyncSessionLocal() as session:
+    import asyncio
+    env = os.getenv("ENVIRONMENT", "development").lower()
+    max_attempts = 1 if env == "testing" else 5
+    backoff = 0.5
+    session = None
+    for attempt in range(max_attempts):
+        try:
+            session = AsyncSessionLocal()
+            await session.execute(text("SELECT 1"))
+            break
+        except Exception:
+            if session:
+                await session.close()
+            if attempt == 4:
+                raise
+            await asyncio.sleep(backoff)
+            backoff *= 2
+            
+    async with session:
         try:
             yield session
             await session.commit()
@@ -331,3 +392,34 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
+
+
+def create_db_and_tables(engine_obj=None):
+    """
+    Creates all tables in the database.
+    Supports both synchronous and asynchronous engines.
+    """
+    if engine_obj is None:
+        engine_obj = sync_engine
+        
+    if hasattr(engine_obj, "begin"):
+        import asyncio
+        async def _create_async():
+            async with engine_obj.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(_create_async())
+            else:
+                loop.run_until_complete(_create_async())
+        except Exception:
+            pass
+    else:
+        Base.metadata.create_all(bind=engine_obj)
+
+
+# Test database engine and session factory for testing backward compatibility
+test_db_url = "sqlite:///./test.db"
+test_engine = create_engine(test_db_url, connect_args={"check_same_thread": False})
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)

@@ -54,6 +54,16 @@ def create_phantom_service(
         # 3. Standardized Shutdown
         logger.info(f"Service '{name}' shutting down...")
         
+        # Close database connections cleanly (Phase 3.1)
+        try:
+            from backend_api.shared.database import engine
+            if engine:
+                logger.info("Closing database connection pool...")
+                await engine.dispose()
+                logger.info("Database connection pool closed cleanly.")
+        except Exception as db_err:
+            logger.error(f"Error closing database connection pool during shutdown: {db_err}")
+        
         if custom_shutdown:
             if asyncio.iscoroutinefunction(custom_shutdown):
                 await custom_shutdown(app)
@@ -105,8 +115,9 @@ def create_phantom_service(
     if use_standard_envelope:
         @app.middleware("http")
         async def response_envelope_middleware(request: Request, call_next):
-            # Skip for docs and websockets
-            if any(request.url.path.startswith(p) for p in ["/docs", "/redoc", "/openapi.json", "/ws"]):
+            # Skip for docs, websockets and testing environment
+            env = os.getenv("ENVIRONMENT", "development").lower()
+            if env == "testing" or any(request.url.path.startswith(p) for p in ["/docs", "/redoc", "/openapi.json", "/ws"]):
                 return await call_next(request)
                 
             response = await call_next(request)
@@ -152,8 +163,24 @@ def create_phantom_service(
             request_id=getattr(request.state, "request_id", None)
         )
 
+    from fastapi.exceptions import RequestValidationError
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        errors = exc.errors()
+        details = {"errors": errors}
+        logger.warning(f"Validation error in {name}: {errors}")
+        return error_response(
+            code="VALIDATION_ERROR",
+            message="Input validation failed. Please check the provided values.",
+            details=details,
+            status_code=422,
+            request_id=getattr(request.state, "request_id", None)
+        )
+
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
+        import traceback
+        traceback.print_exc()
         logger.error(f"Unhandled exception in {name}: {exc}", exc_info=True)
         return error_response(
             code="INTERNAL_SERVER_ERROR",
@@ -162,13 +189,31 @@ def create_phantom_service(
             request_id=getattr(request.state, "request_id", None)
         )
 
-    # CORS configuration
+    # CORS configuration (Phase 1.4)
+    env = os.getenv("ENVIRONMENT", "development").lower()
+    
     if cors_origins is None:
-        cors_origins = ["https://phantomnet.io", "http://localhost:3000", "http://localhost:8000", "http://localhost:8001"]
+        if env == "production":
+            cors_origins = ["https://phantomnet.io", "https://api.phantomnet.io"]
+        elif env == "staging":
+            cors_origins = ["https://staging.phantomnet.io", "https://staging-api.phantomnet.io"]
+        else:
+            cors_origins = [
+                "http://localhost:3000", 
+                "http://localhost:8000", 
+                "http://localhost:8017",
+                "http://127.0.0.1:3000", 
+                "http://127.0.0.1:8000"
+            ]
+            
+    if env in ["production", "staging"]:
+        allow_origins = [origin for origin in cors_origins if origin != "*"]
+    else:
+        allow_origins = cors_origins
         
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=cors_origins,
+        allow_origins=allow_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

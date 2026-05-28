@@ -281,6 +281,12 @@ async def get_current_user(
         if not all([username, user_role, jti, tenant_id_str]):
             raise credentials_exception
 
+        # Validate token revocation using Redis blacklist (Phase 1.7)
+        from backend_api.shared.redis_client import redis_client
+        if redis_client and redis_client.get(f"blacklist_jti:{jti}"):
+            pn_logger.warning(f"REVOKED ACCESS ATTEMPT: Token with JTI {jti} is blacklisted in Redis.")
+            raise credentials_exception
+
         # Validate session token in DB
         stmt = select(SessionToken).where(SessionToken.jti == jti)
         result = await db.execute(stmt)

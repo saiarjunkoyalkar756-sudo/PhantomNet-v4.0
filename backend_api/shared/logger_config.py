@@ -8,7 +8,37 @@ from typing import Any
 from loguru import logger
 
 # 1. Create a queue for inter-thread/inter-process communication
-log_queue = asyncio.Queue()
+_log_queues = {}
+
+def get_log_queue() -> asyncio.Queue:
+    """Gets or creates the asyncio.Queue bound to the current running event loop."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = None
+            
+    if loop not in _log_queues:
+        _log_queues[loop] = asyncio.Queue()
+    return _log_queues[loop]
+
+class LogQueueProxy:
+    def put_nowait(self, item):
+        get_log_queue().put_nowait(item)
+    async def put(self, item):
+        await get_log_queue().put(item)
+    async def get(self):
+        return await get_log_queue().get()
+    def qsize(self):
+        return get_log_queue().qsize()
+    def empty(self):
+        return get_log_queue().empty()
+    def full(self):
+        return get_log_queue().full()
+
+log_queue = LogQueueProxy()
 
 # 2. Define the JSON log format
 import re
