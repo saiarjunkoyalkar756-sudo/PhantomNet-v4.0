@@ -5,15 +5,18 @@ import logging
 import json
 from psycopg2.extras import Json
 
+import os
+
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
     """Establishes a connection to the PostgreSQL database."""
+    db_pass = os.environ.get("DB_PASSWORD", "changeme")
     try:
         conn = psycopg2.connect(
             dbname="phantomnet",
             user="phantomnet",
-            password="password",
+            password=db_pass,
             host="postgres"
         )
         logger.info("Successfully connected to the database.")

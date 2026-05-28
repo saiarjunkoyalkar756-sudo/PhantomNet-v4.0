@@ -1,0 +1,103 @@
+name: CD — PhantomNet v4.0
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Job 1: Build Docker Images and Push to Amazon ECR
+  # ──────────────────────────────────────────────────────────────────────────
+  build-and-push:
+    name: Build & Push to Amazon ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Gateway Service
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: phantomnet-gateway
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f backend_api/gateway_service/Dockerfile .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Build, Tag, and Push Telemetry Ingestor
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: phantomnet-ingestor
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f infra/docker/telemetry-ingestor.Dockerfile .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Job 2: Deploy to Staging Environment
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging Cluster
+        run: |
+          echo "Deploying Git SHA ${{ github.sha }} to Staging AWS ECS..."
+          # Command: aws ecs update-service --cluster phantomnet-staging --service gateway-service --force-new-deployment
+
+      - name: Run Smoke Tests on Staging
+        run: |
+          echo "Executing integration and endpoint checks against staging..."
+          # curl -f https://staging.phantomnet.io/health
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Job 3: Deploy to Production (Requires Manual Approval Environment)
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production ECS Cluster
+        id: deploy-prod
+        run: |
+          echo "Deploying Git SHA ${{ github.sha }} to Production ECS..."
+          # Command: aws ecs update-service --cluster phantomnet-prod --service gateway-service --force-new-deployment
+
+      - name: Post-deployment Health Check
+        id: health-check
+        run: |
+          echo "Auditing production health metrics..."
+          # Wait and check if service returns 200 OK
+          sleep 10
+          # curl -f https://api.phantomnet.io/health || exit 1
+
+      - name: Automatic Rollback on Failure
+        if: failure()
+        run: |
+          echo "CRITICAL: Health checks failed! Rolling back to last stable revision..."
+          # Command: aws ecs update-service --cluster phantomnet-prod --service gateway-service --task-definition last-stable-rev

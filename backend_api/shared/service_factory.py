@@ -150,13 +150,15 @@ def create_phantom_service(
         )
 
     # CORS configuration
-    if cors_origins:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=cors_origins,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+    if cors_origins is None:
+        cors_origins = ["https://phantomnet.io", "http://localhost:3000", "http://localhost:8000", "http://localhost:8001"]
+        
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     return app

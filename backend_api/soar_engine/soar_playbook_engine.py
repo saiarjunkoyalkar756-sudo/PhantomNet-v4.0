@@ -2,7 +2,7 @@
 import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 # from .models import Playbook, PlaybookRun, PlaybookStatus  # Using dicts for now
@@ -81,7 +81,7 @@ class SOARPlaybookEngine:
             "alert_id": alert['alert_id'],
             "decision": "AUTONOMOUS_EXECUTION",
             "execution_results": results,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         await AUDIT_LOG_QUEUE.put(audit_record)
         logger.info(f"Playbook execution record sent for notarization.")
@@ -105,7 +105,7 @@ class SOARPlaybookEngine:
             "alert_id": alert['alert_id'],
             "decision": "HUMAN_IN_THE_LOOP_REQUIRED",
             "reason": reason,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         await AUDIT_LOG_QUEUE.put(audit_record)
         logger.info(f"Escalation record sent for notarization.")

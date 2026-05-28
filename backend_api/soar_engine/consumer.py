@@ -6,6 +6,8 @@ import yaml
 import re # Import re for condition evaluation
 import httpx # Import httpx for making HTTP requests
 from typing import Dict, Any, Optional
+from datetime import datetime, timezone
+from backend_api.shared.kafka_topics import TOPICS
 
 from .models import PlaybookStep, Playbook, PlaybookRun, PlaybookExecutionLog, PlaybookStatus # Import PlaybookStep and Playbook
 from .state import playbooks_store, playbook_runs # Import playbooks_store and playbook_runs
@@ -208,45 +210,16 @@ def evaluate_condition(condition_str: Optional[str], context: Dict[str, Any]) ->
         return False
 
 
-def execute_playbook(playbook_run: PlaybookRun): # Modified to accept PlaybookRun directly
-    logger.info(f"Executing playbook: {playbook_run.playbook_name} (Run ID: {playbook_run.run_id})")
-    
-    # Initialize execution context for adaptive playbooks
-    # playbook_run.current_context is already initialized with triggered_by incident context
-    # Add step_results to current_context
-    playbook_run.current_context["step_results"] = {}
-
-    for idx, step in enumerate(playbook_run.playbook.steps): # Iterate through playbook.steps from the playbook_run object
-        step_status = PlaybookStatus.SKIPPED # Use Enum
-        step_result_details: Dict[str, Any] = {} # To store raw results from action functions
-        step_output: Dict[str, Any] = {} # To store formatted output for PlaybookExecutionLog
-
-        # Evaluate step condition (adaptive playbook logic)
-        if step.condition:
-            # Use current_context for condition evaluation
-            if not evaluate_condition(step.condition, {"event": playbook_run.triggered_by, "context": playbook_run.current_context}):
-import time
-import logging
-import json
-import yaml
-import re # Import re for condition evaluation
-import httpx # Import httpx for making HTTP requests
 import os # Import os for environment variables
 import asyncio # Import asyncio for async operations
-from typing import Dict, Any, Optional
 
 from kafka import KafkaConsumer, KafkaProducer # Import Kafka classes
 from kafka.errors import NoBrokersAvailable # Import Kafka error
 from kafka.admin import KafkaAdminClient, NewTopic # Import for checking topic existence
 
-from .models import PlaybookStep, Playbook, PlaybookRun, PlaybookExecutionLog, PlaybookStatus # Import PlaybookStep and Playbook
-from .state import playbooks_store, playbook_runs # Import playbooks_store and playbook_runs
-
-logger = logging.getLogger(__name__)
-
 # --- Kafka Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-SOAR_ALERT_TOPIC = os.getenv('SOAR_ALERT_TOPIC', 'soar-alerts')
+SOAR_ALERT_TOPIC = os.getenv('SOAR_ALERT_TOPIC', TOPICS["ALERTS"])
 GROUP_ID = os.getenv('SOAR_KAFKA_GROUP_ID', 'soar-engine-group')
 
 # --- SAFE MODE Flags ---
@@ -533,14 +506,14 @@ def execute_playbook(playbook_run: PlaybookRun): # Modified to accept PlaybookRu
         
         if step_status == PlaybookStatus.FAILED: # Use Enum
             playbook_run.status = PlaybookStatus.FAILED # Use Enum
-            playbook_run.end_time = datetime.utcnow()
+            playbook_run.end_time = datetime.now(timezone.utc)
             logger.error(f"Playbook '{playbook_run.playbook_name}' failed at step '{step.action}'.")
             break # Stop playbook execution on failure
 
     if playbook_run.status == PlaybookStatus.PENDING: # Only if not already failed by a step
         playbook_run.status = PlaybookStatus.COMPLETED # Use Enum
     
-    playbook_run.end_time = datetime.utcnow()
+    playbook_run.end_time = datetime.now(timezone.utc)
     # The playbook_run object is already in playbook_runs, so no need to re-add.
     logger.info(f"Playbook '{playbook_run.playbook_name}' execution finished with status: {playbook_run.status}.")
 
@@ -668,76 +641,3 @@ async def stop_soar_consumer_task():
             await soar_consumer_task
         except asyncio.CancelledError:
             logger.info("SOAR Kafka consumer task stopped.")
-                
-                playbook_run.execution_logs.append(
-                    PlaybookExecutionLog(
-                        step_action=step.action,
-                        status=PlaybookStatus.SKIPPED,
-                        details="Condition not met.",
-                        output=step_output
-                    )
-                )
-                continue # Skip to next step
-
-        action_name = step.action
-        action_func = ACTION_MAP.get(action_name)
-
-        if not action_func:
-            logger.error(f"Action '{action_name}' not found in ACTION_MAP.")
-            step_status = PlaybookStatus.FAILED # Use Enum
-            step_result_details = {"status": "failure", "detail": f"Action '{action_name}' not implemented or found."}
-        else:
-            # Prepare parameters, rendering templates using current execution context
-            rendered_params = {}
-            for param_name, param_value in step.parameters.items():
-                rendered_params[param_name] = render_template(str(param_value), {"event": playbook_run.triggered_by, "context": playbook_run.current_context})
-            
-            try:
-                # Execute action
-                logger.info(f"Executing step {idx+1}: Tool='{step.tool_name}', Action='{action_name}' with params: {rendered_params}")
-                
-                # NOTE: Assuming action_func is synchronous here. If it can be async,
-                # this consumer's execute_playbook would need to be async and called
-                # via an event loop (e.g., asyncio.run or asyncio.create_task)
-                step_result_details = action_func(**rendered_params) # Call sync actions
-                
-                step_status = PlaybookStatus.COMPLETED if step_result_details.get("status") == "success" else PlaybookStatus.FAILED # Use Enum
-                
-                # Store step result in context for subsequent steps (adaptive playbook logic)
-                if step.output_to:
-                    playbook_run.current_context["step_results"][step.output_to] = step_result_details
-                else:
-                    playbook_run.current_context["step_results"][action_name] = step_result_details
-
-
-            except Exception as e:
-                logger.error(
-                    f"Error executing step '{action_name}': {e}", exc_info=True
-                )
-                step_status = PlaybookStatus.FAILED # Use Enum
-                step_result_details = {"status": "failure", "detail": str(e)}
-
-        playbook_run.execution_logs.append(
-            PlaybookExecutionLog(
-                step_action=step.action,
-                status=step_status,
-                details=step_result_details.get("detail", ""),
-                output=step_result_details # Store full details as output
-            )
-        )
-        
-        if step_status == PlaybookStatus.FAILED: # Use Enum
-            playbook_run.status = PlaybookStatus.FAILED # Use Enum
-            playbook_run.end_time = datetime.utcnow()
-            logger.error(f"Playbook '{playbook_run.playbook_name}' failed at step '{step.action}'.")
-            break # Stop playbook execution on failure
-
-    if playbook_run.status == PlaybookStatus.PENDING: # Only if not already failed by a step
-        playbook_run.status = PlaybookStatus.COMPLETED # Use Enum
-    
-    playbook_run.end_time = datetime.utcnow()
-    # The playbook_run object is already in playbook_runs, so no need to re-add.
-    logger.info(f"Playbook '{playbook_run.playbook_name}' execution finished with status: {playbook_run.status}.")
-
-
-

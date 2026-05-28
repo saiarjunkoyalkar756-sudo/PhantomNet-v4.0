@@ -50,9 +50,11 @@ def _is_root_user() -> bool:
     else: # Linux/Termux
         return os.geteuid() == 0
 
+import shutil
+
 def _check_command_exists(command: str) -> bool:
     """Checks if a given command is available in the system's PATH."""
-    return bool(subprocess.run(['which', command], capture_output=True, text=True).stdout)
+    return shutil.which(command) is not None
 
 def _detect_system_capabilities() -> Dict[str, Any]:
     """Detects various system capabilities."""

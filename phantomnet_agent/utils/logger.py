@@ -62,20 +62,17 @@ class HttpLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         """
-
-        Sends the log record to the remote ingestor.
+        Sends the log record to the remote ingestor in a background daemon thread.
         """
-        try:
-            telemetry_data = self.format_to_telemetry(record)
-            self.session.post(self.url, json=telemetry_data, timeout=2)
-        except requests.exceptions.RequestException:
-            # If the remote endpoint is down, we don't want to spam the console.
-            # The file logger will still capture the log. We can add more robust
-            # offline caching logic here in the future.
-            pass
-        except Exception:
-            # Catch any other exceptions during formatting or sending
-            pass
+        def send_log():
+            try:
+                telemetry_data = self.format_to_telemetry(record)
+                self.session.post(self.url, json=telemetry_data, timeout=2)
+            except Exception:
+                # Silently catch network errors to avoid spamming the console
+                pass
+
+        Thread(target=send_log, daemon=True).start()
 
 class JsonFormatter(logging.Formatter):
     """

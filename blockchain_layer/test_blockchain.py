@@ -6,7 +6,7 @@ import importlib
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine
 from blockchain_layer.blockchain import Blockchain
-from shared.database import Base, Block, Transaction, SessionLocal # Moved Block, Transaction, SessionLocal here
+from backend_api.shared.database import Base, Block, Transaction, SessionLocal # Moved Block, Transaction, SessionLocal here
 
 
 # Define a fixture for an in-memory SQLite database session for testing

@@ -1,3 +1,6 @@
-# This file previously contained in-memory stores for playbooks and playbook runs.
-# These are now persisted in the database, managed by database models in backend_api.shared.database.
-# No in-memory state is maintained here anymore.
+# backend_api/soar_engine/state.py
+
+# In-memory stores for playbooks and playbook runs.
+# Used by soar_engine/consumer.py and tests to manage playbook lifecycle.
+playbooks_store = {}
+playbook_runs = {}

@@ -12,11 +12,13 @@ from ..ai_behavioral_engine.app import (
 )
 from core_config import SAFE_MODE
 
+from backend_api.shared.kafka_topics import TOPICS
+
 logger = logging.getLogger(__name__)
 
 # --- Kafka Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-KAFKA_TOPIC = os.getenv('BEHAVIORAL_KAFKA_TOPIC', 'attack_logs')
+KAFKA_TOPIC = os.getenv('BEHAVIORAL_KAFKA_TOPIC', TOPICS["NORMALIZED_EVENTS"])
 GROUP_ID = os.getenv('BEHAVIORAL_KAFKA_GROUP_ID', 'behavioral-engine-group')
 
 

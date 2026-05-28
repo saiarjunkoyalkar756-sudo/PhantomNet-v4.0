@@ -14,20 +14,21 @@ import {
     MessageCircle,
     Book,
     ShieldCheck,
+    Zap,
 } from 'lucide-react';
 
 const nodeVariants = {
     hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+    visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' as const } },
     hover: { scale: 1.05, boxShadow: '0px 0px 15px rgba(0, 240, 255, 0.4)' },
 };
 
 const arrowVariants = {
     hidden: { pathLength: 0, opacity: 0 },
-    visible: { pathLength: 1, opacity: 1, transition: { duration: 1, ease: 'easeInOut' } },
+    visible: { pathLength: 1, opacity: 1, transition: { duration: 1, ease: 'easeInOut' as const } },
 };
 
-const Node = ({ icon: Icon, label, color, delay, x, y, width = 120, height = 80 }) => (
+const Node = ({ icon: Icon, label, color, delay, x, y, width = 120, height = 80 }: any) => (
     <motion.g
         initial="hidden"
         animate="visible"
@@ -65,7 +66,7 @@ const Node = ({ icon: Icon, label, color, delay, x, y, width = 120, height = 80 
     </motion.g>
 );
 
-const Arrow = ({ d, delay }) => (
+const Arrow = ({ d, delay }: any) => (
     <motion.path
         d={d}
         className="stroke-pn-electric-purple fill-none stroke-[2px]"

@@ -93,7 +93,23 @@ async def get_users(
     result = await db.execute(stmt)
     users = result.scalars().all()
     
-    # Standardize output manually as we want the envelope
-    user_list = [UserInDB.model_validate(u).model_dump() for u in users]
-    
     return success_response(data=user_list)
+
+@router.get("/blacklist/list")
+async def list_blacklist(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(has_role([UserRole.ADMIN])),
+):
+    stmt = select(BlacklistedIP)
+    result = await db.execute(stmt)
+    blacklisted = result.scalars().all()
+    
+    ips = [
+        {
+            "ip_address": b.ip_address,
+            "reason": b.reason,
+            "date": b.timestamp.isoformat().split('T')[0] if b.timestamp else "2026-05-28"
+        }
+        for b in blacklisted
+    ]
+    return success_response(data=ips)

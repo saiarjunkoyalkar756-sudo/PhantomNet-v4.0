@@ -4,7 +4,7 @@ import os
 import asyncio
 import json
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from .kafka_consumer import consume_kafka_messages, stop_soar_consumer_task
 from .soar_playbook_engine import SOARPlaybookEngine
@@ -172,7 +172,7 @@ async def approve_playbook_step(request_id: str, approved_by: str = Query(..., d
     if playbook_run_db:
         playbook_run_db.status = PlaybookStatus.RUNNING.value
         playbook_run_db.execution_logs.append(PlaybookExecutionLogDB(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             step_action=f"Approval for {approved_req.step_name}",
             status=PlaybookStatus.COMPLETED.value,
             details={"approved_by": approved_by, "reason": reason},
@@ -192,7 +192,7 @@ async def reject_playbook_step(request_id: str, rejected_by: str = Query(..., de
     if playbook_run_db:
         playbook_run_db.status = PlaybookStatus.REJECTED.value
         playbook_run_db.execution_logs.append(PlaybookExecutionLogDB(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             step_action=f"Rejection for {rejected_req.step_name}",
             status=PlaybookStatus.FAILED.value,
             details={"rejected_by": rejected_by, "reason": reason},

@@ -20,7 +20,7 @@ const pathVariants = {
         opacity: 1,
         transition: {
             duration: 1.5,
-            ease: 'easeInOut',
+            ease: 'easeInOut' as const,
         },
     },
 };
@@ -39,8 +39,8 @@ export function AnimatedAttackFlow() {
     const arrowHeight = boxHeight / 2; // Approximate height for arrow lines
 
     let currentX = 0;
-    const elements = [];
-    const arrows = [];
+    const elements: any[] = [];
+    const arrows: any[] = [];
 
     attackFlowSteps.forEach((step, index) => {
         // Box for the step

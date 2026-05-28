@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from shared.logger_config import logger
 from backend_api.shared.chrono_engine import ChronoEngine
@@ -41,7 +41,7 @@ class AutoResponseEngine:
 
         log_entry_data = {
             "step_action": step.action,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "status": PlaybookStatus.IN_PROGRESS,
             "details": f"Auto-executing step: {step.description or step.action}",
             "output": {}
@@ -121,10 +121,10 @@ class AutoResponseEngine:
         # Determine if playbook is completed or failed
         if log_entry_data["status"] == PlaybookStatus.FAILED:
             playbook_run.status = PlaybookStatus.FAILED
-            playbook_run.end_time = datetime.utcnow()
+            playbook_run.end_time = datetime.now(timezone.utc)
         elif step_index == len(playbook_run.playbook.steps) - 1: # Last step executed
              playbook_run.status = PlaybookStatus.COMPLETED
-             playbook_run.end_time = datetime.utcnow()
+             playbook_run.end_time = datetime.now(timezone.utc)
         
         return playbook_run
 

@@ -6,7 +6,7 @@ import json
 import re
 from typing import Dict, Any, Optional
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid # Import uuid
 
 from shared.logger_config import logger
@@ -34,7 +34,7 @@ class LogNormalizer:
             message = data.get("message", "JSON event received")
             timestamp_str = data.get("timestamp") or data.get("time")
             
-            timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.utcnow()
+            timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.now(timezone.utc)
 
             return NormalizedLog(
                 event_id=str(uuid.uuid4()), # Assuming uuid is imported
@@ -67,7 +67,7 @@ class LogNormalizer:
 
             return NormalizedLog(
                 event_id=str(uuid.uuid4()),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 event_type=f"cef.{groups['event_id']}",
                 severity=groups["severity"].lower(),
                 source_system=source_system,

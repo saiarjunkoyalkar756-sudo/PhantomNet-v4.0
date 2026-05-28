@@ -1,6 +1,7 @@
 # backend_api/compliance_engine.py
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
+from loguru import logger
 import random
 import time
 import uuid

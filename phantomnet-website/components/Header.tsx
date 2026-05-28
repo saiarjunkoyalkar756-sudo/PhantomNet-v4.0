@@ -10,14 +10,12 @@ import { Menu, X } from 'lucide-react'; // Lucide icons
 
 const navLinks = [
     { name: 'Home', href: '/' },
-    { name: 'Platform Overview', href: '/platform' },
+    { name: 'Platform', href: '/platform' },
     { name: 'Architecture', href: '/architecture' },
-    { name: 'AI & Intelligence', href: '/ai-intelligence' },
+    { name: 'AI Intel', href: '/ai-intelligence' },
     { name: 'Features', href: '/features' },
-    { name: 'Security & Trust', href: '/security-trust' },
-    { name: 'Demo / Roadmap', href: '/roadmap' },
-    { name: 'About / Vision', href: '/about' },
-    // Removed Contact/Request Demo from main nav as it will be a dedicated button/CTA
+    { name: 'User Shield', href: '/user' },
+    { name: 'Admin Commander', href: '/admin' },
 ];
 
 export function Header() {

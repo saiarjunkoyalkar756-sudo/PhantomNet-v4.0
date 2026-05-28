@@ -2,7 +2,7 @@
 import type { Config } from 'tailwindcss';
 
 const config = {
-    darkMode: ['class'],
+    darkMode: 'class',
     content: [
         './pages/**/*.{ts,tsx}',
         './components/**/*.{ts,tsx}',
@@ -89,3 +89,8 @@ const config = {
             backgroundImage: {
                 'gradient-primary': 'linear-gradient(135deg, var(--pn-dark-light) 0%, #1e0a38 100%)',
             }
+        }
+    }
+} satisfies Config;
+
+export default config;

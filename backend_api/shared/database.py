@@ -19,10 +19,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
-# Load settings
-# Assuming settings.py is updated to include DATABASE_URL
-# If not, we'll read it directly from env for now
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://phantomnet:changeme@localhost:5432/phantomnet")
+from backend_api.shared.settings import settings
+DATABASE_URL = settings.DATABASE_URL
 
 # Async engine with connection pooling
 engine = create_async_engine(
@@ -42,6 +40,23 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False
 )
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Create a synchronous engine and session factory (SessionLocal) for synchronous/legacy operations
+sync_db_url = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+sync_engine = create_engine(
+    sync_db_url,
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True
+)
+SessionLocal = sessionmaker(
+    bind=sync_engine,
+    autocommit=False,
+    autoflush=False
+)
+
 Base = declarative_base()
 
 # --- Models ---
@@ -50,7 +65,7 @@ class Tenant(Base):
     __tablename__ = "tenants"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     name = Column(String, unique=True, index=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     is_active = Column(Boolean, default=True)
 
 class User(Base):
@@ -71,7 +86,7 @@ class SessionToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     jti = Column(String, unique=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     expires_at = Column(DateTime)
     is_valid = Column(Boolean, default=True)
     revoked_at = Column(DateTime, nullable=True)
@@ -90,7 +105,7 @@ class PasswordResetToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     token_id = Column(String, unique=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    issued_at = Column(DateTime, default=datetime.datetime.utcnow)
+    issued_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     expires_at = Column(DateTime)
     used_at = Column(DateTime, nullable=True)
     ip_request = Column(String)
@@ -99,7 +114,7 @@ class PasswordResetToken(Base):
 class AttackLog(Base):
     __tablename__ = "attack_logs"
     id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     ip = Column(String)
     port = Column(Integer)
     data = Column(String)
@@ -115,7 +130,7 @@ class BlacklistedIP(Base):
     id = Column(Integer, primary_key=True, index=True)
     ip_address = Column(String, unique=True, index=True)
     reason = Column(String)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 class RecoveryCode(Base):
     __tablename__ = "recovery_codes"
@@ -130,14 +145,14 @@ class Alert(Base):
     alert_id = Column(String, unique=True, nullable=False)
     alert_name = Column(String, nullable=False)
     severity = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     event_data = Column(JSONB)
 
 class NormalizedEvent(Base):
     __tablename__ = "normalized_events"
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(String, unique=True, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     source = Column(String, nullable=False)
     event_type = Column(String, nullable=False)
     details = Column(JSONB)
@@ -147,14 +162,14 @@ class ForensicRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     record_id = Column(String, unique=True, nullable=False)
     tool_name = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     results = Column(JSONB)
 
 class Block(Base):
     __tablename__ = "blocks"
     id = Column(Integer, primary_key=True, index=True)
     index = Column(Integer, unique=True, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     previous_hash = Column(String, nullable=False)
     block_hash = Column(String, unique=True, nullable=False)
     proof = Column(Integer, nullable=False)
@@ -188,7 +203,7 @@ class Transaction(Base):
     normalized_event_id = Column(Integer, ForeignKey("normalized_events.id"), nullable=True)
     forensic_record_id = Column(Integer, ForeignKey("forensic_records.id"), nullable=True)
     data_type = Column(String, nullable=True)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     transaction_hash = Column(String, unique=True, nullable=False)
 
     block = relationship("Block", back_populates="transactions")
@@ -223,7 +238,7 @@ class Agent(Base):
     version = Column(String, nullable=False)
     location = Column(String, nullable=False)
     status = Column(String, nullable=False)
-    last_seen = Column(DateTime, default=datetime.datetime.utcnow)
+    last_seen = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     quarantined = Column(Boolean, default=True)
     configuration = Column(JSONB, nullable=True)
     os = Column(String, nullable=True)
@@ -240,7 +255,7 @@ class AgentCredential(Base):
     id = Column(Integer, primary_key=True, index=True)
     agent_id = Column(Integer, ForeignKey("agents.id"))
     public_key_pem = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     rotated_at = Column(DateTime, nullable=True)
     revoked_at = Column(DateTime, nullable=True)
 
@@ -248,7 +263,7 @@ class RevokedCertificate(Base):
     __tablename__ = "revoked_certificates"
     id = Column(Integer, primary_key=True, index=True)
     serial_number = Column(String, unique=True, index=True, nullable=False)
-    revocation_date = Column(DateTime, default=datetime.datetime.utcnow)
+    revocation_date = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     reason = Column(String)
 
 class CognitiveMemoryDB(Base):
@@ -256,7 +271,7 @@ class CognitiveMemoryDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     threat_data = Column(String, unique=True, nullable=False)
     episode_data = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 class PhantomChainDB(Base):
     __tablename__ = "phantom_chain"
@@ -274,8 +289,8 @@ class PlaybookDB(Base):
     trigger = Column(JSONB, nullable=False)
     steps = Column(JSONB, nullable=False)
     context = Column(JSONB, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 class PlaybookRunDB(Base):
     __tablename__ = "soar_playbook_runs"
@@ -284,7 +299,7 @@ class PlaybookRunDB(Base):
     playbook_name = Column(String, nullable=False)
     status = Column(String, nullable=False)
     triggered_by = Column(JSONB, nullable=False)
-    start_time = Column(DateTime, default=datetime.datetime.utcnow)
+    start_time = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     end_time = Column(DateTime, nullable=True)
     current_context = Column(JSONB, nullable=False)
     
@@ -295,7 +310,7 @@ class PlaybookExecutionLogDB(Base):
     __tablename__ = "soar_playbook_execution_logs"
     id = Column(Integer, primary_key=True, index=True)
     playbook_run_id = Column(String, ForeignKey("soar_playbook_runs.id"), nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     step_action = Column(String, nullable=False)
     status = Column(String, nullable=False)
     details = Column(JSONB, nullable=True)

@@ -2,16 +2,16 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle, Hourglass, TrendingUp, Calendar, BoxSelect } from 'lucide-react'; // Lucide icons
+import { CheckCircle, Hourglass, TrendingUp, Calendar, BoxSelect, Lightbulb } from 'lucide-react'; // Lucide icons
 
 const sectionVariants = {
     hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
 };
 
 const itemVariants = {
     hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
 export default function RoadmapPage() {

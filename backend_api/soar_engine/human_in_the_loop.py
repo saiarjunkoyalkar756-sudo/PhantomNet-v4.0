@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 from shared.logger_config import logger
@@ -18,7 +18,7 @@ class ApprovalRequest(BaseModel):
     step_index: int
     step_description: str
     context_snapshot: Dict[str, Any]
-    requested_at: datetime = Field(default_factory=datetime.utcnow)
+    requested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: PlaybookStatus = PlaybookStatus.REQUIRES_APPROVAL
     approved_by: Optional[str] = None
     approved_at: Optional[datetime] = None
@@ -51,7 +51,7 @@ class HumanInTheLoop:
         # Update playbook run status
         playbook_run.execution_logs.append(PlaybookExecutionLog(
             step_action=step.action,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             status=PlaybookStatus.REQUIRES_APPROVAL,
             details=f"Step '{step.action}' requires human approval. Request ID: {request_id}",
             output={"request_id": request_id}
@@ -76,7 +76,7 @@ class HumanInTheLoop:
 
         approval_request.status = PlaybookStatus.APPROVED
         approval_request.approved_by = approved_by
-        approval_request.approved_at = datetime.utcnow()
+        approval_request.approved_at = datetime.now(timezone.utc)
         approval_request.reason = reason
         
         del self.pending_approvals[request_id] # Remove from pending
@@ -102,7 +102,7 @@ class HumanInTheLoop:
         approval_request.status = PlaybookStatus.REJECTED
         # In a real system, you'd mark the playbook run as failed or require a new path
         approval_request.approved_by = rejected_by # Reusing field for who rejected
-        approval_request.approved_at = datetime.utcnow()
+        approval_request.approved_at = datetime.now(timezone.utc)
         approval_request.reason = reason
         
         del self.pending_approvals[request_id] # Remove from pending
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         # This part would normally be handled by SOARPlaybookEngine
         log_entry_step0 = PlaybookExecutionLog(
             step_action=RemediationAction.ENRICH_INDICATOR,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             status=PlaybookStatus.COMPLETED,
             details="Enriched indicator.",
             output={"enriched_ip": {"reputation_score": 90}}

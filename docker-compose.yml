@@ -35,6 +35,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
       SERVICE_NAME: 'event-normalizer'
       ENVIRONMENT: 'production'
+      APP_PORT: '8000' # Internal port for uvicorn
     deploy:
       resources:
         limits:
@@ -44,7 +45,6 @@ services:
       - phantom_internal
     security_opt:
       - no-new-privileges:true
-      APP_PORT: '8000' # Internal port for uvicorn
 
   ai-behavioral-engine:
     build:
@@ -58,6 +58,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
       SERVICE_NAME: 'ai-behavioral-engine'
       ENVIRONMENT: 'production'
+      APP_PORT: '8000' # Internal port for uvicorn
     deploy:
       resources:
         limits:
@@ -67,7 +68,6 @@ services:
       - phantom_internal
     security_opt:
       - no-new-privileges:true
-      APP_PORT: '8000' # Internal port for uvicorn
 
   alert-storage:
     build:
@@ -533,3 +533,11 @@ volumes:
   postgres_data:
   redis_data:
   neo4j_data:
+
+networks:
+  default:
+    name: phantom_internal
+  phantom_internal:
+    driver: bridge
+  phantom_frontend:
+    driver: bridge

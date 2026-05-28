@@ -37,18 +37,22 @@ async def get_logs(request: Request, start_time: Optional[datetime] = None, end_
     if conn is None:
         return error_response(code="DATABASE_ERROR", message="Could not connect to the database.", status_code=500)
 
-    # Build WHERE clause from query parameters
+    # Build WHERE clause from query parameters with strict whitelist validation
     query_params = request.query_params
     where_clauses = []
     values = []
+    allowed_columns = {"id", "timestamp", "source", "event_type", "raw_event", "source_ip", "destination_ip", "protocol", "details"}
     for key, value in query_params.items():
         if key not in ["start_time", "end_time"]:
+            clean_key = key[:-10] if key.endswith("__contains") else key
+            if clean_key not in allowed_columns:
+                return error_response(code="VALIDATION_ERROR", message=f"Invalid query parameter: {key}", status_code=400)
+            
             if key.endswith("__contains"):
-                field = key[:-10]
-                where_clauses.append(f"{field} LIKE %s")
+                where_clauses.append(f"{clean_key} LIKE %s")
                 values.append(f"%{value}%")
             else:
-                where_clauses.append(f"{key} = %s")
+                where_clauses.append(f"{clean_key} = %s")
                 values.append(value)
 
     if start_time:

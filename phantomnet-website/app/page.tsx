@@ -32,13 +32,16 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-4 mb-16"
+          className="flex flex-wrap justify-center gap-4 mb-16"
         >
-          <Link href="/contact" className="px-8 py-3 bg-pn-neon-blue text-pn-dark-blue font-semibold rounded-md hover:bg-pn-electric-purple hover:text-pn-heading transition-all duration-300 text-lg shadow-lg">
-            Request Demo
+          <Link href="/user" className="px-8 py-3 bg-pn-neon-blue text-pn-dark-blue font-semibold rounded-md hover:bg-pn-electric-purple hover:text-pn-heading transition-all duration-300 text-lg shadow-lg">
+            Enter User Shield
           </Link>
-          <Link href="/architecture" className="px-8 py-3 border border-pn-neon-blue text-pn-neon-blue font-semibold rounded-md hover:bg-pn-neon-blue hover:text-pn-dark-blue transition-all duration-300 text-lg shadow-lg">
-            View Architecture
+          <Link href="/admin" className="px-8 py-3 border border-pn-neon-blue text-pn-neon-blue font-semibold rounded-md hover:bg-pn-neon-blue hover:text-pn-dark-blue transition-all duration-300 text-lg shadow-lg">
+            Command Center (Admin)
+          </Link>
+          <Link href="/contact" className="px-8 py-3 border border-pn-electric-purple text-pn-electric-purple font-semibold rounded-md hover:bg-pn-electric-purple hover:text-pn-heading transition-all duration-300 text-lg shadow-lg">
+            Request Demo
           </Link>
         </motion.div>
 

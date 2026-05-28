@@ -4,7 +4,7 @@ import asyncio
 import logging
 import json
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from shared.logger_config import logger
 from .schemas import NormalizedLog, PhantomQLQuery, QueryResult # Import models
@@ -101,18 +101,18 @@ if __name__ == "__main__":
 
         # Add some mock normalized logs
         engine.add_indexed_log(NormalizedLog(
-            event_id=str(uuid.uuid4()), timestamp=datetime.utcnow(), event_type="process.create",
+            event_id=str(uuid.uuid4()), timestamp=datetime.now(timezone.utc), event_type="process.create",
             source_system="agent-linux", host_id="server-1", message="Process 'bash' created by user 'root'",
             full_data={"process_name": "bash", "user": "root", "pid": 1234}
         ))
         engine.add_indexed_log(NormalizedLog(
-            event_id=str(uuid.uuid4()), timestamp=datetime.utcnow() - timedelta(minutes=5), event_type="network.connection",
+            event_id=str(uuid.uuid4()), timestamp=datetime.now(timezone.utc) - timedelta(minutes=5), event_type="network.connection",
             source_system="agent-windows", host_id="workstation-1", message="Connection from 192.168.1.100 to 8.8.8.8:53",
             source_ip="192.168.1.100", destination_ip="8.8.8.8", destination_port=53, network_protocol="udp",
             full_data={"src_ip": "192.168.1.100", "dst_ip": "8.8.8.8"}
         ))
         engine.add_indexed_log(NormalizedLog(
-            event_id=str(uuid.uuid4()), timestamp=datetime.utcnow() - timedelta(minutes=10), event_type="auth.login",
+            event_id=str(uuid.uuid4()), timestamp=datetime.now(timezone.utc) - timedelta(minutes=10), event_type="auth.login",
             source_system="firewall", host_id="firewall-gw", message="Failed login attempt for user 'baduser' from 1.1.1.1",
             source_ip="1.1.1.1", severity="warning",
             full_data={"user": "baduser", "action": "login_failed"}

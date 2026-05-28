@@ -2,8 +2,7 @@ import asyncio
 import websockets
 import json
 import ssl
-from pathlib import Path
-from typing import asyncio
+from typing import List
 
 from attestation import generate_attestation_payload
 
@@ -22,6 +21,7 @@ class BackendClient:
         self.websocket: websockets.WebSocketClientProtocol = None
         self.running = False
         self.ssl_context = self._create_ssl_context()
+        self.offline_queue: List[dict] = []  # Local event queue for offline operation
 
     def _create_ssl_context(self) -> ssl.SSLContext:
         """Creates an SSL context for mTLS."""
@@ -64,22 +64,50 @@ class BackendClient:
             raise ConnectionRefusedError("Attestation approval not received from backend.")
 
     async def run(self):
+        retry_delay = 1.0
+        max_delay = 60.0
+        backoff_factor = 2.0
+
         while self.running:
             try:
                 if not self.websocket or self.websocket.closed:
-                    print("Connection lost. Attempting to reconnect...")
+                    print(f"Connection lost. Attempting to reconnect (delay: {retry_delay}s)...")
                     await self.connect()
+                    # Reset backoff on successful connection
+                    retry_delay = 1.0
+
+                    # Flush offline queue events first
+                    if self.offline_queue:
+                        print(f"Flushing {len(self.offline_queue)} buffered offline events...")
+                        while self.offline_queue:
+                            off_event = self.offline_queue[0]
+                            await self.websocket.send(json.dumps(off_event))
+                            self.offline_queue.pop(0)
+                        print("All offline events successfully flushed.")
                 
                 event = await self.event_queue.get()
-                await self.websocket.send(json.dumps(event))
-                self.event_queue.task_done()
+                try:
+                    if not self.websocket or self.websocket.closed:
+                        self.offline_queue.append(event)
+                        print(f"Offline: Buffered event locally. Buffered count: {len(self.offline_queue)}")
+                        self.event_queue.task_done()
+                    else:
+                        await self.websocket.send(json.dumps(event))
+                        self.event_queue.task_done()
+                except Exception as send_err:
+                    self.offline_queue.append(event)
+                    print(f"Send failed, buffering event locally. Error: {send_err}")
+                    self.event_queue.task_done()
+                    raise
 
             except (ConnectionRefusedError, ConnectionError, websockets.exceptions.InvalidURI, websockets.exceptions.ConnectionClosed) as e:
-                print(f"Connection error: {e}. Retrying in 15 seconds.")
-                await asyncio.sleep(15)
+                print(f"Connection error: {e}. Retrying in {retry_delay} seconds.")
+                await asyncio.sleep(retry_delay)
+                retry_delay = min(retry_delay * backoff_factor, max_delay)
             except Exception as e:
-                print(f"An unexpected error occurred in the run loop: {e}. Retrying in 30 seconds.")
-                await asyncio.sleep(30)
+                print(f"An unexpected error occurred in the run loop: {e}. Retrying in {retry_delay} seconds.")
+                await asyncio.sleep(retry_delay)
+                retry_delay = min(retry_delay * backoff_factor, max_delay)
 
     def start(self):
         """Starts the backend client connection loop."""

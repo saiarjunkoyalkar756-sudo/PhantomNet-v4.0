@@ -1,7 +1,8 @@
 import jwt
 import asyncio # Keep for possible future async operations or background tasks if re-introduced
 import logging
-from datetime import datetime, timedelta
+import hashlib
+from datetime import datetime, timedelta, timezone
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa # Keep rsa for public_key() from private_key
 from cryptography.hazmat.backends import default_backend
@@ -51,13 +52,13 @@ class JWTManager:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        return str(abs(hash(fingerprint)))[:8] # Short hash as KID
+        return hashlib.sha256(fingerprint).hexdigest()[:8] # Stable hash as KID
 
     def get_token(self, payload: Optional[Dict[str, Any]] = None) -> str:
         """
         Generates a signed JWT for agent authentication.
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires = now + timedelta(minutes=self.token_expiry_minutes)
 
         jwt_payload = {

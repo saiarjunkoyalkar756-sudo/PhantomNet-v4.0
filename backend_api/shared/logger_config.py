@@ -38,6 +38,8 @@ def serialize(record):
         "message": message,
         "service_name": os.getenv("SERVICE_NAME", "unknown_service"),
         "environment": os.getenv("ENVIRONMENT", "production"), # Hardened default
+        "correlation_id": record["extra"].get("correlation_id"),
+        "request_id": record["extra"].get("request_id"),
     }
     # Add exception details if present
     if record["exception"]:

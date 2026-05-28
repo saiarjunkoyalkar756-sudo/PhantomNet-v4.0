@@ -18,11 +18,13 @@ import pandas as pd
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, Request
 
+from backend_api.shared.kafka_topics import TOPICS
+
 # --- Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-SOURCE_TOPIC = 'normalized-events'
-DESTINATION_TOPIC = 'alerts'
-THREAT_PREDICTIONS_TOPIC = 'threat-predictions'
+SOURCE_TOPIC = TOPICS["NORMALIZED_EVENTS"]
+DESTINATION_TOPIC = TOPICS["ALERTS"]
+THREAT_PREDICTIONS_TOPIC = TOPICS["THREAT_INTEL"]
 GROUP_ID = 'ai-behavioral-engine-group'
 DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 EVENT_THRESHOLD = 100

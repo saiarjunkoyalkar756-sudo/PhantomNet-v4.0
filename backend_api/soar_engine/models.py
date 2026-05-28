@@ -70,6 +70,7 @@ class PlaybookRun(BaseModel):
     start_time: datetime = Field(default_factory=datetime.utcnow)
     end_time: Optional[datetime] = None
     status: PlaybookStatus = PlaybookStatus.PENDING # Overall status of the playbook run
+    playbook: Optional[Playbook] = None
     execution_logs: List[PlaybookExecutionLog] = Field(default_factory=list)
     current_context: Dict[str, Any] = Field(default_factory=dict) # Dynamic context during execution
     

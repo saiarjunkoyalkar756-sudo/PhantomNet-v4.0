@@ -6,13 +6,15 @@ import { Mail, Phone, MapPin, Send } from 'lucide-react'; // Lucide icons
 
 const sectionVariants = {
     hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
 };
 
 const formFieldVariants = {
     hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
 };
+
+const itemVariants = formFieldVariants;
 
 export default function ContactPage() {
     return (

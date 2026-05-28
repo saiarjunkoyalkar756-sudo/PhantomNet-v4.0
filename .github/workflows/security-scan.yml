@@ -1,0 +1,70 @@
+name: Weekly Security Scan — PhantomNet v4.0
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"  # Run every Sunday at midnight
+  workflow_dispatch:     # Allow manual trigger
+
+jobs:
+  security-audit:
+    name: Security Scans & Secrets Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 1. Check for hardcoded secrets in the git history
+      - name: Detect Secrets & Credentials
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # 2. Scan Python dependencies for known CVEs
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Audit Python dependencies for CVEs
+        run: |
+          pip install safety pip-audit
+          pip-audit -r requirements.txt --desc on
+
+      # 3. Scan Docker Image vulnerabilities via Trivy
+      - name: Build local audit image
+        run: |
+          docker build -t phantomnet-audit:latest -f phantomnet_agent/Dockerfile .
+
+      - name: Run Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        id: trivy-scan
+        with:
+          image-ref: 'phantomnet-audit:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      # 4. Static Application Security Testing (SAST)
+      - name: Run Bandit SAST Check
+        run: |
+          pip install bandit
+          bandit -r backend_api/ shared/ phantomnet_agent/ -f json -o bandit-results.json --exit-zero
+
+      # 5. Create GitHub Issue on critical security alerts
+      - name: Create Alert Issue
+        if: failure()
+        uses: dacbd/create-issue-action@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "🚨 PhantomNet Security Advisory: Critical Vulnerability Found"
+          body: |
+            ## Automated Weekly Security Advisory
+            A critical vulnerability or credential exposure has been discovered during the automated weekly security audit.
+            
+            ### Audit Details
+            - **Scan Date**: ${{ github.event.repository.updated_at }}
+            - **Trigger**: Weekly Cron Schedule
+            - **Action Required**: Inspect the Gitleaks/Trivy/Safety scanning steps in the actions run immediately.

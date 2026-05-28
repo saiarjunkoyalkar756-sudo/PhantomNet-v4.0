@@ -126,7 +126,11 @@ def update_case(case_id: int, updates: dict):
     try:
         set_clauses = []
         values = []
+        allowed_columns = {"title", "description", "status", "severity", "assigned_to", "created_at", "updated_at", "timeline", "notes", "playbook_status"}
         for key, value in updates.items():
+            if key not in allowed_columns:
+                logger.error(f"Invalid case update field: {key}")
+                return False
             set_clauses.append(f"{key} = %s")
             values.append(value)
         

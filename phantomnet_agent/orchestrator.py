@@ -159,6 +159,49 @@ class Orchestrator:
                     command_payload = normalized_event.payload.get("payload", {})
                     command_id = normalized_event.payload.get("command_id")
 
+                    # Command signature verification & tamper detection (Phase 5, point 8)
+                    signature = normalized_event.payload.get("signature")
+                    from pathlib import Path
+                    ca_cert_path = Path(__file__).parent / "certs" / "ca.crt"
+                    
+                    if not signature:
+                        if os.getenv("PHANTOMNET_ENFORCE_SIGNATURES", "false").lower() == "true":
+                            self.logger.error(f"Command {command_id} rejected: Missing cryptographic signature.")
+                            await self.agent_executor._stream_response_to_ui(command_id, "failed", "Tampered or unsigned command rejected.")
+                            continue
+                        else:
+                            self.logger.warning(f"Command {command_id} is missing signature. Proceeding as PHANTOMNET_ENFORCE_SIGNATURES is false.")
+                    else:
+                        from cryptography.hazmat.primitives.asymmetric import padding
+                        from cryptography.hazmat.primitives import hashes
+                        from cryptography.exceptions import InvalidSignature
+                        from cryptography import x509
+                        
+                        try:
+                            if ca_cert_path.exists():
+                                with open(ca_cert_path, "rb") as f:
+                                    ca_cert_data = f.read()
+                                cert = x509.load_pem_x509_certificate(ca_cert_data)
+                                public_key = cert.public_key()
+                                
+                                verify_payload = f"{command_type}:{command_id}:{json.dumps(command_payload, sort_keys=True)}"
+                                
+                                public_key.verify(
+                                    bytes.fromhex(signature),
+                                    verify_payload.encode('utf-8'),
+                                    padding.PKCS1v15(),
+                                    hashes.SHA256()
+                                )
+                                self.logger.info(f"Command {command_id} signature verified successfully.")
+                            else:
+                                self.logger.warning(f"CA certificate not found at {ca_cert_path}. Skipping signature verification fallback.")
+                        except InvalidSignature:
+                            self.logger.critical(f"TAMPER DETECTION TRIGGERED! Command {command_id} signature verification failed!")
+                            await self.agent_executor._stream_response_to_ui(command_id, "failed", "Command validation failed: Signature mismatch (Tampered).")
+                            continue
+                        except Exception as e:
+                            self.logger.warning(f"Command signature check warning: {e}")
+
                     if command_type == "execute_os_command":
                         await self.agent_executor.execute_os_command(command_id, cmd=command_payload.get("cmd"), shell=command_payload.get("shell", False))
                     elif command_type == "control_collector":

@@ -9,7 +9,7 @@ from shared.platform_utils import (
     _check_command_exists,
     _detect_system_capabilities,
     get_platform_details,
-    OS_WINDOWS, OS_LINUX, OS_TERMUX,
+    OS_WINDOWS, OS_LINUX, OS_TERMUX, OS_UNKNOWN,
     IS_WINDOWS, IS_LINUX, IS_TERMUX, IS_ROOT,
     HAS_EBPF, HAS_PCAP, CAN_BIND_LOW_PORTS, SAFE_MODE,
 )
@@ -40,7 +40,7 @@ def reset_platform_info():
          patch('shared.platform_utils.HAS_PCAP', False), \
          patch('shared.platform_utils.CAN_BIND_LOW_PORTS', False), \
          patch('shared.platform_utils.SAFE_MODE', False), \
-         patch('shared.platform_utils.PLATFORM_INFO', {{}}):
+         patch('shared.platform_utils.PLATFORM_INFO', {}):
         yield
     
     # Restore original values (if necessary, though tests modify these for their scope)
@@ -59,7 +59,7 @@ class TestPlatformUtils:
 
     @patch('os.name', 'posix')
     @patch('platform.system', MagicMock(return_value='Linux'))
-    @patch.dict(os.environ, {{}}, clear=True) # Ensure ANDROID_ROOT is not set
+    @patch.dict(os.environ, {}, clear=True) # Ensure ANDROID_ROOT is not set
     def test_detect_os_type_linux(self):
         assert _detect_os_type() == OS_LINUX
 
@@ -69,13 +69,13 @@ class TestPlatformUtils:
 
     @patch('os.name', 'posix')
     @patch('platform.system', MagicMock(return_value='Linux'))
-    @patch.dict(os.environ, {{'ANDROID_ROOT': '/data/data/com.termux'}}, clear=True)
+    @patch.dict(os.environ, {'ANDROID_ROOT': '/data/data/com.termux'}, clear=True)
     def test_detect_os_type_termux_android_root(self):
         assert _detect_os_type() == OS_TERMUX
 
     @patch('os.name', 'posix')
     @patch('platform.system', MagicMock(return_value='Linux'))
-    @patch.dict(os.environ, {{'PREFIX': '/data/data/com.termux/files/usr'}}, clear=True)
+    @patch.dict(os.environ, {'PREFIX': '/data/data/com.termux/files/usr'}, clear=True)
     def test_detect_os_type_termux_prefix(self):
         assert _detect_os_type() == OS_TERMUX
 
@@ -155,7 +155,7 @@ class TestPlatformUtils:
         assert caps['can_bind_low_ports'] == False
         assert caps['supports_raw_sockets'] == False
 
-    @patch.dict(os.environ, {{'PHANTOMNET_SAFE_MODE': 'true'}}, clear=True)
+    @patch.dict(os.environ, {'PHANTOMNET_SAFE_MODE': 'true'}, clear=True)
     def test_safe_mode_env_override(self):
         # Reloading module to pick up env var
         from importlib import reload
@@ -168,10 +168,10 @@ class TestPlatformUtils:
 
     @patch('shared.platform_utils.CURRENT_OS_TYPE', OS_LINUX)
     @patch('shared.platform_utils.IS_ROOT', True)
-    @patch('shared.platform_utils._detect_system_capabilities', return_value={{
+    @patch('shared.platform_utils._detect_system_capabilities', return_value={
         "os_type": OS_LINUX, "is_root": True, "has_ebpf": True, "has_pcap": True,
         "can_bind_low_ports": True, "supports_raw_sockets": True, "safe_mode": False
-    }})
+    })
     def test_get_platform_details(self):
         details = get_platform_details()
         assert details['os_type'] == OS_LINUX
