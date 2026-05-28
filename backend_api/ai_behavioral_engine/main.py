@@ -19,6 +19,8 @@ from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, Request
 
 from backend_api.shared.kafka_topics import TOPICS
+from backend_api.shared.kafka_client import ResilientKafkaConsumer, ResilientKafkaProducer
+from backend_api.core_config import SAFE_MODE
 
 # --- Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
@@ -33,15 +35,15 @@ FORECASTING_INTERVAL_SECONDS = 300
 MAX_EVENTS_FOR_FORECASTING = 10000
 
 # --- State ---
-KAFKA_SAFE_MODE = False
+KAFKA_SAFE_MODE = SAFE_MODE
 ML_SAFE_MODE = False
-KAFKA_SAFE_MODE_REASON = ""
+KAFKA_SAFE_MODE_REASON = "Running in SAFE_MODE" if SAFE_MODE else ""
 ML_SAFE_MODE_REASON = ""
 agent_event_history = {}
 network_flows = []
 all_events: List[dict] = []
-consumer: Optional[KafkaConsumer] = None
-producer: Optional[KafkaProducer] = None
+consumer: Optional[ResilientKafkaConsumer] = None
+producer: Optional[ResilientKafkaProducer] = None
 stop_processing_event = asyncio.Event()
 
 # --- Model Init ---
@@ -60,22 +62,21 @@ except Exception as e:
 
 def initialize_kafka():
     global consumer, producer, KAFKA_SAFE_MODE, KAFKA_SAFE_MODE_REASON
+    if SAFE_MODE:
+        KAFKA_SAFE_MODE = True
+        KAFKA_SAFE_MODE_REASON = "Running in SAFE_MODE"
+        logger.warning("SAFE_MODE is ON. Kafka initialization skipped.")
+        return True
     try:
-        if consumer: consumer.close()
-        if producer: producer.close()
-        consumer = KafkaConsumer(
-            SOURCE_TOPIC,
+        producer = ResilientKafkaProducer(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
+        consumer = ResilientKafkaConsumer(
+            topic=SOURCE_TOPIC,
             bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-            auto_offset_reset='earliest',
             group_id=GROUP_ID,
-            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-        )
-        producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+            dlq_topic=f"{SOURCE_TOPIC}.dlq"
         )
         KAFKA_SAFE_MODE = False
-        logger.info("Kafka initialized.")
+        logger.info("Resilient Kafka initialized.")
         return True
     except Exception as e:
         KAFKA_SAFE_MODE = True
@@ -92,29 +93,34 @@ async def run_threat_forecasting():
             events_df = pd.DataFrame(all_events)
             predictions = threat_forecaster.predict_threats(events_df)
             for prediction in predictions:
-                producer.send(THREAT_PREDICTIONS_TOPIC, prediction)
+                if producer:
+                    producer.send(THREAT_PREDICTIONS_TOPIC, prediction)
         except Exception as e:
             logger.error(f"Forecasting error: {e}")
 
-async def consume_and_process_kafka_messages():
-    global network_flows, all_events
-    while not stop_processing_event.is_set():
-        if KAFKA_SAFE_MODE:
-            await asyncio.sleep(30)
-            if not initialize_kafka(): continue
+def process_event(event: dict):
+    global all_events
+    try:
+        if len(all_events) >= MAX_EVENTS_FOR_FORECASTING:
+            all_events.pop(0)
+        all_events.append(event)
+        # ... processing logic (UEBA, IDS, etc.) ...
+        # (Logic remains same as original script)
+        logger.debug(f"Processed event in AI behavioral engine: {event.get('event_id')}")
+    except Exception as e:
+        logger.error(f"Error processing event: {e}")
+        raise  # Re-raise to trigger DLQ logic
 
-        try:
-            for message in consumer:
-                if stop_processing_event.is_set(): break
-                event = message.value
-                if len(all_events) >= MAX_EVENTS_FOR_FORECASTING:
-                    all_events.pop(0)
-                all_events.append(event)
-                # ... processing logic (UEBA, IDS, etc.) ...
-                # (Logic remains same as original script)
-        except Exception as e:
-            logger.error(f"Consumer error: {e}")
-            KAFKA_SAFE_MODE = True
+async def consume_and_process_kafka_messages():
+    if SAFE_MODE:
+        logger.warning("SAFE_MODE is ON. consume_and_process_kafka_messages is disabled.")
+        return
+    if not consumer:
+        initialize_kafka()
+    if consumer:
+        logger.info("AI Behavioral Engine: Waiting for messages...")
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, consumer.listen, process_event)
 
 async def ai_behavioral_startup(app: FastAPI):
     initialize_kafka()

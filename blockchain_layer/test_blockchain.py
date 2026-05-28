@@ -1,5 +1,17 @@
-import pytest
+import sys
 import os
+# Prevent shadowing of global backend_api by local blockchain_layer/backend_api
+for path in list(sys.path):
+    if "blockchain_layer" in path:
+        try:
+            sys.path.remove(path)
+        except ValueError:
+            pass
+if "" in sys.path:
+    sys.path.remove("")
+sys.path.insert(0, "/home/joyhark522/PhantomNet-v4.0")
+
+import pytest
 import json
 import datetime
 import importlib
@@ -12,10 +24,10 @@ from backend_api.shared.database import Base, Block, Transaction, SessionLocal #
 # Define a fixture for an in-memory SQLite database session for testing
 @pytest.fixture(scope="function")
 def db_session_factory():
-    # Define the database file path in a temporary location
+    # Define the database file path in a temporary location inside the workspace
     db_file_path = os.path.join(
-        "/data/data/com.termux/files/home/.gemini/tmp/ad1ea826cb0f4295afdb1907c7352a84a1a1003965f03d9432baf71cd1d2a7bf",
-        f"test_db_{os.getpid()}.db",
+        "/home/joyhark522/PhantomNet-v4.0",
+        f"test_db_blockchain_{os.getpid()}.db",
     )
 
     # Ensure the directory exists
@@ -26,9 +38,9 @@ def db_session_factory():
         os.remove(db_file_path)
 
     # RELOAD THE DATABASE MODULE AGGRESSIVELY
-    import backend_api.database
+    import backend_api.shared.database
 
-    importlib.reload(backend_api.database)
+    importlib.reload(backend_api.shared.database)
  
 
     # Create a local engine and SessionLocal for this test, using the reloaded database module's Base
@@ -37,12 +49,21 @@ def db_session_factory():
     )
     LocalSession = sessionmaker(autocommit=False, autoflush=False, bind=local_engine)
 
+    # Overwrite the global SessionLocal inside backend_api.shared.database and test_blockchain
+    original_session_local = backend_api.shared.database.SessionLocal
+    backend_api.shared.database.SessionLocal = LocalSession
+    globals()["SessionLocal"] = LocalSession
+
     # Drop all tables to ensure a clean slate, including previous runs
     Base.metadata.drop_all(bind=local_engine)
     # Create tables based on the latest schema for this local engine
     Base.metadata.create_all(bind=local_engine)
 
     yield LocalSession
+
+    # Restore SessionLocal on teardown
+    backend_api.shared.database.SessionLocal = original_session_local
+    globals()["SessionLocal"] = original_session_local
 
     # Clean up the database after each test
     Base.metadata.drop_all(bind=local_engine)
@@ -221,13 +242,15 @@ def test_is_chain_valid_with_tampered_transaction_hash(db_session: Session):
     tx_id = tx.id
 
     # Tamper with the transaction's hash in a new session to simulate external tampering
-    with SessionLocal() as tamper_session:
+    TamperSession = sessionmaker(bind=db_session.bind)
+    with TamperSession() as tamper_session:
         tampered_tx = tamper_session.query(Transaction).filter_by(id=tx_id).first()
         tampered_tx.transaction_hash = "another_fake_hash"
         tamper_session.commit()
 
     # Create a new blockchain instance with a fresh session to validate the tampered chain
-    with SessionLocal() as validate_session:
+    ValidateSession = sessionmaker(bind=db_session.bind)
+    with ValidateSession() as validate_session:
         blockchain_validator = Blockchain(validate_session)
         assert blockchain_validator.is_chain_valid() is False
 

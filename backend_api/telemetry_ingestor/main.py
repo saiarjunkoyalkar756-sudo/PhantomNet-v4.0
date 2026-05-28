@@ -2,7 +2,8 @@ from backend_api.shared.service_factory import create_phantom_service
 from backend_api.shared.health_utils import check_kafka_health, perform_full_health_check
 from backend_api.core.response import success_response, error_response
 from loguru import logger
-from kafka import KafkaProducer
+from backend_api.shared.kafka_topics import RAW_TELEMETRY
+from backend_api.shared.kafka_client import ResilientKafkaProducer
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 from uuid import UUID
@@ -12,20 +13,17 @@ from fastapi import FastAPI, HTTPException, Request
 
 # --- Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-TELEMETRY_TOPIC = 'telemetry-events'
+TELEMETRY_TOPIC = RAW_TELEMETRY
 DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 # --- Global State ---
-producer: Optional[KafkaProducer] = None
+producer: Optional[ResilientKafkaProducer] = None
 
 def get_kafka_producer():
     global producer
     if producer is None:
         try:
-            producer = KafkaProducer(
-                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
-            )
+            producer = ResilientKafkaProducer(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
             logger.info("Kafka producer initialized successfully.")
         except Exception as e:
             logger.error(f"Failed to initialize Kafka producer: {e}")

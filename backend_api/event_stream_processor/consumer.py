@@ -3,9 +3,9 @@ import logging
 import json
 import os
 import time
-from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import NoBrokersAvailable
 
+from backend_api.shared.kafka_topics import RAW_TELEMETRY, ALERTS
+from backend_api.shared.kafka_client import ResilientKafkaConsumer, ResilientKafkaProducer
 from .database import insert_event, create_events_table
 from core_config import SAFE_MODE
 
@@ -13,9 +13,10 @@ logger = logging.getLogger(__name__)
 
 # --- Kafka Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-KAFKA_TOPIC_IN = os.getenv('ESP_KAFKA_TOPIC_IN', 'attack_logs')
-KAFKA_TOPIC_OUT = os.getenv('ESP_KAFKA_TOPIC_OUT', 'alerts')
+KAFKA_TOPIC_IN = os.getenv('ESP_KAFKA_TOPIC_IN', RAW_TELEMETRY)
+KAFKA_TOPIC_OUT = os.getenv('ESP_KAFKA_TOPIC_OUT', ALERTS)
 GROUP_ID = os.getenv('ESP_KAFKA_GROUP_ID', 'event-stream-processor-group')
+producer = None
 
 def normalize_event(raw_event):
     """Transforms a raw log event into a standardized format."""
@@ -41,54 +42,39 @@ def check_for_alert(normalized_event):
         }
     return None
 
+def process_event(raw_event):
+    """Processes a raw event, normalizes it, inserts to database, and triggers alerts if necessary."""
+    try:
+        normalized_event = normalize_event(raw_event)
+        logger.info(f"Normalized event: {normalized_event}")
+        insert_event(normalized_event)
+        alert = check_for_alert(normalized_event)
+        if alert and producer:
+            producer.send(KAFKA_TOPIC_OUT, alert)
+            logger.info(f"Published alert: {alert['alert_name']}")
+    except Exception as e:
+        logger.error(f"Error processing message: {e}", exc_info=True)
+        raise  # Re-raise exception to let ResilientKafkaConsumer trigger DLQ logic
+
 async def start_kafka_consumer():
-    """Starts the Kafka consumer for the Event Stream Processor."""
+    """Starts the resilient Kafka consumer for the Event Stream Processor."""
     if SAFE_MODE:
         logger.warning("SAFE_MODE is ON. Event Stream Processor consumer is disabled.")
         return
 
-    consumer = None
-    producer = None
-    while not consumer or not producer:
-        try:
-            consumer = KafkaConsumer(
-                KAFKA_TOPIC_IN,
-                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-                group_id=GROUP_ID,
-                auto_offset_reset='earliest',
-                value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-            )
-            producer = KafkaProducer(
-                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
-            )
-            logger.info("Successfully connected to Kafka.")
-        except NoBrokersAvailable:
-            logger.error(f"Could not connect to Kafka at {KAFKA_BOOTSTRAP_SERVERS}. Retrying in 10 seconds...")
-            await asyncio.sleep(10)
-
     create_events_table()
+    
+    global producer
+    producer = ResilientKafkaProducer(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
+    
+    consumer = ResilientKafkaConsumer(
+        topic=KAFKA_TOPIC_IN,
+        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+        group_id=GROUP_ID,
+        dlq_topic=f"{KAFKA_TOPIC_IN}.dlq"
+    )
+    
     logger.info("Event Stream Processor: Waiting for messages...")
-    try:
-        for message in consumer:
-            try:
-                raw_event = message.value
-                normalized_event = normalize_event(raw_event)
-                logger.info(f"Normalized event: {normalized_event}")
-                insert_event(normalized_event)
-                alert = check_for_alert(normalized_event)
-                if alert:
-                    producer.send(KAFKA_TOPIC_OUT, alert)
-                    logger.info(f"Published alert: {alert['alert_name']}")
-            except json.JSONDecodeError:
-                logger.error(f"Failed to decode Kafka message as JSON: {message.value}")
-            except Exception as e:
-                logger.error(f"Error processing message: {e}", exc_info=True)
-    except Exception as e:
-        logger.critical(f"Critical error in Kafka consumer loop: {e}", exc_info=True)
-    finally:
-        if consumer:
-            consumer.close()
-        if producer:
-            producer.close()
-        logger.info("Kafka consumer and producer stopped.")
+    loop = asyncio.get_running_loop()
+    # Run the listener in a background thread executor as it contains blocking IO loops
+    await loop.run_in_executor(None, consumer.listen, process_event)

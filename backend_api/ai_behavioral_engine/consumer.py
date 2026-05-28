@@ -2,8 +2,6 @@ import asyncio
 import logging
 import json
 import os
-from kafka import KafkaConsumer
-from kafka.errors import NoBrokersAvailable
 import time
 
 from ..ai_behavioral_engine.app import (
@@ -11,8 +9,8 @@ from ..ai_behavioral_engine.app import (
     analyze_behavioral_event,
 )
 from core_config import SAFE_MODE
-
 from backend_api.shared.kafka_topics import TOPICS
+from backend_api.shared.kafka_client import ResilientKafkaConsumer
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +20,8 @@ KAFKA_TOPIC = os.getenv('BEHAVIORAL_KAFKA_TOPIC', TOPICS["NORMALIZED_EVENTS"])
 GROUP_ID = os.getenv('BEHAVIORAL_KAFKA_GROUP_ID', 'behavioral-engine-group')
 
 
-async def _process_event_async(event_data: dict):
-    """Asynchronous part of event processing."""
+def _process_event_sync(event_data: dict):
+    """Synchronous processing callback for resilient consumer."""
     try:
         logger.info(f"Received event for behavioral analysis: {event_data.get('event_id', 'N/A')}")
 
@@ -37,47 +35,35 @@ async def _process_event_async(event_data: dict):
             data=event_data,
         )
 
-        analysis_results = analyze_behavioral_event(event)
-        logger.info(f"Analysis results for {event.event_id}: {analysis_results}")
+        # Note: analyze_behavioral_event is an async function in app.py.
+        # But we can run it using asyncio.run or schedule it on the loop.
+        try:
+            loop = asyncio.get_running_loop()
+            future = asyncio.run_coroutine_threadsafe(analyze_behavioral_event(event), loop)
+            future.result()
+        except RuntimeError:
+            asyncio.run(analyze_behavioral_event(event))
+            
+        logger.info(f"Analysis complete for {event.event_id}")
 
     except Exception as e:
         logger.error(f"Error processing message: {e}", exc_info=True)
+        raise  # Re-raise to trigger DLQ logic
 
 
 async def start_kafka_consumer():
-    """Starts the Kafka consumer for the AI Behavioral Engine."""
+    """Starts the resilient Kafka consumer for the AI Behavioral Engine."""
     if SAFE_MODE:
         logger.warning("SAFE_MODE is ON. AI Behavioral Engine consumer is disabled.")
         return
 
-    consumer = None
-    while not consumer:
-        try:
-            consumer = KafkaConsumer(
-                KAFKA_TOPIC,
-                bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-                group_id=GROUP_ID,
-                auto_offset_reset='earliest',
-                value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-            )
-            logger.info("Successfully connected to Kafka.")
-        except NoBrokersAvailable:
-            logger.error(f"Could not connect to Kafka at {KAFKA_BOOTSTRAP_SERVERS}. Retrying in 10 seconds...")
-            await asyncio.sleep(10)
+    consumer = ResilientKafkaConsumer(
+        topic=KAFKA_TOPIC,
+        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+        group_id=GROUP_ID,
+        dlq_topic=f"{KAFKA_TOPIC}.dlq"
+    )
 
     logger.info("AI Behavioral Engine: Waiting for messages...")
-    try:
-        for message in consumer:
-            try:
-                event_data = message.value
-                await _process_event_async(event_data)
-            except json.JSONDecodeError:
-                logger.error(f"Failed to decode Kafka message as JSON: {message.value}")
-            except Exception as e:
-                logger.error(f"Error processing message: {e}", exc_info=True)
-    except Exception as e:
-        logger.critical(f"Critical error in Kafka consumer loop: {e}", exc_info=True)
-    finally:
-        if consumer:
-            consumer.close()
-        logger.info("Kafka consumer stopped.")
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, consumer.listen, _process_event_sync)

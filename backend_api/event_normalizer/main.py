@@ -7,15 +7,15 @@ import json
 import os
 import asyncio
 from datetime import datetime, timezone
-from kafka import KafkaConsumer, KafkaProducer
+from backend_api.shared.kafka_topics import RAW_TELEMETRY as SOURCE_TOPIC, NORMALIZED_EVENTS as DESTINATION_TOPIC
+from backend_api.shared.kafka_client import ResilientKafkaConsumer, ResilientKafkaProducer
+from backend_api.core_config import SAFE_MODE
 from uuid import UUID
 from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Request
 
 # --- Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-SOURCE_TOPIC = 'telemetry-events'
-DESTINATION_TOPIC = 'normalized-events'
 GROUP_ID = 'event-normalizer-group'
 
 DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
@@ -25,6 +25,7 @@ dna_engine = DNAEngine()
 
 # --- Global State ---
 stop_processing_event = asyncio.Event()
+producer = None
 
 def normalize_event(event_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -41,45 +42,42 @@ def normalize_event(event_data: Dict[str, Any]) -> Dict[str, Any]:
     
     return event_data
 
+def process_event(raw_event: Dict[str, Any]):
+    """Processes a single telemetry event, normalizes it, and sends it to the destination topic."""
+    try:
+        normalized_event = normalize_event(raw_event)
+        logger.info(f"Normalized event: {normalized_event.get('event_id')} type={normalized_event.get('event_type')}")
+        if producer:
+            producer.send(DESTINATION_TOPIC, normalized_event)
+    except Exception as e:
+        logger.error(f"Error normalizing event: {e}")
+        raise  # Re-raise exception to let ResilientKafkaConsumer trigger DLQ logic
+
 async def consume_and_process_kafka_messages():
     logger.info("Starting Kafka consumer for event normalization...")
     await asyncio.sleep(10) # Startup delay
 
+    if SAFE_MODE:
+        logger.warning("SAFE_MODE is ON. Event Normalizer consumer is disabled.")
+        return
+
+    global producer
     try:
-        consumer = KafkaConsumer(
-            SOURCE_TOPIC,
+        producer = ResilientKafkaProducer(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
+        consumer = ResilientKafkaConsumer(
+            topic=SOURCE_TOPIC,
             bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-            auto_offset_reset='earliest',
             group_id=GROUP_ID,
-            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-        )
-        producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+            dlq_topic=f"{SOURCE_TOPIC}.dlq"
         )
         logger.info("Kafka consumer/producer initialized.")
     except Exception as e:
         logger.error(f"Kafka connection failed: {e}")
         return
 
-    try:
-        for message in consumer:
-            if stop_processing_event.is_set():
-                break
-
-            try:
-                raw_event = message.value
-                normalized_event = normalize_event(raw_event)
-                logger.info(f"Normalized event: {normalized_event.get('event_id')} type={normalized_event.get('event_type')}")
-                producer.send(DESTINATION_TOPIC, normalized_event)
-            except Exception as e:
-                logger.error(f"Error normalizing event: {e}")
-    except asyncio.CancelledError:
-        logger.info("Normalizer loop cancelled.")
-    finally:
-        consumer.close()
-        producer.close()
-        logger.info("Event Normalizer backend resources closed.")
+    logger.info("Event Normalizer: Waiting for messages...")
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, consumer.listen, process_event)
 
 async def event_normalizer_startup(app: FastAPI):
     app.state.consumer_task = asyncio.create_task(consume_and_process_kafka_messages())
