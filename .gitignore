@@ -32,22 +32,6 @@ docker-compose.override.yml
 .env
 *.local
 
-# Logs and DB dumps
-*.log
-*.rdb
-dump.rdb
-
-# IDEs
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# Others
-.Dockerfile.swp
-coverage/
-htmlcov/
-node_modules/
 dashboard_frontend/node_modules/
 .env
 
@@ -141,8 +125,20 @@ build/
 # Python env
 venv/
 .venv/
+.venv_phantomnet/
 env/
+
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Project Runtime Logs
+logs/
+
+# IDE & AI Agent folders
+.vscode/
+.idea/
+.ai-agents/
+
+
