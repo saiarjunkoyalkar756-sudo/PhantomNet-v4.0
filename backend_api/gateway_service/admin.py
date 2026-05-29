@@ -92,7 +92,7 @@ async def get_users(
     stmt = stmt.offset(skip).limit(limit)
     result = await db.execute(stmt)
     users = result.scalars().all()
-    
+    user_list = [UserInDB.model_validate(u) for u in users]
     return success_response(data=user_list)
 
 @router.get("/blacklist/list")
