@@ -1,5 +1,5 @@
 # backend_api/core/response.py
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 from fastapi.responses import JSONResponse
 
@@ -9,7 +9,7 @@ def success_response(data: Any, request_id: Optional[str] = None):
         "data": data,
         "error": None,
         "request_id": request_id,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 def error_response(code: str, message: str, details: Optional[dict] = None, status_code: int = 400, request_id: Optional[str] = None):
@@ -24,6 +24,6 @@ def error_response(code: str, message: str, details: Optional[dict] = None, stat
                 "details": details or {}
             },
             "request_id": request_id,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     )
