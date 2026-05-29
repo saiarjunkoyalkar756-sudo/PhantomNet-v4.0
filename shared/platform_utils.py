@@ -12,13 +12,11 @@ logger = logging.getLogger(__name__)
 # --- Constants for OS types ---
 OS_WINDOWS = "windows"
 OS_LINUX = "linux"
-OS_TERMUX = "termux"
 OS_UNKNOWN = "unknown"
 
 # --- Global Capability Flags (populated on import) ---
 IS_WINDOWS = False
 IS_LINUX = False
-IS_TERMUX = False
 IS_ROOT = False
 HAS_PCAP = False
 HAS_EBPF = False
@@ -32,9 +30,8 @@ def _detect_os_type() -> str:
     if os.name == 'nt':
         return OS_WINDOWS
     elif os.name == 'posix':
-        if "ANDROID_ROOT" in os.environ or (platform.system() == 'Linux' and 'com.termux' in os.getenv('PREFIX', '')):
-            return OS_TERMUX
-        return OS_LINUX
+        if platform.system() == 'Linux':
+            return OS_LINUX
     return OS_UNKNOWN
 
 def _is_root_user() -> bool:
@@ -47,7 +44,7 @@ def _is_root_user() -> bool:
             # For Windows, check if process is elevated
             import ctypes
             return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    else: # Linux/Termux
+    else: # Linux
         return os.geteuid() == 0
 
 import shutil
@@ -73,7 +70,6 @@ def _detect_system_capabilities() -> Dict[str, Any]:
         "has_npcap": False, # Windows packet capture driver
         "has_wmi": False, # Windows Management Instrumentation
         "has_pywin32": False, # Python for Windows extensions
-        "has_toybox": False, # Termux utility set
         "supports_raw_sockets": False,
         "safe_mode": False, # Default to False, can be overridden by env var or config
     }
@@ -104,13 +100,6 @@ def _detect_system_capabilities() -> Dict[str, Any]:
         caps["supports_raw_sockets"] = True # Linux generally supports raw sockets, but requires CAP_NET_RAW or root
         # eBPF check - presence of libbpf or bcc tools
         caps["has_ebpf"] = _check_command_exists("bpftool") or _check_command_exists("bcc")
-    elif CURRENT_OS_TYPE == OS_TERMUX:
-        caps["has_pcap"] = _check_command_exists("libpcap") # Termux has libpcap package
-        caps["has_toybox"] = _check_command_exists("toybox")
-        # Termux generally restricts raw sockets. We'll assume false for unprivileged users.
-        caps["supports_raw_sockets"] = False # Very restricted on Termux
-        caps["can_bind_low_ports"] = False # Usually not possible without root/special setup
-        caps["has_ebpf"] = False # Not typically supported on Termux kernel
 
     # Check for SAFE_MODE override
     if os.getenv("PHANTOMNET_SAFE_MODE", "false").lower() == "true":
@@ -126,7 +115,6 @@ PLATFORM_INFO = _detect_system_capabilities()
 
 IS_WINDOWS = (CURRENT_OS_TYPE == OS_WINDOWS)
 IS_LINUX = (CURRENT_OS_TYPE == OS_LINUX)
-IS_TERMUX = (CURRENT_OS_TYPE == OS_TERMUX)
 
 HAS_PCAP = PLATFORM_INFO["has_pcap"]
 HAS_EBPF = PLATFORM_INFO["has_ebpf"]
