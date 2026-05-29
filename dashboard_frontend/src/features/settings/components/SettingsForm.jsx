@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ToggleSwitch from './ToggleSwitch';
 import SliderControl from './SliderControl';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Save, AlertTriangle } from 'lucide-react';
 
 const SettingsForm = () => {

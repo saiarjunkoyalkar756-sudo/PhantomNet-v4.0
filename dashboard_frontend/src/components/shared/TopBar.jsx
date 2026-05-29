@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Bell, User, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ModeToggle } from './ThemeToggler';
 import {
   DropdownMenu,

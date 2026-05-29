@@ -12,7 +12,7 @@ import { ArrowUpDown, Shield } from 'lucide-react';
 import StatusChip from '@/components/shared/StatusChip';
 import ActionMenu from './ActionMenu';
 import AgentModal from './AgentModal';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 // Dummy data for agents

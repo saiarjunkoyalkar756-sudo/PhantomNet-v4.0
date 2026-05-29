@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { GitGraph, ZoomIn, ZoomOut } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 // This is a placeholder for a complex graph visualization component.
 // A real implementation would involve libraries like react-force-graph, vis.js, or D3.

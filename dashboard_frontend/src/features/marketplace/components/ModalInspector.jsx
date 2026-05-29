@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { ToggleLeft, Info, FileText, CheckCircle, XCircle } from 'lucide-react';
 import StatusChip from '@/components/shared/StatusChip';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 const ModalInspector = ({ plugin, isOpen, onClose, onToggleEnable }) => {
   if (!plugin) return null;

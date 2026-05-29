@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
 import { motion } from 'framer-motion';
-import { Cloud, Lock, ShieldAlert, Aws } from 'lucide-react';
+import { Cloud, Lock, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -105,7 +105,7 @@ const CloudSecurityPage = () => {
       />
 
       <div className="p-4 bg-card rounded-lg shadow-sm">
-        <h3 className="text-lg font-semibold mb-2 flex items-center"><Aws className="mr-2" />AWS Configuration</h3>
+        <h3 className="text-lg font-semibold mb-2 flex items-center"><Cloud className="mr-2" />AWS Configuration</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <Label htmlFor="awsAccessKeyId">AWS Access Key ID</Label>
