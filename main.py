@@ -151,4 +151,4 @@ async def health_check():
 if __name__ == "__main__":
     port = int(os.environ.get("UNIFIED_PORT", 8000))
     logger.info(f"Starting PhantomNet Unified Stack on port {port}...")
-    uvicorn.run("main.py:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

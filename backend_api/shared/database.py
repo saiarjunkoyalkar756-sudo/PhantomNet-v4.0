@@ -402,7 +402,8 @@ def create_db_and_tables(engine_obj=None):
     if engine_obj is None:
         engine_obj = sync_engine
         
-    if hasattr(engine_obj, "begin"):
+    from sqlalchemy.ext.asyncio import AsyncEngine
+    if isinstance(engine_obj, AsyncEngine):
         import asyncio
         async def _create_async():
             async with engine_obj.begin() as conn:
