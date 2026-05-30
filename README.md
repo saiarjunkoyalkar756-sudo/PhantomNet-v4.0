@@ -10,7 +10,26 @@
 
 ---
 
-PhantomNet v4.0 is a production-grade, distributed autonomous cyber defense and XDR operations grid. It automates high-speed threat ingestion, correlates security events with a custom query AST compiler, logs integrity audits onto an immutable blockchain ledger, and deploys cross-platform telemetry endpoint agents.
+PhantomNet v4.0 is a production-grade, distributed autonomous cyber defense, Breach and Attack Simulation (BAS), and XDR operations grid. It automates high-speed threat ingestion, correlates security events with a custom query AST compiler, logs integrity audits onto an immutable blockchain ledger, and deploys cross-platform telemetry endpoint agents.
+
+---
+
+## 🌌 What is PhantomNet v4.0?
+
+PhantomNet is a state-of-the-art security control validation and autonomous response architecture designed to defend modern enterprise infrastructure. It allows organizations to simulate complex adversary campaigns in a safe sandbox while actively validating and calibrating their production-grade defense pipelines (WAFs, EDRs, firewalls, and SIEMs).
+
+### 🛡️ Core Defensive Pillars
+* **Breach & Attack Emulation:** Automates continuous, gradated simulations from simple SQL injections and link-based phishing campaigns up to advanced Golden Ticket Active Directory takeovers, supplying the exact threat profile to the sensors.
+* **Autonomous SOAR Orchestration:** Parses threat vectors dynamically to calculate risk exposures. If the defense evaluation drops below strict thresholds, the SOAR engine executes dynamic containment countermeasures (including host network isolation, active malicious process terminations, and firewall IP blockades).
+* **Automated Volatile Forensics:** Immediately compiles forensic capture jobs (e.g. Volatility RAM memory dumps, syslog archives) the moment a high-risk alert triggers, preserving volatile artifact evidence in the Forensics Vault.
+* **Immutable Security Ledgers:** Cryptographically logs alert audits onto an immutable blockchain ledger to enforce absolute accountability and audit compliance, preventing internal tampering.
+
+### ⛓️ The Telemetry Pipeline (Under the Hood)
+When a threat is simulated or detected, the event traverses a real-time production data stack:
+1. **Dynamic Rate Limiting (Redis):** The API Gateway checks the source IP against blocked IP lists and limits socket rates via Redis pipeline counters to prevent ingestion flooding.
+2. **Telemetry Ingestion Bus (Redpanda):** Structured events are published to Redpanda/Kafka queues (`normalized_events`) to absorb high-frequency thread spikes.
+3. **AI Analysis & Correlation Core (PostgreSQL):** The Event Normalizer and AI Core parse the stream, mapping alerts to PostgreSQL relation schemas and storing transactional SOAR states.
+4. **Attack Path Mapping (Neo4j):** Mapped relations are evaluated inside a Bolt graph database to visualize adversary lateral movements and directory privilege escalations.
 
 ---
 
@@ -46,26 +65,28 @@ PhantomNet-v4.0/
 
 ## 🚪 Quick Start (Development)
 
-### 1. Backend Microservices Stack
-Configure your secrets template inside `.env`:
+The complete deployment instructions including databases, API gateways, and user dashboard setups are structured in the [Deploy.md](Deploy.md) guide.
+
+### Option A: Optimized Local-Hybrid Setup (Recommended)
 ```bash
-cp .env.example .env
-docker compose up -d --build
+# 1. Start postgres, redis, redpanda, and neo4j in Docker
+DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" docker compose up -d postgres redis redpanda neo4j
+
+# 2. Start the unified FastAPI Backend Core
+source .venv_phantomnet/bin/activate
+DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" REDIS_HOST="localhost" KAFKA_BOOTSTRAP_SERVERS="localhost:9092" python main.py
+
+# 3. Start the User Dashboard Console (Vite)
+cd dashboard_frontend && npm run dev -- --port 3000 --host 0.0.0.0
 ```
 
-### 2. Next.js Marketing & Portals
-Navigate to the web portal directory, install packages, and spin up the hot-reload Turbopack compiler:
+### Option B: Fully Containerized Dev Stack (Docker Only)
 ```bash
-cd phantomnet-website
-npm install
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to browse the marketing pages or go to `/admin` and `/user` to access the dashboards.
+# 1. Start all 28 microservices + databases in Docker
+DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" docker compose up -d
 
-### 3. Run Test Suite
-Provide your credentials and execute unit/integration test suites on the host:
-```bash
-PYTHONPATH=.:phantomnet_agent JWT_SECRET_KEY=changeme DB_PASSWORD=changeme NEO4J_PASSWORD=changeme pytest tests/
+# 2. Start the User Dashboard Console (Vite)
+cd dashboard_frontend && npm run dev -- --port 3000 --host 0.0.0.0
 ```
 
 ---
@@ -105,3 +126,4 @@ The cross-platform agent compiles cleanly and runs across multiple host architec
 
 * **[Production Runbook](docs/runbook.md):** System monitoring, database scaling, backup and recovery operations, and incident response procedures.
 * **[API Reference](docs/api-reference.md):** Complete developer REST API specifications for authentication, agents, SOAR execution, and forensics triggers.
+* **[Deploy.md Reference](Deploy.md):** Full setup guide, operational cheat sheets, and active testing targets.
