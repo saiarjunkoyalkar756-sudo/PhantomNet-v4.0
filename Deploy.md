@@ -156,4 +156,34 @@ git commit -m "docs: Add Deploy.md and comprehensive simulation testing scripts"
 
 # Push the committed changes to your main branch on GitHub
 git push origin main
+
+---
+
+## 8. Frontend Deployment via Vercel
+
+The User Dashboard Console can be easily deployed to Vercel for hosting and collaboration.
+
+### A. Prerequisites
+Verify that the Vercel CLI is installed globally:
+```bash
+vercel --version
+```
+
+### B. Deploying to Vercel
+To link and deploy the frontend dashboard to Vercel, navigate to the `dashboard_frontend` directory and invoke Vercel CLI commands:
+
+```bash
+# Navigate to the frontend directory
+cd dashboard_frontend
+
+# Log in to your Vercel Account
+vercel login
+
+# Initialize/Link and deploy the project to a preview environment
+vercel
+
+# Deploy the project to production
+vercel --prod
+```
+
 ```
