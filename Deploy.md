@@ -29,45 +29,39 @@ The platform reads credentials and service locations from an environment configu
 
 ---
 
-## 3. Step-by-Step Deployment
+## 3. Quick Start: Running the Whole Project
 
-Follow these steps to launch the entire multi-tier stack:
+There are two recommended methodologies to deploy and run the entire multi-tier stack:
 
-### Step 1: Run Persistent Services (Docker Compose)
-Spins up containerized instances of the databases, streaming caches, and message queues. Using Docker ensures data storage layers are managed cleanly without polluting the host OS.
+### Option A: Optimized Local-Hybrid Setup (Recommended)
+This is the most efficient developer setup. It runs the persistent databases and message queues inside Docker containers (taking 5 seconds to download and boot) and launches the unified backend services grid locally on port `8000` (taking 2 seconds to boot and dynamically mounting all 28 microservices under a single process space).
 
-```bash
-# Build and start PostgreSQL, Redis, Redpanda (Kafka), and Neo4j in the background
-DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" docker compose up -d postgres redis redpanda neo4j
-```
+1. **Start the Infrastructure (Docker):**
+   ```bash
+   DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" docker compose up -d postgres redis redpanda neo4j
+   ```
+2. **Start the Backend Services Grid (Python):**
+   ```bash
+   source .venv_phantomnet/bin/activate
+   DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" REDIS_HOST="localhost" KAFKA_BOOTSTRAP_SERVERS="localhost:9092" python main.py
+   ```
+3. **Start the User Dashboard Console (Vite):**
+   ```bash
+   cd dashboard_frontend && npm run dev -- --port 3000 --host 0.0.0.0
+   ```
 
-### Step 2: Run Unified Backend Services Grid (API Core)
-Rather than compiling 28 separate custom Python containers (which is memory-heavy and takes up to 20 minutes to build), the backend mounts **all 28 microservices dynamically** under a single, highly optimized process on port `8000`.
+### Option B: Fully Containerized Dev Stack (Docker Only)
+This runs the databases, queue brokers, and all modular backend services completely inside containerized environments via Docker Compose.
 
-```bash
-# 1. Activate virtual environment
-source .venv_phantomnet/bin/activate
-
-# 2. Start the unified FastAPI Gateway
-DB_PASSWORD="changeme" \
-NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" \
-REDIS_HOST="localhost" \
-KAFKA_BOOTSTRAP_SERVERS="localhost:9092" \
-python main.py
-```
-*The gateway will automatically initialize PostgreSQL tables via DDL parsing, establish Redis cache pools, connect to Redpanda topics, and listen on `http://localhost:8000`.*
-
-### Step 3: Run User Dashboard (Vite Frontend)
-Launches the interactive dashboard displaying threat events, SOAR mitigations, and MITRE maps.
-
-```bash
-# 1. Move to frontend workspace
-cd dashboard_frontend
-
-# 2. Start Vite dev server on port 3000
-npm run dev -- --port 3000 --host 0.0.0.0
-```
-*Open `http://localhost:3000` in your web browser to access the management panel.*
+1. **Build and start the entire multi-container stack in the background:**
+   ```bash
+   # Starts databases, redpanda, and all 28 FastAPI microservices
+   DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" docker compose up -d
+   ```
+2. **Start the User Dashboard Console (Vite):**
+   ```bash
+   cd dashboard_frontend && npm run dev -- --port 3000 --host 0.0.0.0
+   ```
 
 ---
 
