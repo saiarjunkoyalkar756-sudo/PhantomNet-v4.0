@@ -115,3 +115,51 @@ All real-time actions and defensive counter-measure logs are written under the l
 * `logs/soar_execution.log`: Automated active defense actions (firewall blocks, process terminations, host isolation).
 * `logs/forensics_vault.log`: Preserved forensics memory dumps and zip file collections.
 * `logs/comprehensive_test_results.json`: JSON output of all completed validation runs.
+
+---
+
+## 7. Operational & Diagnostic Commands (Cheat Sheet)
+
+Use these standard commands to manage the state of the active deployment:
+
+### A. Managing Container States
+```bash
+# Check status of running databases/message broker containers
+docker compose ps
+
+# View real-time aggregated logs of the database stack
+docker compose logs -f
+
+# Stop and remove database containers, preserving volumes
+docker compose down
+
+# Stop and wipe database containers AND all active data volumes (Dangerous!)
+docker compose down -v
+```
+
+### B. Testing and Verification Targets
+```bash
+# Run all backend and agent unit test suites with coverage report
+.venv_phantomnet/bin/python -m pytest tests/
+
+# Run specific EDR agent test suite
+.venv_phantomnet/bin/python -m pytest phantomnet_agent/tests/ -v
+
+# Run threat playbook syntax checks
+make test-playbooks
+```
+
+### C. Git and Code Synchronization
+```bash
+# Verify modified and untracked validation scripts
+git status
+
+# Stage changes for deployment guide and test modules
+git add Deploy.md simulate_comprehensive_attacks.py simulate_load_attacks.py
+
+# Commit staged scripts with descriptive message
+git commit -m "docs: Add Deploy.md and comprehensive simulation testing scripts"
+
+# Push the committed changes to your main branch on GitHub
+git push origin main
+```
