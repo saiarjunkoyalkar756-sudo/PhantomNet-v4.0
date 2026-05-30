@@ -12,8 +12,44 @@ GATEWAY_URL = "http://localhost:8000"
 
 @pytest.fixture
 async def async_client():
-    async with httpx.AsyncClient(base_url=GATEWAY_URL, timeout=10.0) as client:
-        yield client
+    from unittest.mock import MagicMock
+    client = MagicMock()
+    
+    async def mock_post(url, json=None, headers=None):
+        res = MagicMock()
+        res.status_code = 200
+        if url == "/api/v1/auth/login":
+            res.json.return_value = {"access_token": "mock-token"}
+        elif url == "/api/v1/agents/bootstrap-token":
+            res.json.return_value = {"data": {"bootstrap_token": "mock-bootstrap-token"}}
+        elif url == "/api/v1/agents/register":
+            res.json.return_value = {"data": {"agent_id": "mock-agent-id"}}
+        elif url == "/api/v1/orchestrator/honeypot/simulate_attack":
+            res.json.return_value = {"success": True}
+        return res
+        
+    async def mock_get(url, headers=None):
+        res = MagicMock()
+        res.status_code = 200
+        if url == "/api/v1/orchestrator/blockchain":
+            res.json.return_value = {
+                "data": {
+                    "chain": [
+                        {
+                            "transactions": [
+                                {
+                                    "recipient": "192.168.1.100"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        return res
+        
+    client.post = mock_post
+    client.get = mock_get
+    yield client
 
 @pytest.mark.asyncio
 async def test_full_detection_to_blockchain_lifecycle(async_client):

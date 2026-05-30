@@ -1,6 +1,8 @@
 from backend_api.shared.service_factory import create_phantom_service
 from pydantic import BaseModel
 from loguru import logger
+from backend_api.shared.file_logging import get_rotating_file_logger
+incident_logger = get_rotating_file_logger("incident_response", "incident_response.log")
 from typing import List, Optional
 from datetime import datetime
 from .database import create_cases_table, get_all_cases, get_case_by_id, create_case, update_case
@@ -57,6 +59,16 @@ async def create_new_case(case_data: CaseCreate):
     new_case = get_case_by_id(case_id)
     if new_case is None:
         raise HTTPException(status_code=500, detail="Failed to retrieve newly created case.")
+        
+    try:
+        incident_logger.info(
+            f"Incident created - Case ID: {case_id}, Title: {case_data.title}, "
+            f"Severity: {case_data.severity}, Assigned To: {case_data.assigned_to or 'Unassigned'}, "
+            f"Status: open"
+        )
+    except Exception as log_err:
+        logger.error(f"Error writing to incident_response.log: {log_err}")
+        
     return success_response(data=Case(**new_case).model_dump())
 
 @app.get("/cases")
@@ -80,6 +92,17 @@ async def update_incident(case_id: int, updates: CaseUpdate):
     updated_case = get_case_by_id(case_id)
     if updated_case is None:
         raise HTTPException(status_code=404, detail="Case not found after update.")
+        
+    try:
+        status_change = updates.status or "no_change"
+        assigned_change = updates.assigned_to or "no_change"
+        incident_logger.info(
+            f"Incident status change - Case ID: {case_id}, Status Update: {status_change}, "
+            f"Assigned To Update: {assigned_change}"
+        )
+    except Exception as log_err:
+        logger.error(f"Error writing to incident_response.log: {log_err}")
+        
     return success_response(data=Case(**updated_case).model_dump())
 
 @app.post("/cases/{case_id}/add_note")

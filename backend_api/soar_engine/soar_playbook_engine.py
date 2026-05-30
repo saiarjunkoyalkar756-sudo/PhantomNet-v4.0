@@ -30,7 +30,9 @@ class SOARPlaybookEngine:
     playbooks based on risk and confidence.
     """
 
-    def __init__(self, playbooks: List[Playbook]):
+    def __init__(self, playbooks: Optional[List[Playbook]] = None):
+        if playbooks is None:
+            playbooks = []
         self.playbook_strategy_engine = PlaybookStrategyEngine(playbooks)
         self.blast_radius_analyzer = SimulationBlastRadiusAnalyzer()
         self.running_playbooks: Dict[str, asyncio.Task] = {}

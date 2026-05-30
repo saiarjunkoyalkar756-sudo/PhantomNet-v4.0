@@ -10,7 +10,6 @@ from shared.platform_utils import IS_LINUX, IS_WINDOWS, IS_TERMUX
 from .base_adapter import BaseAdapter
 from .linux_adapter import LinuxAdapter
 from .windows_adapter import WindowsAdapter
-from .termux_adapter import TermuxAdapter
 
 logger = get_logger(__name__)
 
@@ -30,9 +29,6 @@ class OSDetector:
         elif IS_WINDOWS:
             self._adapter = WindowsAdapter()
             logger.info("Loaded WindowsAdapter.")
-        elif IS_TERMUX:
-            self._adapter = TermuxAdapter()
-            logger.info("Loaded TermuxAdapter.")
         else:
             logger.error("Unsupported operating system. No platform adapter loaded.")
             self._adapter = None

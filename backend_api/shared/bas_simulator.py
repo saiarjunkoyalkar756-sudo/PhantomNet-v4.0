@@ -14,6 +14,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+from backend_api.shared.file_logging import get_rotating_file_logger
+attack_sim_file_logger = get_rotating_file_logger("attack_simulation", "attack_simulation.log")
+
 
 # --- Data Models for BAS Operations ---
 class AttackScenario(BaseModel):
@@ -263,6 +266,253 @@ class BASSimulator:
         ]
         return result
 
+    async def _simulate_lateral_movement(self, scenario: AttackScenario) -> SimulationResult:
+        """Simulates an advanced Lateral Movement campaign (e.g., PSExec, SSH, Pass-the-Hash)."""
+        simulation_id = str(uuid.uuid4())
+        result = SimulationResult(
+            simulation_id=simulation_id,
+            scenario_id=scenario.scenario_id,
+            status="running",
+            score=random.uniform(40, 95),
+        )
+        self.active_simulations[simulation_id] = result
+        await asyncio.sleep(random.uniform(3, 6))
+
+        if result.score > 75:
+            result.status = "prevented"
+            result.detection_points.append(
+                {
+                    "stage": "network_segmentation",
+                    "action": "blocked_ssh_port_forwarding",
+                    "timestamp": time.time(),
+                }
+            )
+            result.remediation_suggestions.append(
+                "Implement strict microsegmentation, restrict local admin SSH privileges, and configure bastion hosts."
+            )
+        elif result.score > 45:
+            result.status = "detected"
+            result.detection_points.append(
+                {
+                    "stage": "lateral_movement_detector",
+                    "action": "alerted_anomalous_psexec_execution",
+                    "timestamp": time.time(),
+                }
+            )
+            result.impact_assessment = {
+                "movement_scope": "limited_workstations",
+                "privilege_scope": "standard_user",
+            }
+            result.remediation_suggestions.append(
+                "Deploy Remote Credential Guard, alert security analysts on local admin authentications, and restrict admin tools."
+            )
+        else:
+            result.status = "successful"
+            result.impact_assessment = {
+                "movement_scope": "domain_wide",
+                "privilege_scope": "domain_admin",
+                "compromised_controllers": ["primary_domain_controller"],
+            }
+            result.remediation_suggestions.append(
+                "Limit workstation-to-workstation communication, rotate Kerberos tickets (krbtgt), and audit credential vaults."
+            )
+
+        result.end_time = time.time()
+        result.raw_logs = [
+            f"[{time.time()}] INFO: Host-to-host movement attempt detected from external pivot point targeting {scenario.target_asset}.",
+            (
+                f"[{time.time()}] ALERT: Lateral Movement detected via Remote Services (T1021) / Service Execution (T1569.002)."
+                if result.status != "prevented"
+                else f"[{time.time()}] INFO: Lateral movement blocked by port filtration/firewall."
+            ),
+        ]
+        return result
+
+    async def _simulate_credential_access(self, scenario: AttackScenario) -> SimulationResult:
+        """Simulates advanced Credential Access campaigns (e.g., Mimikatz LSASS memory dumping)."""
+        simulation_id = str(uuid.uuid4())
+        result = SimulationResult(
+            simulation_id=simulation_id,
+            scenario_id=scenario.scenario_id,
+            status="running",
+            score=random.uniform(35, 90),
+        )
+        self.active_simulations[simulation_id] = result
+        await asyncio.sleep(random.uniform(4, 7))
+
+        if result.score > 70:
+            result.status = "prevented"
+            result.detection_points.append(
+                {
+                    "stage": "lsass_protection",
+                    "action": "blocked_memory_dump_attempt",
+                    "timestamp": time.time(),
+                }
+            )
+            result.remediation_suggestions.append(
+                "Keep LSA Protection (RunAsPPL) enabled, and activate credential guard."
+            )
+        elif result.score > 40:
+            result.status = "detected"
+            result.detection_points.append(
+                {
+                    "stage": "edr_agent",
+                    "action": "detected_lsass_process_access",
+                    "timestamp": time.time(),
+                }
+            )
+            result.impact_assessment = {
+                "credentials_exposed": "partial_hashes",
+                "remediation_status": "alerted",
+            }
+            result.remediation_suggestions.append(
+                "Configure SOC alerts for anomalous process handles requesting access to lsass.exe."
+            )
+        else:
+            result.status = "successful"
+            result.impact_assessment = {
+                "credentials_exposed": "cleartext_domain_admin",
+                "hash_harvest": "widespread",
+            }
+            result.remediation_suggestions.append(
+                "Enforce multi-factor authentication across all administration paths, restrict SeDebugPrivilege, and rotate high-privilege keys."
+            )
+
+        result.end_time = time.time()
+        result.raw_logs = [
+            f"[{time.time()}] INFO: Process access handle requested for lsass.exe by unauthorized binary.",
+            (
+                f"[{time.time()}] ALERT: LSASS memory dump attempt detected (T1003 OS Credential Dumping)."
+                if result.status != "prevented"
+                else f"[{time.time()}] INFO: LSASS protection rule blocked read access to lsass memory space."
+            ),
+        ]
+        return result
+
+    async def _simulate_privilege_escalation(self, scenario: AttackScenario) -> SimulationResult:
+        """Simulates advanced Privilege Escalation campaigns (e.g., token impersonation, kernel exploit, UAC bypass)."""
+        simulation_id = str(uuid.uuid4())
+        result = SimulationResult(
+            simulation_id=simulation_id,
+            scenario_id=scenario.scenario_id,
+            status="running",
+            score=random.uniform(30, 95),
+        )
+        self.active_simulations[simulation_id] = result
+        await asyncio.sleep(random.uniform(3, 5))
+
+        if result.score > 75:
+            result.status = "prevented"
+            result.detection_points.append(
+                {
+                    "stage": "application_control",
+                    "action": "blocked_uac_bypass_execution",
+                    "timestamp": time.time(),
+                }
+            )
+            result.remediation_suggestions.append(
+                "Enforce patched operating system baselines and restrict administrative elevation rules via AppLocker/WDAC."
+            )
+        elif result.score > 40:
+            result.status = "detected"
+            result.detection_points.append(
+                {
+                    "stage": "agent_behavioral_engine",
+                    "action": "detected_token_impersonation",
+                    "timestamp": time.time(),
+                }
+            )
+            result.impact_assessment = {
+                "elevation_scope": "local_admin_only",
+                "persistence_status": "none",
+            }
+            result.remediation_suggestions.append(
+                "Monitor and block command interpreter elevation from non-administrative parent processes."
+            )
+        else:
+            result.status = "successful"
+            result.impact_assessment = {
+                "elevation_scope": "system_root",
+                "integrity_level": "system",
+                "persistence_status": "compromised",
+            }
+            result.remediation_suggestions.append(
+                "Audit high-privileged local accounts, patch system kernels immediately, and enforce least privilege roles."
+            )
+
+        result.end_time = time.time()
+        result.raw_logs = [
+            f"[{time.time()}] INFO: Attempt to spawn elevated subprocess from unprivileged shell.",
+            (
+                f"[{time.time()}] ALERT: Privilege Escalation detected (T1068 Exploitation for Privilege Escalation / T1548 Abuse of Elevation Control)."
+                if result.status != "prevented"
+                else f"[{time.time()}] INFO: Integrity elevation blocked by operating system access control policies."
+            ),
+        ]
+        return result
+
+    async def _simulate_exfiltration(self, scenario: AttackScenario) -> SimulationResult:
+        """Simulates advanced Data Exfiltration campaigns (e.g., DNS Tunneling, HTTPS large uploads)."""
+        simulation_id = str(uuid.uuid4())
+        result = SimulationResult(
+            simulation_id=simulation_id,
+            scenario_id=scenario.scenario_id,
+            status="running",
+            score=random.uniform(40, 95),
+        )
+        self.active_simulations[simulation_id] = result
+        await asyncio.sleep(random.uniform(4, 6))
+
+        if result.score > 80:
+            result.status = "prevented"
+            result.detection_points.append(
+                {
+                    "stage": "dlp_gateway",
+                    "action": "blocked_encrypted_tunnel_connection",
+                    "timestamp": time.time(),
+                }
+            )
+            result.remediation_suggestions.append(
+                "Deploy SSL/TLS inspection, enforce strict data egress control policies, and block unauthorized cloud upload destinations."
+            )
+        elif result.score > 50:
+            result.status = "detected"
+            result.detection_points.append(
+                {
+                    "stage": "dns_firewall",
+                    "action": "detected_anomalous_dns_query_volume",
+                    "timestamp": time.time(),
+                }
+            )
+            result.impact_assessment = {
+                "exfiltration_volume_mb": 150,
+                "data_sensitivity": "pii_medium",
+            }
+            result.remediation_suggestions.append(
+                "Configure anomalies checks for outbound DNS query payload sizes, and enforce standard external proxy usage."
+            )
+        else:
+            result.status = "successful"
+            result.impact_assessment = {
+                "exfiltration_volume_mb": 42000,
+                "data_sensitivity": "intellectual_property_high",
+                "customer_records_exposed": 25000,
+            }
+            result.remediation_suggestions.append(
+                "Deploy comprehensive Data Loss Prevention (DLP) solutions and classify sensitive databases to trigger direct egress stops."
+            )
+
+        result.end_time = time.time()
+        result.raw_logs = [
+            f"[{time.time()}] INFO: Anomalous volume outbound network transfer initiated to unclassified external IP address.",
+            (
+                f"[{time.time()}] ALERT: Potential Data Exfiltration detected (T1048 Exfiltration Over Alternative Protocol)."
+                if result.status != "prevented"
+                else f"[{time.time()}] INFO: Outbound network transfer payload size limit triggered. Connection severed."
+            ),
+        ]
+        return result
+
     async def run_simulation(self, scenario: AttackScenario) -> SimulationResult:
         """
         Runs a simulated attack based on the provided scenario.
@@ -273,7 +523,14 @@ class BASSimulator:
             result = await self._simulate_ransomware(scenario)
         elif scenario.attack_type == "sqli":
             result = await self._simulate_sqli(scenario)
-        # Add more attack types here
+        elif scenario.attack_type == "lateral_movement":
+            result = await self._simulate_lateral_movement(scenario)
+        elif scenario.attack_type == "credential_access":
+            result = await self._simulate_credential_access(scenario)
+        elif scenario.attack_type == "privilege_escalation":
+            result = await self._simulate_privilege_escalation(scenario)
+        elif scenario.attack_type == "exfiltration":
+            result = await self._simulate_exfiltration(scenario)
         else:
             raise ValueError(f"Unknown attack type: {scenario.attack_type}")
 
@@ -283,6 +540,45 @@ class BASSimulator:
         logger.info(
             f"[{__name__}] Simulation '{scenario.name}' ({result.simulation_id}) finished with status: {result.status}"
         )
+        try:
+            attack_type = scenario.attack_type
+            status = result.status
+            blocked = (status == "prevented")
+            score = result.score
+            
+            if attack_type == "sqli":
+                payload = "UNION SELECT username, password FROM users"
+            elif attack_type == "phishing":
+                payload = "Subject: Urgent account verification required"
+            elif attack_type == "ransomware":
+                payload = "vssadmin.exe delete shadows /all /quiet"
+            elif attack_type == "lateral_movement":
+                payload = "psexec.exe \\\\domain-controller cmd.exe"
+            elif attack_type == "credential_access":
+                payload = "mimikatz.exe sekurlsa::logonpasswords"
+            elif attack_type == "privilege_escalation":
+                payload = "bypassuac.exe"
+            elif attack_type == "exfiltration":
+                payload = "DNS tunnel upload client.zip"
+            else:
+                payload = "None"
+                
+            source_ip = "10.0.0.10"
+            if hasattr(scenario, "target_asset") and scenario.target_asset:
+                if scenario.target_asset.startswith("ceo@"):
+                    source_ip = "192.168.1.55"
+                elif "workstation" in scenario.target_asset:
+                    source_ip = "192.168.1.104"
+                elif "server" in scenario.target_asset or "db" in scenario.target_asset or "controller" in scenario.target_asset:
+                    source_ip = "10.0.0.22"
+            
+            attack_sim_file_logger.info(
+                f"Attack simulation executed - Name: {scenario.name}, Type: {attack_type}, Target: {scenario.target_asset}, "
+                f"Source IP: {source_ip}, Payload Snippet: '{payload}', Threat/Defense Score: {score:.2f}, Status: {status}, Blocked: {blocked}"
+            )
+        except Exception as log_err:
+            logger.error(f"Error writing to attack_simulation.log: {log_err}")
+            
         return result
 
     def get_simulation_result(self, simulation_id: str) -> Optional[SimulationResult]:

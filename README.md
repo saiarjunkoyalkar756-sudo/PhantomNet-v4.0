@@ -98,3 +98,10 @@ The cross-platform agent compiles cleanly and runs across multiple host architec
 * JWT validation relies on secure keys managed in environment settings (`JWT_SECRET_KEY`).
 * All sensitive network metrics and agent operations require validated token authorization.
 * Inter-service transactions use credentials audited cryptographically by the local blockchain ledger.
+
+---
+
+## 📖 Operational Documentation
+
+* **[Production Runbook](docs/runbook.md):** System monitoring, database scaling, backup and recovery operations, and incident response procedures.
+* **[API Reference](docs/api-reference.md):** Complete developer REST API specifications for authentication, agents, SOAR execution, and forensics triggers.

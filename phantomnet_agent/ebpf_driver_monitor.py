@@ -67,9 +67,12 @@ class EbpfDriverMonitor:
     Monitors kernel module loading/unloading using eBPF.
     """
 
-    def __init__(self):
+    def __init__(self, orchestrator=None, adapter=None, config=None):
         self.name = "ebpf_driver_monitor"
         self.logger = get_logger(f"phantomnet_agent.{self.name}")
+        self.orchestrator = orchestrator
+        self.adapter = adapter
+        self.config = config or {}
         self.bpf = None
         self.stop_event = asyncio.Event()
         self._monitor_task: Optional[asyncio.Task] = None

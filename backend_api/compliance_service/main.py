@@ -15,7 +15,6 @@ app = create_phantom_service(
     description="Service for governance, risk, and compliance management.",
     version="1.0.0"
 )
-app.include_router(router)
 
 # --- Standards ---
 class ComplianceStandardBase(BaseModel):
@@ -67,7 +66,36 @@ def create_standard(standard: ComplianceStandardCreate, db: Session = Depends(ge
 
 @router.get("/standards/")
 def read_standards(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    import json
+    from loguru import logger
+    from backend_api.shared.redis_client import redis_client
+
+    cache_key = f"compliance:standards:{skip}:{limit}"
+    try:
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            logger.info("Serving compliance standards from Redis cache.")
+            return success_response(data=json.loads(cached_data))
+    except Exception as e:
+        logger.error(f"Redis cache read error: {e}")
+
     standards = crud.get_compliance_standards(db, skip=skip, limit=limit)
+    
+    try:
+        serializable_standards = []
+        for s in standards:
+            serializable_standards.append({
+                "id": s.id,
+                "name": s.name,
+                "description": s.description,
+                "version": s.version,
+                "created_at": s.created_at.isoformat() if hasattr(s.created_at, "isoformat") else str(s.created_at),
+                "updated_at": s.updated_at.isoformat() if hasattr(s.updated_at, "isoformat") else str(s.updated_at)
+            })
+        redis_client.setex(cache_key, 3600, json.dumps(serializable_standards))
+    except Exception as e:
+        logger.error(f"Redis cache write error: {e}")
+
     return success_response(data=standards)
 
 @router.get("/standards/{standard_name}")
@@ -105,3 +133,5 @@ def update_assessment(assessment_id: str, assessment: ComplianceAssessmentUpdate
     if not db_assessment:
         return error_response(code="NOT_FOUND", message="Compliance assessment not found", status_code=404)
     return success_response(data=db_assessment)
+
+app.include_router(router)

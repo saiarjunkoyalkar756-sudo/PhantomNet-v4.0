@@ -16,8 +16,8 @@ class EbpfSimulator(Collector):
     A simulated eBPF collector that produces synthetic eBPF-like events
     for development, testing, or environments where real eBPF is not available.
     """
-    def __init__(self, orchestrator: Any, config: Dict[str, Any]):
-        super().__init__(orchestrator, config)
+    def __init__(self, orchestrator: Any, adapter: Any, config: Dict[str, Any]):
+        super().__init__(orchestrator, adapter, config)
         self.name = "ebpf_simulator"
         self.logger = get_logger(f"phantomnet_agent.{self.name}")
         self.interval_seconds = config.get("interval_seconds", 5) # How often to generate events

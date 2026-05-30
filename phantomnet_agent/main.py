@@ -152,7 +152,6 @@ from shared.platform_utils import IS_WINDOWS, IS_LINUX, IS_TERMUX, IS_ROOT, HAS_
 from phantomnet_agent.platform_compatibility.os_detector import OSDetector
 from phantomnet_agent.platform_compatibility.linux_adapter import LinuxAdapter
 from phantomnet_agent.platform_compatibility.windows_adapter import WindowsAdapter
-from phantomnet_agent.platform_compatibility.termux_adapter import TermuxAdapter
 
 
 
@@ -375,7 +374,7 @@ def _get_collector_capability_status(collector_name: str, agent_state: Any) -> s
 
 
 
-        if PLATFORM_INFO["memory_scanner_method"] == "limited_mode":
+        if PLATFORM_INFO.get("memory_scanner_method") == "limited_mode":
 
 
 
@@ -566,10 +565,10 @@ async def register_agent_with_manager(agent_state: Any, config: Any, private_key
     """
     Handles the agent registration process with the PN_Agent_Manager.
     Uses provided key pair to send public key and receive a signed certificate.
+    Supports retries with exponential backoff on network connection failures.
     """
     logger.info("Initiating agent registration with PN_Agent_Manager...")
 
-    # 1. Prepare registration data with provided public key
     registration_data = {
         "public_key": public_key_pem,
         "role": getattr(config.agent, "role", "default_agent_role"),
@@ -579,43 +578,50 @@ async def register_agent_with_manager(agent_state: Any, config: Any, private_key
         "configuration": getattr(config.agent, "configuration", None).model_dump_json() if getattr(config.agent, "configuration", None) else None,
     }
 
-    # 2. Send registration request to PN_Agent_Manager
     agent_manager_url = str(config.agent.manager_url) + "/agents/register"
+    
+    max_retries = 5
+    backoff = 1.0
+    
+    for attempt in range(1, max_retries + 1):
+        try:
+            client_kwargs = {}
+            if getattr(config.agent.security, 'tls', None) and config.agent.security.tls.enabled:
+                ca_cert_path = getattr(config.agent.security.tls, "ca_cert_path", None)
+                if cert_path and key_path and ca_cert_path:
+                     client_kwargs["cert"] = (str(cert_path), str(key_path))
+                     client_kwargs["verify"] = str(ca_cert_path)
+                else:
+                    logger.warning("mTLS is enabled in config but cert/key/CA paths are not fully configured. Proceeding without mTLS for registration.")
 
-    try:
-        # Use httpx.AsyncClient with mTLS if enabled and certs are available
-        client_kwargs = {}
-        if getattr(config.agent.security, 'tls', None) and config.agent.security.tls.enabled: # Assuming mTLS is enabled in config
-            # ca_cert_path would come from config.agent.security.tls.ca_cert_path
-            ca_cert_path = getattr(config.agent.security.tls, "ca_cert_path", None)
-            if cert_path and key_path and ca_cert_path:
-                 client_kwargs["cert"] = (str(cert_path), str(key_path))
-                 client_kwargs["verify"] = str(ca_cert_path)
-            else:
-                logger.warning("mTLS is enabled in config but cert/key/CA paths are not fully configured. Proceeding without mTLS for registration.")
+            async with httpx.AsyncClient(**client_kwargs) as client:
+                response = await client.post(agent_manager_url, json=registration_data, timeout=10.0)
+                response.raise_for_status()
+                registration_result = response.json()
+            
+            agent_state.agent_id = registration_result["agent"]["id"]
+            agent_state.signed_certificate_pem = registration_result["certificate"]
+            
+            cert_path.write_text(agent_state.signed_certificate_pem)
+            agent_state.cert_path = str(cert_path)
+            agent_state.key_path = str(key_path)
 
-        async with httpx.AsyncClient(**client_kwargs) as client:
-            response = await client.post(agent_manager_url, json=registration_data, timeout=10.0)
-            response.raise_for_status()
-            registration_result = response.json()
-        
-        # 3. Store signed certificate and agent ID
-        agent_state.agent_id = registration_result["agent"]["id"]
-        agent_state.signed_certificate_pem = registration_result["certificate"]
-        
-        # Save received signed cert to file (overwriting temporary self-signed if needed)
-        cert_path.write_text(agent_state.signed_certificate_pem)
-        agent_state.cert_path = str(cert_path) # Update agent_state with path to signed cert
-        agent_state.key_path = str(key_path) # Ensure key path is also stored
-
-        logger.info(f"Agent '{agent_state.agent_id}' registered successfully. Certificate received.")
-        return True
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Agent registration failed - HTTP Error: {e.response.status_code} {e.response.text}", extra={"error": str(e)})
-    except httpx.RequestError as e:
-        logger.error(f"Agent registration failed - Network Error: {e}", extra={"error": str(e)})
-    except Exception as e:
-        logger.error(f"Agent registration failed: {e}", exc_info=True, extra={"error": str(e)})
+            logger.info(f"Agent '{agent_state.agent_id}' registered successfully on attempt {attempt}. Certificate received.")
+            return True
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            logger.warning(
+                f"Agent registration attempt {attempt}/{max_retries} failed: {e}. "
+                f"Retrying in {backoff:.1f}s with exponential backoff..."
+            )
+            if attempt == max_retries:
+                logger.error(f"Agent registration failed after {max_retries} attempts.")
+                break
+            await asyncio.sleep(backoff)
+            backoff *= 2.0  # Exponential backoff
+        except Exception as e:
+            logger.error(f"Unexpected error during agent registration on attempt {attempt}: {e}", exc_info=True)
+            break
+            
     return False
 
 
@@ -713,6 +719,27 @@ async def main():
     if not config:
         print(f"ERROR: Failed to load or validate configuration from {args.config}", file=sys.stderr)
         sys.exit(1)
+        
+    # Ensure agent ID is unique per machine in production or if it is a default/test ID
+    import socket
+    import uuid
+    import hashlib
+    
+    default_ids = ["agent-007", "agent-local-dev", "agent-{{AGENT_ID}}", "default-agent", ""]
+    if config.agent.id in default_ids or (isinstance(config.agent.id, str) and "agent-" in config.agent.id and len(config.agent.id) <= 15):
+        try:
+            hostname = socket.gethostname()
+        except Exception:
+            hostname = "unknown-host"
+        try:
+            mac_num = uuid.getnode()
+            mac_hex = f"{mac_num:012x}"
+        except Exception:
+            mac_hex = "000000000000"
+        combined = f"{hostname}-{mac_hex}"
+        unique_hash = hashlib.sha256(combined.encode('utf-8')).hexdigest()[:12]
+        unique_id = f"agent-{hostname}-{unique_hash}"
+        config.agent.id = unique_id
     
     # Override mode from CLI if provided
     config.agent.mode = args.mode
@@ -907,6 +934,40 @@ async def main():
     self_healing_controller_task = asyncio.create_task(self_healing_controller.start())
     logger.info("Self-Healing Controller started.")
     # --- End Self-Healing Controller ---
+
+    # Print a clear, premium startup summary
+    try:
+        active_collectors = []
+        if hasattr(config, "collectors"):
+            for col_name in dir(config.collectors):
+                if not col_name.startswith("_"):
+                    col_obj = getattr(config.collectors, col_name)
+                    if hasattr(col_obj, "enabled") and col_obj.enabled:
+                        active_collectors.append(col_name)
+                        
+        loaded_analyzers = []
+        analyzers_dir = Path(__file__).parent / "analyzers"
+        if analyzers_dir.exists():
+            for f in analyzers_dir.iterdir():
+                if f.name.endswith("_analyzer.py"):
+                    loaded_analyzers.append(f.stem)
+                    
+        caps = [k for k, v in PLATFORM_INFO.items() if v is True]
+        
+        logger.info("=" * 60)
+        logger.info("🛡️  PHANTOMNET ENDPOINT AGENT STARTED SUCCESSFULLY")
+        logger.info("=" * 60)
+        logger.info(f"🔹 Agent ID          : {agent_state.agent_id}")
+        logger.info(f"🔹 Hostname          : {agent_state.hostname}")
+        logger.info(f"🔹 OS Type          : {agent_state.os} ({PLATFORM_INFO['architecture']})")
+        logger.info(f"🔹 Capabilities      : {', '.join(caps) if caps else 'Basic'}")
+        logger.info(f"🔹 Manager URL       : {config.agent.manager_url}")
+        logger.info(f"🔹 JWT KID Fingerprint: {jwt_manager.current_signing_kid if jwt_manager else 'None'}")
+        logger.info(f"🔹 Active Collectors : {', '.join(active_collectors) if active_collectors else 'None'}")
+        logger.info(f"🔹 Loaded Analyzers  : {', '.join(loaded_analyzers) if loaded_analyzers else 'None'}")
+        logger.info("=" * 60)
+    except Exception as sum_err:
+        logger.error(f"Error logging startup summary: {sum_err}")
 
     # 9. Start local API (if enabled, and not collector-only/forensics where it might not be needed)
     api_task = None

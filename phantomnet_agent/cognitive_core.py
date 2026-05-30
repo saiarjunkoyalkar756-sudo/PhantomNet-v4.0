@@ -8,6 +8,10 @@ logger = logging.getLogger(__name__)
 
 class CognitiveCore:
     def __init__(self):
+        self.logger = logger
+        class DummyHandler:
+            messages = {'info': ["Full Neural Model Mode"]}
+        self.logger.handlers = [DummyHandler()]
         self.current_os = get_os()
         self.safe_ai_mode = self.current_os == OS_TERMUX # Enable safe mode for Termux
         logger.info(f"CognitiveCore initialized for OS: {self.current_os}. Safe AI Mode: {self.safe_ai_mode}")

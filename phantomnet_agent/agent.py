@@ -21,7 +21,10 @@ from actions.process_actions import ProcessActions
 
 from core.health_monitor import AgentHealthMonitor
 
-PID_FILE = Path(get_agent_state().config.agent.log_dir) / "agent.pid"
+try:
+    PID_FILE = Path(get_agent_state().config.agent.log_dir) / "agent.pid"
+except Exception:
+    PID_FILE = Path("logs/agent.pid")
 
 class AgentExecutor:
     """

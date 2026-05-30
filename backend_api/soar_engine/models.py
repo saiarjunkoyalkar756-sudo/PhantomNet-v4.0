@@ -1,6 +1,4 @@
-# backend_api/soar_engine/models.py
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from enum import Enum
@@ -42,6 +40,13 @@ class PlaybookStep(BaseModel):
     description: Optional[str] = Field(None, description="Human-readable description of the step.")
     output_to: Optional[str] = Field(None, description="Key in context to store this step's output.")
     requires_approval: bool = Field(False, description="Whether this step requires human approval before execution.")
+
+    @field_validator('action', mode='before')
+    @classmethod
+    def lowercase_action(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return v.lower()
+        return v
 
 class Playbook(BaseModel):
     """Represents a SOAR playbook."""

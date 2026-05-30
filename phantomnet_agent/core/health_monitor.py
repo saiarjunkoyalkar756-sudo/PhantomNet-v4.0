@@ -25,7 +25,10 @@ MEM_HIGH_WM = 80.0  # %
 MEM_CRITICAL_WM = 95.0  # %
 
 # PID file for tamper detection
-PID_FILE = Path(get_agent_state().config.agent.log_dir) / "agent.pid"
+try:
+    PID_FILE = Path(get_agent_state().config.agent.log_dir) / "agent.pid"
+except Exception:
+    PID_FILE = Path("logs/agent.pid")
 
 
 class OpMode(Enum):
@@ -53,14 +56,7 @@ class AgentHealthMonitor:
             self._collector_health[name] = HEALTH_SCORE_MAX
         logger.info("Initialized health scores for all collectors.")
 
-    async def _check_collectors(self):
-        # ... (existing _check_collectors logic) ...
 
-    async def _handle_unhealthy_collector(self, name: str):
-        # ... (existing _handle_unhealthy_collector logic) ...
-
-    async def _check_tampering(self):
-        # ... (existing _check_tampering logic) ...
 
     async def _check_resource_usage(self):
         """

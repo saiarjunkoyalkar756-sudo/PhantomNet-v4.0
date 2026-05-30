@@ -5,12 +5,15 @@ import json
 import random
 from backend_api.shared.bas_simulator import BASSimulator, AttackScenario
 
-async def run_bulk_attack_simulation(attack_count: int = 120):
-    print(f"🚀 Initializing PhantomNet XDR Threat Simulator...")
+async def run_bulk_attack_simulation(attack_count: int = 150):
+    print(f"🚀 Initializing PhantomNet XDR Threat Simulator (v4.0 Advanced)...")
     print(f"⚡ Scheduling {attack_count} parallel breach attacks against enterprise assets...")
     
     simulator = BASSimulator()
-    attack_types = ["phishing", "ransomware", "sqli"]
+    attack_types = [
+        "phishing", "ransomware", "sqli", 
+        "lateral_movement", "credential_access", "privilege_escalation", "exfiltration"
+    ]
     assets = [
         "prod_database_cluster", "domain_controller", "finance_workstation_04",
         "file_server_prod", "hr_portal_web", "mail_exchange_gateway",
@@ -20,29 +23,37 @@ async def run_bulk_attack_simulation(attack_count: int = 120):
     scenarios = []
     for i in range(attack_count):
         atk_type = random.choice(attack_types)
+        
+        # Select realistic attack vectors per type
+        if atk_type == "phishing":
+            vector = "email"
+        elif atk_type == "sqli":
+            vector = "web_app"
+        elif atk_type in ["ransomware", "lateral_movement"]:
+            vector = "network"
+        elif atk_type in ["credential_access", "privilege_escalation"]:
+            vector = "host_agent"
+        else:  # exfiltration
+            vector = "network_egress"
+            
         scenario = AttackScenario(
             name=f"Threat-Campaign-{i+1:03d} ({atk_type.upper()})",
-            description=f"Simulated mass breach campaign iteration {i+1}",
+            description=f"Simulated mass breach campaign iteration {i+1} utilizing {atk_type}",
             attack_type=atk_type,
             target_asset=random.choice(assets),
-            attack_vector="network" if atk_type == "ransomware" else ("email" if atk_type == "phishing" else "web_app"),
+            attack_vector=vector,
             risk_level=random.choice(["medium", "high", "critical"])
         )
         scenarios.append(scenario)
         
     start_time = time.time()
     
-    # Run all 100+ simulations concurrently using asyncio.gather
-    # We patch or override sleep internally or use gather to execute all at once
-    # We mock or use small sleeps to speed up execution of 120 threats under 1.5 seconds
+    # Run all simulations concurrently using asyncio.gather
     tasks = []
     for scenario in scenarios:
-        # Patch sleep to make benchmark extremely fast
-        # To avoid blocking, we run simulated attacks with negligible sleeps
-        # Since BASSimulator awaits asyncio.sleep, we run them all concurrently
         tasks.append(simulator.run_simulation(scenario))
         
-    print(f"🔥 Executing attacks concurrently...")
+    print(f"🔥 Executing advanced attacks concurrently...")
     results = await asyncio.gather(*tasks)
     end_time = time.time()
     
@@ -65,7 +76,7 @@ async def run_bulk_attack_simulation(attack_count: int = 120):
     avg_score = total_score / attack_count
     
     print("\n" + "="*60)
-    print("🏆 PHANTOMNET XDR BREACH SIMULATION REPORT")
+    print("🏆 PHANTOMNET XDR BREACH SIMULATION REPORT (ADVANCED CAMPAIGN)")
     print("="*60)
     print(f"🔹 Total Attacks Simulated  : {attack_count}")
     print(f"🔹 Concurrent Time Elapsed  : {total_duration:.2f} seconds")
@@ -77,4 +88,4 @@ async def run_bulk_attack_simulation(attack_count: int = 120):
     print("="*60)
     
 if __name__ == "__main__":
-    asyncio.run(run_bulk_attack_simulation(120))
+    asyncio.run(run_bulk_attack_simulation(150))

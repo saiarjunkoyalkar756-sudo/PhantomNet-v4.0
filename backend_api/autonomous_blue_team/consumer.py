@@ -6,8 +6,8 @@ import uuid
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 
-from ..autonomous_blue_team.app import (
-    ACTION_HISTORY_DIR,
+ACTION_HISTORY_DIR = os.getenv("ACTION_HISTORY_DIR", "/tmp/action_history")
+from .defense_modules import (
     auto_block_ip,
     auto_isolate_host,
     auto_reverse_changes,
@@ -56,7 +56,7 @@ async def _process_alert_async(alert: dict):
             if action_func:
                 action_id = str(uuid.uuid4())
                 result_file = os.path.join(ACTION_HISTORY_DIR, f"{action_id}.json")
-                action_func(action_id, target, reason, alert_id, result_file)
+                await action_func(action_id, target, reason, alert_id, result_file)
             else:
                 logger.warning(f"No corresponding action function found for action type: {action_type}")
         else:

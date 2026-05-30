@@ -6,6 +6,7 @@ from collectors.base import Collector
 if TYPE_CHECKING:
     from orchestrator import Orchestrator
 from schemas.events import NetworkEvent
+from shared.platform_utils import IS_ROOT
 
 logger = logging.getLogger(__name__)
 

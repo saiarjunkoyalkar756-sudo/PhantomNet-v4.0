@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, List
 
 from actions.base import Action
 from schemas.config_schema import PhantomNetAgentConfig
+from bus.base import Transport
 
 class ProcessActions(Action):
     """

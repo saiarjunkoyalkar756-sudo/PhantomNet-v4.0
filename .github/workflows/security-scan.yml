@@ -16,10 +16,11 @@ jobs:
           fetch-depth: 0
 
       # 1. Check for hardcoded secrets in the git history
-      - name: Detect Secrets & Credentials
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: TruffleHog Secrets Scan
+        uses: trufflesecurity/trufflehog-action@main
+        with:
+          base: ""
+          head: "HEAD"
         continue-on-error: true
 
       # 2. Scan Python dependencies for known CVEs
@@ -31,6 +32,7 @@ jobs:
       - name: Audit Python dependencies for CVEs
         run: |
           pip install safety pip-audit
+          safety check --exit-code=0
           pip-audit -r requirements.txt --desc on
 
       # 3. Scan Docker Image vulnerabilities via Trivy

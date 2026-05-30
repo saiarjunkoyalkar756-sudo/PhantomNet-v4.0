@@ -8,14 +8,13 @@ from schemas.config_schema import PhantomNetAgentConfig # Keep for config access
 from bus.base import Transport # Keep for transport access
 from phantomnet_agent.platform_compatibility.linux_adapter import LinuxAdapter
 from phantomnet_agent.platform_compatibility.windows_adapter import WindowsAdapter
-from phantomnet_agent.platform_compatibility.termux_adapter import TermuxAdapter
 
 class Action(ABC):
     """
     Abstract base class for all agent actions.
     Actions are operations that the agent can perform on the system.
     """
-    def __init__(self, logger: logging.Logger, transport: Optional[Transport] = None, config: Optional[PhantomNetAgentConfig] = None, adapter: Optional[Union[LinuxAdapter, WindowsAdapter, TermuxAdapter]] = None):
+    def __init__(self, logger: logging.Logger, transport: Optional[Transport] = None, config: Optional[PhantomNetAgentConfig] = None, adapter: Optional[Union[LinuxAdapter, WindowsAdapter]] = None):
         self.logger = logger
         self.transport = transport
         self.config = config

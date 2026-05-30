@@ -7,6 +7,7 @@ def get_secret(key: str, generate_if_missing: bool = False) -> str:
     """
     Retrieves a secret from environment variables.
     If not found:
+    - In development/testing environments, automatically behaves as generate_if_missing=True.
     - If generate_if_missing is True, generates a temporary secure random secret.
     - Otherwise, raises a ValueError. This is a hard failure to prevent running without critical secrets.
     """
@@ -14,9 +15,14 @@ def get_secret(key: str, generate_if_missing: bool = False) -> str:
     if value:
         return value
     
+    env = os.getenv("ENVIRONMENT", "development").lower()
+    if env in ["development", "testing"]:
+        generate_if_missing = True
+        
     if generate_if_missing:
         generated_secret = secrets.token_hex(32) # Generate a 64-char hex string
         logger.warning(f"Generated a temporary secret for {key}. This is INSECURE and should NOT be used in production. Configure this key in your .env file.")
+        os.environ[key] = generated_secret
         return generated_secret
     
     logger.critical(f"CRITICAL: Required secret '{key}' is not set in the environment.")
@@ -42,6 +48,11 @@ def validate_secrets() -> None:
     for key in critical_keys:
         value = os.getenv(key)
         if not value:
+            if not is_strict:
+                fallback_value = "changeme123" if key in ["DB_PASSWORD", "NEO4J_PASSWORD"] else secrets.token_hex(32)
+                os.environ[key] = fallback_value
+                logger.warning(f"Development mode fallback: Set missing environment secret '{key}' to '{fallback_value}'.")
+                continue
             err_msg = f"Required environment secret '{key}' is missing."
             logger.critical(f"SECURITY AUDIT FAILED: {err_msg}")
             raise ValueError(err_msg)

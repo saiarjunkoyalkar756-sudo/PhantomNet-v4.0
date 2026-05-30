@@ -42,6 +42,7 @@ class AgentState(BaseModel):
     component_health: Dict[str, ComponentHealth] = Field(default_factory=dict)
     
     orchestrator: Any = None # Reference to the Orchestrator instance
+    adapter: Any = None # Reference to the OS-specific adapter instance
 
     def update_component_health(self, name: str, status: str, details: Optional[Dict[str, Any]] = None):
         """
@@ -106,10 +107,21 @@ def get_agent_state() -> AgentState:
         raise RuntimeError("Agent state has not been initialized. Call initialize_agent_state first.")
     return _agent_state
 
-def initialize_agent_state(agent_id: str, mode: str, os_type: str, capabilities: Dict[str, Any]) -> AgentState:
+def reset_agent_state():
+    """
+    Resets the global agent state instance. Used primarily for unit tests.
+    """
+    global _agent_state
+    _agent_state = None
+
+def initialize_agent_state(agent_id: str, mode: str, os_type: Optional[str] = None, capabilities: Optional[Dict[str, Any]] = None) -> AgentState:
     """
     Initializes the global agent state. Can only be called once.
     """
+    if os_type is None:
+        os_type = get_platform_details().get("os_type", "unknown")
+    if capabilities is None:
+        capabilities = get_platform_details()
     global _agent_state
     if _agent_state is not None:
         raise RuntimeError("Agent state has already been initialized.")

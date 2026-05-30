@@ -63,13 +63,19 @@ from backend_api.shared.settings import settings
 DATABASE_URL = settings.DATABASE_URL
 
 # Async engine with connection pooling
-engine = create_async_engine(
-    DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-    echo=False # Set to True for debugging SQL queries
-)
+if "sqlite" in DATABASE_URL:
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False
+    )
+else:
+    engine = create_async_engine(
+        DATABASE_URL,
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True,
+        echo=False
+    )
 
 # Async session factory
 AsyncSessionLocal = async_sessionmaker(
@@ -84,13 +90,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Create a synchronous engine and session factory (SessionLocal) for synchronous/legacy operations
-sync_db_url = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
-sync_engine = create_engine(
-    sync_db_url,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True
-)
+sync_db_url = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://").replace("sqlite+aiosqlite://", "sqlite://")
+if "sqlite" in sync_db_url:
+    sync_engine = create_engine(
+        sync_db_url
+    )
+else:
+    sync_engine = create_engine(
+        sync_db_url,
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True
+    )
 SessionLocal = sessionmaker(
     bind=sync_engine,
     autocommit=False,
@@ -387,7 +398,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield session
             await session.commit()
-        except Exception:
+        except Exception as e:
+            from fastapi import HTTPException
+            if isinstance(e, HTTPException):
+                raise
             await session.rollback()
             raise
         finally:

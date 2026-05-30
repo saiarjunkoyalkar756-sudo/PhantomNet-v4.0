@@ -46,8 +46,8 @@ class MemoryScanner(Collector):
     Scans process memory with YARA rules.
     """
 
-    def __init__(self, transport: Transport, config: Dict[str, Any]):
-        super().__init__(transport, config)
+    def __init__(self, orchestrator: "Orchestrator", adapter: Any, config: Dict[str, Any]):
+        super().__init__(orchestrator, adapter, config)
         self.logger = get_logger("phantomnet_agent.memory_scanner")
         self.rules: Optional[yara.Rules] = None
         self.rule_path = self.config.get("rule_path", "yara_rules.yar")

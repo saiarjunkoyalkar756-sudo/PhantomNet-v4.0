@@ -14,6 +14,9 @@ from .state import playbooks_store, playbook_runs # Import playbooks_store and p
 
 logger = logging.getLogger(__name__)
 
+from backend_api.shared.file_logging import get_rotating_file_logger
+soar_file_logger = get_rotating_file_logger("soar_execution", "soar_execution.log")
+
 # --- Placeholder Actions ---
 # In a real implementation, these would interact with other systems
 # (e.g., EDR agents, firewalls, ticketing systems)
@@ -92,7 +95,9 @@ ACTION_MAP = {
     "isolate_host": isolate_host,
     "block_ip": block_ip,
     "terminate_process": terminate_process,
+    "kill_process": terminate_process,
     "notify_soc": notify_soc,
+    "notify_user": notify_soc,
     "create_ticket": create_ticket, # New action for ITSM tool integration
     "dispatch_agent_command": dispatch_agent_command, # New action for agent command dispatch
 }
@@ -310,7 +315,9 @@ ACTION_MAP = {
     "isolate_host": isolate_host,
     "block_ip": block_ip,
     "terminate_process": terminate_process,
+    "kill_process": terminate_process,
     "notify_soc": notify_soc,
+    "notify_user": notify_soc,
     "create_ticket": create_ticket, # New action for ITSM tool integration
     "dispatch_agent_command": dispatch_agent_command, # New action for agent command dispatch
 }
@@ -503,6 +510,20 @@ def execute_playbook(playbook_run: PlaybookRun): # Modified to accept PlaybookRu
                 output=step_result_details # Store full details as output
             )
         )
+        
+        try:
+            target = rendered_params.get("ip_address") or rendered_params.get("hostname") or rendered_params.get("agent_id") or "unknown_target"
+            alert_id = "unknown_alert_id"
+            if playbook_run.triggered_by:
+                alert_id = playbook_run.triggered_by.get("id") or playbook_run.triggered_by.get("alert_id") or "unknown_alert_id"
+            
+            result_str = "success" if step_status == PlaybookStatus.COMPLETED else "failure"
+            soar_file_logger.info(
+                f"SOAR Action Executed - Action Type: {action_name}, Target: {target}, "
+                f"Triggered by Alert ID: {alert_id}, Result: {result_str}, Details: '{step_result_details.get('detail', '')}'"
+            )
+        except Exception as log_err:
+            logger.error(f"Error writing to soar_execution.log: {log_err}")
         
         if step_status == PlaybookStatus.FAILED: # Use Enum
             playbook_run.status = PlaybookStatus.FAILED # Use Enum

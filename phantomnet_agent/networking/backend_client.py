@@ -3,6 +3,7 @@ import websockets
 import json
 import ssl
 from typing import List
+from pathlib import Path
 
 from attestation import generate_attestation_payload
 

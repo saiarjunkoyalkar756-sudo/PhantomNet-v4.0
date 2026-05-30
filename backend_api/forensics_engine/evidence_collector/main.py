@@ -4,6 +4,9 @@ from typing import Optional, Dict, Any, List
 import datetime
 import uuid
 
+from backend_api.shared.file_logging import get_rotating_file_logger
+forensics_vault_logger = get_rotating_file_logger("forensics_vault", "forensics_vault.log")
+
 router = APIRouter()
 
 class CollectedArtifact(BaseModel):
@@ -78,6 +81,17 @@ async def collect_evidence(request: EvidenceCollectionRequest):
             ))
         else:
             print(f"Warning: Unknown artifact type requested: {artifact_type}")
+
+    # Log every evidence artifact collected
+    try:
+        for art in collected_artifacts:
+            forensics_vault_logger.info(
+                f"Evidence artifact collected - Job ID: {request.job_id}, Asset ID: {request.asset_id}, "
+                f"Artifact ID: {art.artifact_id}, Name: {art.name}, Type: {art.type}, "
+                f"Source Path: {art.source_path}, Storage Path: {art.storage_path}, Size: {art.size_bytes} bytes"
+            )
+    except Exception as log_err:
+        print(f"Error writing artifact events to forensics_vault.log: {log_err}")
 
     return EvidenceCollectionResponse(
         job_id=request.job_id,

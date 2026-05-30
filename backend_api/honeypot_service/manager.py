@@ -8,8 +8,8 @@ from typing import Dict, Any, List, Optional
 from .models import HoneypotConfig
 from .forwarder import forward_event
 from .metrics import honeypot_errors_total
-from runners.base import HoneypotRunner
-from runners.process_runner import ProcessHoneypotRunner # Import the process runner
+from phantomnet_agent.runners.base import HoneypotRunner
+from phantomnet_agent.runners.process_runner import ProcessHoneypotRunner # Import the process runner
 
 logger = logging.getLogger(__name__)
 

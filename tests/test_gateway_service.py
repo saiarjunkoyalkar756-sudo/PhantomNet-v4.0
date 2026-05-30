@@ -1,17 +1,41 @@
 # tests/test_gateway_service.py
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
 from backend_api.gateway_service.main import app
 
+from backend_api.shared.database import get_db
+
 client = TestClient(app)
+
+async def mock_get_db_dependency():
+    mock_session = MagicMock()
+    mock_session.execute = AsyncMock()
+    mock_session.commit = AsyncMock()
+    mock_session.rollback = AsyncMock()
+    mock_session.close = AsyncMock()
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock()
+    yield mock_session
+
+app.dependency_overrides[get_db] = mock_get_db_dependency
 
 @pytest.fixture(autouse=True)
 def mock_db_session():
-    with patch("backend_api.gateway_service.main.SessionLocal") as mock_session_cls:
+    with patch("backend_api.gateway_service.main.SessionLocal") as mock_session_cls, \
+         patch("backend_api.shared.database.AsyncSessionLocal") as mock_async_session_cls:
         mock_session = MagicMock()
         mock_session.query.return_value.filter.return_value.first.return_value = None
         mock_session_cls.return_value = mock_session
+        
+        mock_async_session = MagicMock()
+        mock_async_session.execute = AsyncMock()
+        mock_async_session.commit = AsyncMock()
+        mock_async_session.rollback = AsyncMock()
+        mock_async_session.close = AsyncMock()
+        mock_async_session.__aenter__ = AsyncMock(return_value=mock_async_session)
+        mock_async_session.__aexit__ = AsyncMock()
+        mock_async_session_cls.return_value = mock_async_session
         yield mock_session
 
 def test_cors_headers():

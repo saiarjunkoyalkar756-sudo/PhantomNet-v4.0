@@ -1,0 +1,23 @@
+{
+    "simulation_id": "8f36cc2c-d191-4fff-bc40-c7f50ec99667",
+    "scenario_id": "147414e8-dc4f-4369-8b85-703ee8bf063e",
+    "status": "prevented",
+    "start_time": 1780061656.6773875,
+    "end_time": 1780061661.0850542,
+    "detection_points": [
+        {
+            "stage": "waf",
+            "action": "blocked_injection_attempt",
+            "timestamp": 1780061661.0850494
+        }
+    ],
+    "impact_assessment": {},
+    "remediation_suggestions": [
+        "Ensure WAF rules are updated and input validation is enforced."
+    ],
+    "score": 82.68366216775041,
+    "raw_logs": [
+        "[1780061661.085069] INFO: Web application received suspicious SQL query.",
+        ""
+    ]
+}

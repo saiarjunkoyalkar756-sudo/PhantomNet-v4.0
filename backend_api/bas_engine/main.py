@@ -42,8 +42,28 @@ class SimulationRequest(BaseModel):
 @app.post("/start_simulation")
 async def start_simulation(request: SimulationRequest, background_tasks: BackgroundTasks):
     simulation_id = str(uuid.uuid4())
-    # Simulation logic mapping...
-    return success_response(data={"simulation_id": simulation_id, "status": "initiated"}, message="Simulation started.")
+    sim_type = request.simulation_type.lower()
+    target = request.target
+    params = request.parameters
+
+    if sim_type == "xss":
+        run_xss_simulation(target, params, simulation_id)
+    elif sim_type == "sqli":
+        run_sqli_simulation(target, params, simulation_id)
+    elif sim_type == "rce":
+        run_rce_simulation(target, params, simulation_id)
+    elif sim_type == "privilege_escalation":
+        run_privilege_escalation_simulation(target, params, simulation_id)
+    elif sim_type == "ransomware":
+        run_ransomware_mimic_simulation(target, params, simulation_id)
+    elif sim_type == "port_scan":
+        run_port_scan_simulation(target, params, simulation_id)
+    elif sim_type == "bruteforce":
+        run_bruteforce_simulation(target, params, simulation_id)
+    else:
+        run_sqli_simulation(target, params, simulation_id)
+
+    return success_response(data={"simulation_id": simulation_id, "status": "initiated"})
 
 @app.get("/simulation_results/{simulation_id}")
 async def get_simulation_results(simulation_id: str):

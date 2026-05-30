@@ -2,7 +2,7 @@
 
 import logging
 import subprocess
-from typing import List, Tuple, Optional, Any
+from typing import List, Tuple, Optional, Any, Dict
 import asyncio
 
 from utils.logger import get_logger

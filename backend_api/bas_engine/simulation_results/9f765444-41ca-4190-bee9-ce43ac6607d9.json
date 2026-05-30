@@ -1,0 +1,26 @@
+{
+    "simulation_id": "e4c40ac8-a250-45b8-9f35-5c27a82ffe8e",
+    "scenario_id": "9f765444-41ca-4190-bee9-ce43ac6607d9",
+    "status": "detected",
+    "start_time": 1780061442.1409802,
+    "end_time": 1780061446.4144056,
+    "detection_points": [
+        {
+            "stage": "ids",
+            "action": "detected_anomalous_db_query",
+            "timestamp": 1780061446.4143841
+        }
+    ],
+    "impact_assessment": {
+        "data_access": "limited",
+        "data_exfiltration": "attempted"
+    },
+    "remediation_suggestions": [
+        "Implement parameterized queries and least privilege access to databases."
+    ],
+    "score": 62.360882964650166,
+    "raw_logs": [
+        "[1780061446.4144132] INFO: Web application received suspicious SQL query.",
+        ""
+    ]
+}

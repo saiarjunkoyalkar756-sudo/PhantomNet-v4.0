@@ -40,16 +40,40 @@ class AuditLogResponse(AuditLogBase):
         from_attributes = True
 
 @router.post("/ingest/", status_code=status.HTTP_201_CREATED)
-def ingest_single_audit_log(audit_log: AuditLogCreate, db: Session = Depends(get_db)):
+async def ingest_single_audit_log(audit_log: AuditLogCreate, db: Session = Depends(get_db)):
     db_audit = crud.create_audit_log(db=db, **audit_log.dict())
+    try:
+        from blockchain_layer.blockchain_client import submit_alert_to_ledger
+        metadata = audit_log.metadata or {}
+        if "alert" in audit_log.action.lower():
+            await submit_alert_to_ledger(
+                alert_id=audit_log.event_id or "MOCK-ALERT-ID",
+                alert_name=audit_log.raw_log_data,
+                severity=metadata.get("severity", "high"),
+                event_data=metadata
+            )
+    except Exception as e:
+        pass
     return success_response(data=db_audit)
 
 @router.post("/ingest/batch", status_code=status.HTTP_201_CREATED)
-def ingest_batch_audit_logs(audit_logs: List[AuditLogCreate], db: Session = Depends(get_db)):
+async def ingest_batch_audit_logs(audit_logs: List[AuditLogCreate], db: Session = Depends(get_db)):
     created_logs = []
     for audit_log in audit_logs:
         db_audit = crud.create_audit_log(db=db, **audit_log.dict())
         created_logs.append(db_audit)
+        try:
+            from blockchain_layer.blockchain_client import submit_alert_to_ledger
+            metadata = audit_log.metadata or {}
+            if "alert" in audit_log.action.lower():
+                await submit_alert_to_ledger(
+                    alert_id=audit_log.event_id or "MOCK-ALERT-ID",
+                    alert_name=audit_log.raw_log_data,
+                    severity=metadata.get("severity", "high"),
+                    event_data=metadata
+                )
+        except Exception as e:
+            pass
     return success_response(data=created_logs)
 
 @router.get("/logs/")

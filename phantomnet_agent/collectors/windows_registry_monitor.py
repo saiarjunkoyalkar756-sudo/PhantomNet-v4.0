@@ -36,8 +36,8 @@ class WindowsRegistryMonitor(Collector):
     Monitors Windows Registry for changes.
     """
 
-    def __init__(self, transport: Transport, config: Dict[str, Any]):
-        super().__init__(transport, config)
+    def __init__(self, orchestrator: "Orchestrator", adapter: Any, config: Dict[str, Any]):
+        super().__init__(orchestrator, adapter, config)
         self.logger = get_logger("phantomnet_agent.windows_registry_monitor")
         self.current_os = get_os()
 

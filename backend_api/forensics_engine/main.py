@@ -5,6 +5,8 @@ from .timeline_builder.main import router as timeline_router, TimelineRequest, T
 from .evidence_collector.main import router as evidence_router, EvidenceCollectionRequest, EvidenceCollectionResponse
 from backend_api.core.response import success_response, error_response
 from loguru import logger
+from backend_api.shared.file_logging import get_rotating_file_logger
+forensics_vault_logger = get_rotating_file_logger("forensics_vault", "forensics_vault.log")
 import datetime
 import uuid
 import asyncio
@@ -53,14 +55,35 @@ class ForensicReportResponse(BaseModel):
 
 async def _perform_forensic_tasks_in_background(job_id: str, job_type: str, target_asset_id: str, parameters: Dict[str, Any], db: Session):
     logger.info(f"Starting forensic job {job_id}")
+    try:
+        sources_list = parameters.get("sources", []) if parameters else []
+        forensics_vault_logger.info(
+            f"Forensic job started - Job ID: {job_id}, Asset ID: {target_asset_id}, "
+            f"Job Type: {job_type}, Sources Requested: {sources_list}, Status: running"
+        )
+    except Exception as log_err:
+        logger.error(f"Error writing start event to forensics_vault.log: {log_err}")
+        
     crud.update_forensic_job_status(db, job_id, "running")
     try:
         # Simulations (placeholder logic from original)
         await asyncio.sleep(2)
         crud.update_forensic_job_status(db, job_id, "completed")
+        try:
+            forensics_vault_logger.info(
+                f"Forensic job completed - Job ID: {job_id}, Asset ID: {target_asset_id}, Status: completed"
+            )
+        except Exception as log_err:
+            logger.error(f"Error writing completion event to forensics_vault.log: {log_err}")
     except Exception as e:
         logger.error(f"Job {job_id} failed: {e}")
         crud.update_forensic_job_status(db, job_id, "failed")
+        try:
+            forensics_vault_logger.info(
+                f"Forensic job failed - Job ID: {job_id}, Asset ID: {target_asset_id}, Status: failed, Error: {e}"
+            )
+        except Exception as log_err:
+            logger.error(f"Error writing failure event to forensics_vault.log: {log_err}")
 
 @router.post("/jobs/", response_model=ForensicJobResponse, status_code=status.HTTP_201_CREATED)
 async def create_forensic_job_endpoint(job_create: ForensicJobCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):

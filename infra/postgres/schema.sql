@@ -251,6 +251,7 @@ CREATE TABLE IF NOT EXISTS soar_playbook_execution_logs (
 CREATE INDEX IF NOT EXISTS idx_alerts_tenant_id ON alerts(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts(severity);
 CREATE INDEX IF NOT EXISTS idx_alerts_agent_id ON alerts(agent_id);
+CREATE INDEX IF NOT EXISTS idx_alerts_triggered_at ON alerts(triggered_at);
 CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON users(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_session_tokens_jti ON session_tokens(jti);
 CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(status);

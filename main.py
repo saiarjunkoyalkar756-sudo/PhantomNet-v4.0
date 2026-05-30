@@ -7,8 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 import uvicorn
 
-# Ensure the root directory is in python path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+# Ensure the root directory and backend_api directory are in python path
+root_dir = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, root_dir)
+sys.path.insert(0, os.path.join(root_dir, "backend_api"))
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -78,7 +80,7 @@ async def startup_event():
     
     # Mount key telemetry and analytics services
     mount_sub_service("/api/v1/behavioral", "backend_api.ai_behavioral_engine.main")
-    mount_sub_service("/api/v1/soar", "backend_api.soar_engine.main")
+    mount_sub_service("/api/v1/soar", "backend_api.soar_engine.app")
     mount_sub_service("/api/v1/compliance", "backend_api.compliance_service.main")
     mount_sub_service("/api/v1/vulnerability", "backend_api.vulnerability_management_service.main")
     mount_sub_service("/api/v1/bas", "backend_api.bas_engine.main")
