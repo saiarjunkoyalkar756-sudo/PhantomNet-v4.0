@@ -7,7 +7,7 @@ import secrets
 import asyncio
 from enum import Enum
 from datetime import datetime, timedelta
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +30,7 @@ from backend_api.shared.schemas import TokenData
 from backend_api.core.logging import logger as pn_logger
 
 # Password hashing
-def get_password_hash(password: str) -> bytes:
+def get_password_hash(password: str) -> str:
     salt = os.urandom(16)
     kdf = Scrypt(
         salt=salt,
@@ -41,11 +41,23 @@ def get_password_hash(password: str) -> bytes:
         backend=default_backend()
     )
     hashed_password = kdf.derive(password.encode())
-    return salt + hashed_password
+    return (salt + hashed_password).hex()
 
-def verify_password(plain_password: str, hashed_password: bytes) -> bool:
+def verify_password(plain_password: str, hashed_password: Any) -> bool:
     if not hashed_password:
         return False
+    
+    # Handle string (hex) stored format, convert back to bytes
+    if isinstance(hashed_password, str):
+        try:
+            hashed_password = bytes.fromhex(hashed_password)
+        except ValueError:
+            if hasattr(hashed_password, "encode"):
+                hashed_password = hashed_password.encode()
+                
+    if len(hashed_password) < 16:
+        return False
+        
     salt = hashed_password[:16]
     stored_hash = hashed_password[16:]
     kdf = Scrypt(
@@ -59,7 +71,7 @@ def verify_password(plain_password: str, hashed_password: bytes) -> bool:
     try:
         kdf.verify(plain_password.encode(), stored_hash)
         return True
-    except InvalidKey:
+    except Exception:
         return False
 
 # JWT settings
