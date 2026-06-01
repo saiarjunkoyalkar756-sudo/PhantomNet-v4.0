@@ -7,7 +7,7 @@ import useAuthStore from '../store/authStore';
  * Handles the unified response envelope: { success, data, error, request_id }
  */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://48247fafa75510.lhr.life/api/v1/gateway/api',
 });
 
 // Request interceptor for Auth
