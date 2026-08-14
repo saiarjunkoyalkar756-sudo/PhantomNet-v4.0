@@ -127,3 +127,25 @@ The cross-platform agent compiles cleanly and runs across multiple host architec
 * **[Production Runbook](docs/runbook.md):** System monitoring, database scaling, backup and recovery operations, and incident response procedures.
 * **[API Reference](docs/api-reference.md):** Complete developer REST API specifications for authentication, agents, SOAR execution, and forensics triggers.
 * **[Deploy.md Reference](Deploy.md):** Full setup guide, operational cheat sheets, and active testing targets.
+
+
+## Why PhantomNet?
+
+PhantomNet is a research and engineering platform for defensive security validation, breach-and-attack simulation, telemetry collection, automated response, and auditability. It is most useful to security engineers, detection-and-response researchers, and developers building controlled SOC automation experiments.
+
+## Start with a Safe Local Check
+
+For a lightweight dependency and import check, use the repository’s Python environment and run:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+python -m pytest -q
+```
+
+Full deployments require the services described in [`Deploy.md`](Deploy.md). Use isolated test networks and synthetic data; do not point simulations at systems you do not own or have explicit permission to test.
+
+## Contributing
+
+Contributions are welcome in detection rules, safe-mode behavior, test coverage, documentation, and platform adapters. Please explain the defensive use case, identify the affected service or feature, include tests, and document any required infrastructure. Stars help other security practitioners find the project, while forks are encouraged for clearly scoped research and lab environments.
