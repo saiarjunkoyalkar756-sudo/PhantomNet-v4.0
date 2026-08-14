@@ -66,7 +66,7 @@ class ChronoDefense:
             self._save_registry()
             
             logger.info(f"Snapshot Created: {snapshot_id} for {target_path}")
-            return snapshot_id
+            return snapshot_full_path
         except Exception as e:
             logger.error(f"Snapshot Error: {e}")
             return None
@@ -86,6 +86,25 @@ class ChronoDefense:
                     logger.info(f"Rotated old snapshot: {entry['id']}")
                 except Exception as e:
                     logger.warning(f"Failed to delete rotated snapshot {entry['id']}: {e}")
+
+    def get_latest_snapshot(self, target_path: str) -> Optional[str]:
+        """Return the filesystem path of the latest snapshot for a target."""
+        target_snapshots = [s for s in self.registry["snapshots"] if s["target"] == target_path]
+        if not target_snapshots:
+            return None
+        latest = sorted(target_snapshots, key=lambda x: x["timestamp"])[-1]
+        return latest.get("path")
+
+    def rollback_to_snapshot(self, target_path: str, snapshot_path: str) -> bool:
+        """Restore a target from a snapshot filesystem path."""
+        entry = next(
+            (s for s in self.registry["snapshots"]
+             if s["target"] == target_path and s.get("path") == snapshot_path),
+            None,
+        )
+        if entry is not None:
+            return self.rollback_to_id(entry["id"])
+        return False
 
     def rollback_to_latest(self, target_path: str) -> bool:
         """

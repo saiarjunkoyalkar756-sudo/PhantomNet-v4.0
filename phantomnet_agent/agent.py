@@ -6,20 +6,20 @@ from typing import Dict, Any, Optional
 import json
 from datetime import datetime
 
-from core.state import get_agent_state
-from plugins.loader import PluginLoader
-from api.log_streaming_api import manager as log_streaming_manager
-from schemas.actions import AgentCommand
-from bus.base import Transport
+from phantomnet_agent.core.state import get_agent_state
+from phantomnet_agent.plugins.loader import PluginLoader
+from phantomnet_agent.api.log_streaming_api import manager as log_streaming_manager
+from phantomnet_agent.schemas.actions import AgentCommand
+from phantomnet_agent.bus.base import Transport
 
-from networking.network_sensor import NetworkSensor
-from networking.backend_client import BackendClient
+from phantomnet_agent.networking.network_sensor import NetworkSensor
+from phantomnet_agent.networking.backend_client import BackendClient
 
-from actions.network_actions import NetworkActions
-from actions.system_actions import SystemActions
-from actions.process_actions import ProcessActions
+from phantomnet_agent.actions.network_actions import NetworkActions
+from phantomnet_agent.actions.system_actions import SystemActions
+from phantomnet_agent.actions.process_actions import ProcessActions
 
-from core.health_monitor import AgentHealthMonitor
+from phantomnet_agent.core.health_monitor import AgentHealthMonitor
 
 try:
     PID_FILE = Path(get_agent_state().config.agent.log_dir) / "agent.pid"

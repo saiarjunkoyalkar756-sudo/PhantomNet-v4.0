@@ -13,8 +13,9 @@ from typing import Optional, Dict, Any, List
 from .jti_store import JtiStore, default_jti_store
 from backend_api.shared.settings import settings
 
-# Global set for simple in-memory token revocation
+# Global sets retained for compatibility with the original security test API.
 revoked_tokens = set()
+used_jtis = set()
 
 def generate_key_pair():
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -175,6 +176,7 @@ def verify_inter_node_jwt(
             token_lifetime = timedelta(seconds=(exp - iat))
             # Add a small buffer to the expiration
             jti_store.mark_jti_as_used(jti, expires_in=token_lifetime + timedelta(seconds=60))
+        used_jtis.add(jti)
 
         return decoded_payload
     except jwt.ExpiredSignatureError:

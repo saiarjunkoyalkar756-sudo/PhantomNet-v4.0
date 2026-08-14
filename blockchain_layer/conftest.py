@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+
 # Prevent shadowing of global backend_api by local blockchain_layer/backend_api
 for path in list(sys.path):
     if "blockchain_layer" in path:
@@ -9,7 +10,8 @@ for path in list(sys.path):
             pass
 if "" in sys.path:
     sys.path.remove("")
-sys.path.insert(0, "/home/joyhark522/PhantomNet-v4.0")
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, REPO_ROOT)
 
 import pytest
 from sqlalchemy import create_engine

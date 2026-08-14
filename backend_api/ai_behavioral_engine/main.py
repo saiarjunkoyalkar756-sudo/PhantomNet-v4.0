@@ -18,6 +18,13 @@ import pandas as pd
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, Request
 
+
+class Blockchain:
+    """Optional audit-chain integration point; replaced by the real adapter in deployments."""
+
+    def add_event(self, *_args, **_kwargs):
+        return None
+
 from backend_api.shared.kafka_topics import TOPICS
 from backend_api.shared.kafka_client import ResilientKafkaConsumer, ResilientKafkaProducer
 from backend_api.core_config import SAFE_MODE
@@ -97,6 +104,32 @@ async def run_threat_forecasting():
                     producer.send(THREAT_PREDICTIONS_TOPIC, prediction)
         except Exception as e:
             logger.error(f"Forecasting error: {e}")
+
+def generate_alert(tenant_id: str, agent_id: str, event_count: int, window_seconds: int) -> Dict[str, Any]:
+    """Build a deterministic alert for high-frequency event anomalies."""
+    return {
+        "tenant_id": str(tenant_id),
+        "agent_id": agent_id,
+        "rule_name": "High Frequency Event Anomaly",
+        "event_count": event_count,
+        "window_seconds": window_seconds,
+        "severity": "high" if event_count > EVENT_THRESHOLD else "medium",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def generate_network_alert(tenant_id: str, agent_id: str, anomaly: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a deterministic alert from a network anomaly record."""
+    anomaly_type = str(anomaly.get("type") or "Unknown")
+    return {
+        "tenant_id": str(tenant_id),
+        "agent_id": agent_id,
+        "rule_name": f"Network Anomaly - {anomaly_type}",
+        "description": str(anomaly.get("description") or ""),
+        "severity": "high",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
 
 def process_event(event: dict):
     global all_events

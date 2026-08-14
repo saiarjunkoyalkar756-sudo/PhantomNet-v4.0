@@ -1,5 +1,5 @@
-import uuid
 import datetime
+import uuid
 import yaml
 import jinja2
 import logging
@@ -57,3 +57,21 @@ class TwinGenerator:
             self.logger.error(f"Failed to store Docker Compose YAML as evidence for twin {inst_id}: {e}", exc_info=True)
 
         return instance
+
+
+def render_template(template: TwinTemplate, params: dict) -> TwinInstance:
+    """Render a template synchronously for local validation and test tooling."""
+    compose = {"version": "3.8", "services": {}}
+    for svc in template.services:
+        compose["services"][svc.name] = {
+            "image": svc.image or "alpine:latest",
+            "environment": svc.env,
+            "ports": svc.ports,
+        }
+    return TwinInstance(
+        instance_id=f"twin-{uuid.uuid4().hex[:8]}",
+        template_id=template.template_id,
+        created_at=datetime.datetime.utcnow().isoformat() + "Z",
+        params=params,
+        docker_compose_yaml=yaml.safe_dump(compose, sort_keys=False),
+    )

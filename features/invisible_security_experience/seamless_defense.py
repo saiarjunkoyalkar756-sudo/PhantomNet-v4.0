@@ -49,3 +49,15 @@ class InvisibleSecurityExperience:
             "total_invisible_resolutions": len(self.background_remediations),
             "friction_saved_index": len(self.background_remediations) * 1.5 # Simulated metric
         }
+
+
+class SeamlessDefense(InvisibleSecurityExperience):
+    """Compatibility facade for the original invisible-security test harness."""
+
+    def __init__(self, cognitive_core: Any = None, friction_threshold: float = 0.3):
+        super().__init__(friction_threshold=friction_threshold)
+        self.cognitive_core = cognitive_core
+
+    def monitor_system_harmony(self) -> Dict[str, Any]:
+        """Return current ambient-defense metrics without starting a background loop."""
+        return self.get_silent_metrics()

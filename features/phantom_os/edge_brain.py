@@ -53,6 +53,9 @@ class PhantomOS_EdgeBrain:
         self.active_policies.append({"id": policy_id, "rules": rules})
         logger.info(f"Policy {policy_id} injected into Edge Brain kernel space.")
 
+# Backwards-compatible public name used by the original PhantomOS test harness.
+EdgeBrain = PhantomOS_EdgeBrain
+
 if __name__ == "__main__":
     brain = PhantomOS_EdgeBrain("Web_Server_1")
     print(brain.get_system_vitals())

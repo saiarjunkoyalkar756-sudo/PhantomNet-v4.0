@@ -158,3 +158,16 @@ class AIAnalyzer:
             self.logger.error(f"Error during full AI analysis for event {event_id}: {e}. Returning failed analysis result.", exc_info=True)
 
         return analysis_result
+
+
+def analyze_attack(payload: str) -> str:
+    """Run the lightweight attack analyzers in deterministic priority order."""
+    from phantomnet_agent.analyzers.ml_analyzer import MLAnalyzer
+    from phantomnet_agent.analyzers.rule_based_analyzer import RuleBasedAnalyzer
+    from phantomnet_agent.analyzers.command_injection_analyzer import CommandInjectionAnalyzer
+
+    for analyzer in (MLAnalyzer(), RuleBasedAnalyzer(), CommandInjectionAnalyzer()):
+        result = analyzer.analyze(payload)
+        if isinstance(result, str) and result:
+            return result
+    return "Unknown"
