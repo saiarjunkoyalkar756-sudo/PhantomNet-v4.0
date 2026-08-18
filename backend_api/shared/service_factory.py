@@ -7,7 +7,7 @@ import os
 import time
 import json
 import uuid
-from typing import Optional, Callable, Dict, Any, List
+from typing import Optional, Callable, Dict, Any, List, Iterable
 from loguru import logger
 from backend_api.shared.logger_config import setup_logging, async_log_sink
 from backend_api.core.response import success_response, error_response
@@ -20,6 +20,7 @@ def create_phantom_service(
     custom_shutdown: Optional[Callable] = None,
     use_standard_envelope: bool = True,
     cors_origins: Optional[List[str]] = None,
+    required_dependencies: Optional[Iterable[str]] = None,
 ) -> FastAPI:
     """
     Standardized factory to create a 'Strong' PhantomNet microservice.
@@ -149,16 +150,40 @@ def create_phantom_service(
     async def health_check():
         try:
             from backend_api.shared.health import run_standard_health_check
-            health_details = await run_standard_health_check()
+            health_details = await run_standard_health_check(required_dependencies=required_dependencies)
             health_details["service"] = name
             health_details["version"] = version
             return success_response(data=health_details)
         except Exception as e:
-            logger.error(f"Health check failed: {e}")
+            logger.error("Health check failed", error_type=type(e).__name__)
             return error_response(
                 code="HEALTH_CHECK_FAILED",
-                message=f"Health check diagnostics failed: {e}",
+                message="Health check diagnostics failed.",
                 status_code=500
+            )
+
+    @app.get("/ready", tags=["Infrastructure"])
+    async def readiness_check():
+        """Return 200 only when required upstream protection dependencies are active."""
+        try:
+            from backend_api.shared.health import run_standard_health_check
+            health_details = await run_standard_health_check(required_dependencies=required_dependencies)
+            health_details["service"] = name
+            health_details["version"] = version
+            if health_details["readiness"] != "ready":
+                return error_response(
+                    code="SERVICE_NOT_READY",
+                    message="Required service dependencies are not active.",
+                    details=health_details,
+                    status_code=503,
+                )
+            return success_response(data=health_details)
+        except Exception as e:
+            logger.error("Readiness check failed", error_type=type(e).__name__)
+            return error_response(
+                code="READINESS_CHECK_FAILED",
+                message="Readiness diagnostics failed.",
+                status_code=500,
             )
 
     # Global Exception Handlers
