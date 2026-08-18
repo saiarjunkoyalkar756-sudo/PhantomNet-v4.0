@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Dict, Any, List
 
 from collectors.base import Collector
@@ -53,18 +54,20 @@ class DnsCollector(Collector):
                         query_name = match.group(2)
                         resolver = match.group(3) if match.group(3) else "UNKNOWN_RESOLVER" # Placeholder
                         
+                        event_payload = {
+                            "query_name": query_name,
+                            "query_type": query_type,
+                            "answer": None,
+                            "resolver": resolver,
+                            "process_pid": None,
+                        }
                         event = DnsEvent(
-                            agent_id="agent-id-placeholder",
-                            timestamp=asyncio.get_event_loop().time(),
-                            payload={
-                                "query_name": query_name,
-                                "query_type": query_type,
-                                "answer": None, # This might require further lookup or more advanced parsing
-                                "resolver": resolver,
-                                "process_pid": None # Cannot easily get PID from log parsing alone
-                            }
+                            agent_id=self.config.get("agent_id", "agent-id-placeholder"),
+                            timestamp=datetime.now(timezone.utc),
+                            payload=event_payload,
+                            **event_payload,
                         )
-                        await self.orchestrator.ingest_event(event.dict())
+                        await self.orchestrator.ingest_event(event.model_dump())
                         logger.debug(f"Detected DNS query: {query_name} ({query_type})")
                 self.last_read_positions[log_file_path] = f.tell()
         except FileNotFoundError:

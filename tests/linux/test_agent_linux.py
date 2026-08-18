@@ -127,6 +127,9 @@ async def test_linux_heartbeat_telemetry(initialized_agent_state_linux):
     """Test heartbeat telemetry includes Linux OS and capabilities."""
     with patch('phantomnet_agent.self_healing_infrastructure.httpx.AsyncClient') as mock_client_cls:
         mock_client = AsyncMock()
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
         mock_client_cls.return_value.__aenter__.return_value = mock_client
         mock_post = mock_client.post
         

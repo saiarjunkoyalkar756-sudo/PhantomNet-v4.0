@@ -11,11 +11,30 @@ from backend_api.shared.kafka_topics import TOPICS
 
 from .models import PlaybookStep, Playbook, PlaybookRun, PlaybookExecutionLog, PlaybookStatus # Import PlaybookStep and Playbook
 from .state import playbooks_store, playbook_runs # Import playbooks_store and playbook_runs
+from .local_enforcement import get_local_enforcement_adapter
+from .response_providers import ResponseRequest, get_response_provider
 
 logger = logging.getLogger(__name__)
 
 from backend_api.shared.file_logging import get_rotating_file_logger
 soar_file_logger = get_rotating_file_logger("soar_execution", "soar_execution.log")
+
+
+def _external_response(action: str, target: str, kwargs: Dict[str, Any]) -> Dict[str, Any] | None:
+    """Use an external provider only when a playbook explicitly opts in."""
+    if kwargs.get("response_provider") != "external":
+        return None
+    approval_id = kwargs.get("approval_id")
+    request = ResponseRequest(
+        action=action,
+        target=target,
+        tenant_id=str(kwargs.get("tenant_id", "")),
+        requested_by=str(kwargs.get("requested_by", "unknown")),
+        approval_id=str(approval_id) if approval_id else None,
+        idempotency_key=str(kwargs.get("idempotency_key") or f"{action}:{target}:{approval_id or 'unapproved'}"),
+        metadata=dict(kwargs.get("response_metadata", {})),
+    )
+    return get_response_provider().execute(request)
 
 # --- Placeholder Actions ---
 # In a real implementation, these would interact with other systems
@@ -23,22 +42,34 @@ soar_file_logger = get_rotating_file_logger("soar_execution", "soar_execution.lo
 
 
 def isolate_host(hostname: str, **kwargs):
-    logger.info(f"[SOAR ACTION][EDR] Isolating host: {hostname}")
-    return {"status": "success", "detail": f"Host {hostname} isolated via EDR."}
+    logger.info(f"[SOAR ACTION][EDR] Requesting isolation for host: {hostname}")
+    return _external_response("isolate_host", hostname, kwargs) or get_local_enforcement_adapter().isolate_host(hostname)
 
 
 def block_ip(ip_address: str, **kwargs):
-    logger.info(f"[SOAR ACTION][Firewall] Blocking IP: {ip_address}")
-    return {"status": "success", "detail": f"IP {ip_address} blocked on firewall."}
+    logger.info(f"[SOAR ACTION][Firewall] Requesting IP block for: {ip_address}")
+    return _external_response("block_ip", ip_address, kwargs) or get_local_enforcement_adapter().block_ip(ip_address)
+
+
+def rollback_block_ip(ip_address: str, **kwargs):
+    logger.info(f"[SOAR ACTION][Firewall] Requesting rollback for IP: {ip_address}")
+    return get_local_enforcement_adapter().rollback_block_ip(ip_address)
 
 
 def terminate_process(hostname: str, process_name: str, **kwargs):
-    logger.info(
-        f"[SOAR ACTION][EDR] Terminating process '{process_name}' on host: {hostname}"
+    logger.info(f"[SOAR ACTION][EDR] Process termination requested for '{process_name}' on {hostname}.")
+    external = _external_response(
+        "terminate_process",
+        hostname,
+        {**kwargs, "response_metadata": {**kwargs.get("response_metadata", {}), "process_name": process_name}},
     )
+    if external is not None:
+        return external
     return {
-        "status": "success",
-        "detail": f"Process {process_name} terminated on {hostname} via EDR.",
+        "status": "failure",
+        "detail": f"No configured EDR provider can terminate {process_name} on {hostname}.",
+        "enforced": False,
+        "verified": False,
     }
 
 
@@ -94,6 +125,7 @@ async def dispatch_agent_command(agent_id: str, command_type: str, payload: Dict
 ACTION_MAP = {
     "isolate_host": isolate_host,
     "block_ip": block_ip,
+    "rollback_block_ip": rollback_block_ip,
     "terminate_process": terminate_process,
     "kill_process": terminate_process,
     "notify_soc": notify_soc,
@@ -243,22 +275,34 @@ stop_consuming_event = asyncio.Event()
 
 
 def isolate_host(hostname: str, **kwargs):
-    logger.info(f"[SOAR ACTION][EDR] Isolating host: {hostname}")
-    return {"status": "success", "detail": f"Host {hostname} isolated via EDR."}
+    logger.info(f"[SOAR ACTION][EDR] Requesting isolation for host: {hostname}")
+    return _external_response("isolate_host", hostname, kwargs) or get_local_enforcement_adapter().isolate_host(hostname)
 
 
 def block_ip(ip_address: str, **kwargs):
-    logger.info(f"[SOAR ACTION][Firewall] Blocking IP: {ip_address}")
-    return {"status": "success", "detail": f"IP {ip_address} blocked on firewall."}
+    logger.info(f"[SOAR ACTION][Firewall] Requesting IP block for: {ip_address}")
+    return _external_response("block_ip", ip_address, kwargs) or get_local_enforcement_adapter().block_ip(ip_address)
+
+
+def rollback_block_ip(ip_address: str, **kwargs):
+    logger.info(f"[SOAR ACTION][Firewall] Requesting rollback for IP: {ip_address}")
+    return get_local_enforcement_adapter().rollback_block_ip(ip_address)
 
 
 def terminate_process(hostname: str, process_name: str, **kwargs):
-    logger.info(
-        f"[SOAR ACTION][EDR] Terminating process '{process_name}' on host: {hostname}"
+    logger.info(f"[SOAR ACTION][EDR] Process termination requested for '{process_name}' on {hostname}.")
+    external = _external_response(
+        "terminate_process",
+        hostname,
+        {**kwargs, "response_metadata": {**kwargs.get("response_metadata", {}), "process_name": process_name}},
     )
+    if external is not None:
+        return external
     return {
-        "status": "success",
-        "detail": f"Process {process_name} terminated on {hostname} via EDR.",
+        "status": "failure",
+        "detail": f"No configured EDR provider can terminate {process_name} on {hostname}.",
+        "enforced": False,
+        "verified": False,
     }
 
 
@@ -314,6 +358,7 @@ async def dispatch_agent_command(agent_id: str, command_type: str, payload: Dict
 ACTION_MAP = {
     "isolate_host": isolate_host,
     "block_ip": block_ip,
+    "rollback_block_ip": rollback_block_ip,
     "terminate_process": terminate_process,
     "kill_process": terminate_process,
     "notify_soc": notify_soc,

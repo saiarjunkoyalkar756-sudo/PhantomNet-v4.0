@@ -3,6 +3,7 @@ import logging
 from typing import Dict, Any, List, Optional, TYPE_CHECKING
 from pathlib import Path
 import hashlib
+from datetime import datetime, timezone
 
 if TYPE_CHECKING:
     from orchestrator import Orchestrator
@@ -159,18 +160,19 @@ class FileCollector(Collector):
     async def _send_file_event(self, operation: str, path: Path, file_info: Dict[str, Any]):
         """Sends a FileEvent via the orchestrator."""
         event_payload = {
-            "agent_id": "agent-id-placeholder",
-            "timestamp": asyncio.get_event_loop().time(),
-            "payload": {
-                "path": str(path),
-                "operation": operation,
-                "file_type": file_info.get("file_type", "unknown"),
-                "size": file_info.get("size"),
-                "hash": file_info.get("hash")
-            }
+            "path": str(path),
+            "operation": operation,
+            "file_type": file_info.get("file_type", "unknown"),
+            "size": file_info.get("size"),
+            "hash": file_info.get("hash"),
         }
-        file_event = FileEvent(**event_payload)
-        await self.orchestrator.ingest_event(file_event.dict())
+        file_event = FileEvent(
+            agent_id=self.config.get("agent_id", "agent-id-placeholder"),
+            timestamp=datetime.now(timezone.utc),
+            payload=event_payload,
+            **event_payload,
+        )
+        await self.orchestrator.ingest_event(file_event.model_dump())
 
 
 if __name__ == '__main__':

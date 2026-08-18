@@ -4,7 +4,6 @@ import httpx
 import asyncio
 from typing import Dict, Any, Optional, Tuple, Union, AsyncGenerator
 
-from core.state import get_agent_state # For accessing agent_id if needed in logs
 from utils.logger import get_logger # Use the structured logger
 from security.jwt_manager import JWTManager # Import JWTManager
 
@@ -13,13 +12,14 @@ class HttpTransport(Transport):
     HTTP-based transport for sending events to a backend API.
     Commands reception is currently a placeholder as HTTP is typically pull-based.
     """
-    def __init__(self, endpoint: str, client_cert: Optional[Union[str, Tuple[str, str]]] = None, client_key: Optional[str] = None, verify_ca: Union[str, bool] = True, jwt_manager: Optional[JWTManager] = None):
+    def __init__(self, endpoint: str, client_cert: Optional[Union[str, Tuple[str, str]]] = None, client_key: Optional[str] = None, verify_ca: Union[str, bool] = True, jwt_manager: Optional[JWTManager] = None, agent_state: Optional[Any] = None):
         self.logger = get_logger("phantomnet_agent.bus.http")
         self.endpoint = endpoint
         self.client_cert = client_cert
         self.client_key = client_key
         self.verify_ca = verify_ca
         self.jwt_manager = jwt_manager # Store JWTManager instance
+        self.agent_state = agent_state
         self.client: Optional[httpx.AsyncClient] = None
         self.logger.info(f"HttpTransport initialized for endpoint: {self.endpoint}")
 
@@ -40,10 +40,7 @@ class HttpTransport(Transport):
             timeout=10.0 # Default timeout for bus operations
         )
         self.logger.info("Connected to HTTP bus.")
-        # Update agent_state's bus connection status
-        agent_state = get_agent_state()
-        agent_state.bus_connected = True
-        agent_state.update_component_health("bus_http", "connected", {"endpoint": self.endpoint})
+        self._update_component_health("connected", {"endpoint": self.endpoint}, bus_connected=True)
 
 
     async def disconnect(self):
@@ -52,10 +49,7 @@ class HttpTransport(Transport):
             await self.client.aclose()
             self.logger.info("Disconnected from HTTP bus.")
             self.client = None
-            # Update agent_state's bus connection status
-            agent_state = get_agent_state()
-            agent_state.bus_connected = False
-            agent_state.update_component_health("bus_http", "disconnected", {})
+            self._update_component_health("disconnected", {}, bus_connected=False)
 
     async def send_event(self, event_data: Dict[str, Any]):
         """
@@ -96,17 +90,21 @@ class HttpTransport(Transport):
             self.logger.debug(f"Event '{event_type}' sent successfully to backend.", extra={"event_data": event_data})
         except httpx.RequestError as e:
             self.logger.warning(f"Failed to send event '{event_type}' to backend ({self.endpoint}{ingest_path}): Network error - {e}", extra={"event_data": event_data, "error": str(e)})
-            # Update agent_state's bus connection status due to persistent failure
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_http", "degraded", {"reason": "Network error sending event", "details": str(e)})
+            self._update_component_health("degraded", {"reason": "Network error sending event", "details": str(e)})
         except httpx.HTTPStatusError as e:
             self.logger.warning(f"Failed to send event '{event_type}' to backend ({self.endpoint}{ingest_path}): HTTP error {e.response.status_code} - {e.response.text}", extra={"event_data": event_data, "error": str(e)})
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_http", "degraded", {"reason": "HTTP error sending event", "details": str(e)})
+            self._update_component_health("degraded", {"reason": "HTTP error sending event", "details": str(e)})
         except Exception as e:
             self.logger.error(f"Unexpected error sending event '{event_type}' to backend: {e}", exc_info=True, extra={"event_data": event_data})
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_http", "error", {"reason": "Unexpected error sending event", "details": str(e)})
+            self._update_component_health("error", {"reason": "Unexpected error sending event", "details": str(e)})
+
+    def _update_component_health(self, status: str, details: Dict[str, Any], bus_connected: Optional[bool] = None) -> None:
+        """Report optional agent health without requiring a global singleton."""
+        if self.agent_state is None:
+            return
+        if bus_connected is not None:
+            self.agent_state.bus_connected = bus_connected
+        self.agent_state.update_component_health("bus_http", status, details)
 
     async def receive_commands(self, commands_topic: str) -> AsyncGenerator[Any, None]:
         """
@@ -114,10 +112,5 @@ class HttpTransport(Transport):
         This implementation simply logs a warning and yields no commands.
         """
         self.logger.warning(f"Command reception is not actively supported for HTTP bus type on topic '{commands_topic}'. This is a no-op.", extra={"topic": commands_topic})
-        # In a real scenario, this might implement long-polling or await external triggers.
-        while True:
-            await asyncio.sleep(self.client.timeout or 10.0) # Sleep to prevent busy-looping
-            # Yield nothing for now
-            if self.client.is_closed: # Ensure we don't block indefinitely if client is closed
-                break
-            yield
+        if False:
+            yield None

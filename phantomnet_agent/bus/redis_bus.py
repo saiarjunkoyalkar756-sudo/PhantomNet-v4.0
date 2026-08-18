@@ -6,8 +6,10 @@ from typing import Dict, Any, AsyncGenerator, Optional, List
 import redis.asyncio as redis
 from redis.asyncio.client import Redis as RedisClient
 from redis.exceptions import ConnectionError as RedisConnectionError # Specific Redis connection error
+from pydantic import ValidationError
 
 from phantomnet_agent.bus.base import Transport
+from phantomnet_agent.schemas.actions import AgentAction
 from utils.logger import get_logger # Use the structured logger
 
 class RedisTransport(Transport):
@@ -20,7 +22,7 @@ class RedisTransport(Transport):
     DLQ_LIST_KEY: str = "phantomnet:dlq"
     DLQ_TTL_SECONDS: int = 86400  # 24 hours
 
-    def __init__(self, url: str, events_channel: str, commands_channel: str, stream_max_len: int = 10000):
+    def __init__(self, url: str, events_channel: str, commands_channel: str, stream_max_len: int = 10000, agent_state: Optional[Any] = None):
         self.logger = get_logger("phantomnet_agent.bus.redis")
         self.url = url
         self.events_channel = events_channel
@@ -32,6 +34,7 @@ class RedisTransport(Transport):
         self._command_queue: asyncio.Queue = asyncio.Queue()
         self._local_dlq: List[Dict[str, Any]] = []  # Local fallback when Redis itself is down
         self.connected: bool = False
+        self.agent_state = agent_state
         self.logger.info(f"RedisTransport initialized for URL: {self.url}")
 
     async def connect(self):
@@ -46,20 +49,21 @@ class RedisTransport(Transport):
             
             self.connected = True
             self.logger.info(f"Connected to Redis at {self.url}")
-            # Update agent_state's bus connection status
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_redis", "connected", {"url": self.url})
+            self._update_component_health("connected", {"url": self.url})
         except (RedisConnectionError, ConnectionRefusedError) as e:
             self.connected = False
             self.logger.warning(f"Failed to connect to Redis at {self.url}: {e}. Redis bus will operate in no-op mode.", extra={"error": str(e)})
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_redis", "disconnected", {"url": self.url, "reason": "Connection failed"})
+            self._update_component_health("disconnected", {"url": self.url, "reason": "Connection failed"})
         except Exception as e:
             self.connected = False
             self.logger.error(f"Unexpected error connecting to Redis at {self.url}: {e}", exc_info=True)
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_redis", "error", {"url": self.url, "reason": "Unexpected error", "details": str(e)})
+            self._update_component_health("error", {"url": self.url, "reason": "Unexpected error", "details": str(e)})
 
+
+    def _update_component_health(self, status: str, details: Dict[str, Any]) -> None:
+        """Report transport health only when a state dependency was explicitly supplied."""
+        if self.agent_state is not None:
+            self.agent_state.update_component_health("bus_redis", status, details)
 
     async def disconnect(self):
         """Closes the Redis connection and stops the listener task."""
@@ -75,8 +79,7 @@ class RedisTransport(Transport):
         if self.redis:
             await self.redis.close()
         self.logger.info("Redis transport disconnected.")
-        agent_state = get_agent_state()
-        agent_state.update_component_health("bus_redis", "disconnected", {"url": self.url})
+        self._update_component_health("disconnected", {"url": self.url})
 
     async def send_event(self, event_data: Dict[str, Any]):
         """Sends an event to the Redis Stream with retry and DLQ fallback."""
@@ -130,10 +133,8 @@ class RedisTransport(Transport):
                 f"Redis DLQ write also failed. Event stored in local memory DLQ. "
                 f"Local DLQ size: {len(self._local_dlq)}"
             )
-        agent_state = get_agent_state()
-        agent_state.update_component_health(
-            "bus_redis", "degraded",
-            {"reason": "Event moved to DLQ", "details": str(last_exc)}
+        self._update_component_health(
+            "degraded", {"reason": "Event moved to DLQ", "details": str(last_exc)}
         )
 
     async def flush_dlq(self) -> int:
@@ -203,17 +204,17 @@ class RedisTransport(Transport):
                 if message and message['type'] == 'message':
                     try:
                         data = json.loads(message['data'])
-                        await self._command_queue.put(data) # Put command data into queue
-                        self.logger.debug(f"Received command from Redis PubSub: {data.get('action_type')}", extra={"command": data})
-                    except json.JSONDecodeError:
-                        self.logger.warning(f"Received malformed JSON command from Redis PubSub on channel '{self.commands_channel}'.")
+                        command = AgentAction(**data)
+                        await self._command_queue.put(command)
+                        self.logger.debug(f"Received command from Redis PubSub: {command.action_type}", extra={"command": command.model_dump()})
+                    except (json.JSONDecodeError, ValidationError):
+                        self.logger.warning(f"Received malformed command on Redis channel '{self.commands_channel}'.")
                 await asyncio.sleep(0.01) # Yield control
         except asyncio.CancelledError:
             self.logger.info("Redis command listener task cancelled.")
         except Exception as e:
             self.logger.error(f"Error in Redis command listener task: {e}", exc_info=True)
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_redis", "degraded", {"reason": "Command listener error", "details": str(e)})
+            self._update_component_health("degraded", {"reason": "Command listener error", "details": str(e)})
         finally:
             if self.pubsub:
                 await self.pubsub.unsubscribe(self.commands_channel)

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 import uuid
 
@@ -18,6 +18,7 @@ class PlaybookStatus(str, Enum):
 class RemediationAction(str, Enum):
     """Types of automated remediation actions."""
     BLOCK_IP = "block_ip"
+    ROLLBACK_BLOCK_IP = "rollback_block_ip"
     ISOLATE_HOST = "isolate_host"
     KILL_PROCESS = "kill_process"
     CONTAIN_CONTAINER = "contain_container"
@@ -56,13 +57,13 @@ class Playbook(BaseModel):
     steps: List[PlaybookStep] = Field(..., description="Ordered list of steps to execute.")
     context: Dict[str, Any] = Field(default_factory=dict, description="Initial context variables for the playbook execution.")
     version: str = Field("1.0.0", description="Version of the playbook.")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class PlaybookExecutionLog(BaseModel):
     """Log entry for a single step's execution within a playbook run."""
     step_action: RemediationAction
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: PlaybookStatus
     details: str
     output: Dict[str, Any] = Field(default_factory=dict)
@@ -72,7 +73,7 @@ class PlaybookRun(BaseModel):
     run_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID for this playbook run.")
     playbook_name: str
     triggered_by: Dict[str, Any] = Field(..., description="The event or incident that triggered this run.")
-    start_time: datetime = Field(default_factory=datetime.utcnow)
+    start_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     end_time: Optional[datetime] = None
     status: PlaybookStatus = PlaybookStatus.PENDING # Overall status of the playbook run
     playbook: Optional[Playbook] = None

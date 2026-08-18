@@ -21,6 +21,7 @@ class LogCollector(Collector):
     def __init__(self, orchestrator: "Orchestrator", adapter: Any, config: Dict[str, Any]):
         super().__init__(orchestrator, adapter, config)
         self.files: List[str] = config.get("files", [])
+        self.agent_id = config.get("agent_id", "agent-id-placeholder")
         self.interval_seconds = self.config.get("interval_seconds", 5)
         self.log_patterns: List[Dict[str, Any]] = config.get("log_patterns", [])
         self.compiled_patterns: List[Dict[str, Any]] = []
@@ -95,8 +96,8 @@ class LogCollector(Collector):
                         # Include all parsed fields in metadata for richer context
                         payload={"parsed_data": parsed_payload, "event_type": event_type} 
                     )
-                    await self.orchestrator.ingest_event(event.dict())
-                    logger.debug(f"Collected and parsed log from {log_file_path}: {event.dict()}")
+                    await self.orchestrator.ingest_event(event.model_dump())
+                    logger.debug(f"Collected and parsed log from {log_file_path}: {event.model_dump()}")
                 self.last_read_positions[log_file_path] = f.tell()
         except FileNotFoundError:
             logger.warning(f"Log file not found during tailing: {log_file_path}")

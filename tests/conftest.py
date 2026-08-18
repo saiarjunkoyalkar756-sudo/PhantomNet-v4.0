@@ -1,5 +1,5 @@
-import pytest
 import sys
+import pytest
 from unittest.mock import patch
 
 def reset_all_agent_states():
@@ -14,9 +14,3 @@ def reset_agent_state_fixture():
     reset_all_agent_states()
     yield
     reset_all_agent_states()
-
-@pytest.fixture(autouse=True)
-def mock_main_create_task():
-    # Patch asyncio.create_task in main.py to prevent background collectors from running
-    with patch('phantomnet_agent.main.asyncio.create_task') as mock_task:
-        yield mock_task

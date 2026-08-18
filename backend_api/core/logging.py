@@ -5,10 +5,10 @@ import sys
 import uuid
 import time
 from datetime import datetime, timezone
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 from typing import Any, Dict, Optional
 
-class CustomJsonFormatter(jsonlogger.JsonFormatter):
+class CustomJsonFormatter(JsonFormatter):
     def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]) -> None:
         super(CustomJsonFormatter, self).add_fields(log_record, record, message_dict)
         if not log_record.get('timestamp'):

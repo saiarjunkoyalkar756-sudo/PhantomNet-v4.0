@@ -31,8 +31,8 @@ class NormalizedLogEvent(BaseModel):
     file_hash: Optional[str] = Field(None, description="Hash of the file involved in the event.")
     
     # Network information
-    protocol: Optional[str] = Field(None, example="TCP", description="Network protocol.")
-    action: Optional[str] = Field(None, example="ALLOW", description="Action taken (e.g., ALLOW, DENY, CREATE, DELETE).")
+    protocol: Optional[str] = Field(None, json_schema_extra={"example": "TCP"}, description="Network protocol.")
+    action: Optional[str] = Field(None, json_schema_extra={"example": "ALLOW"}, description="Action taken (e.g., ALLOW, DENY, CREATE, DELETE).")
 
     # Raw log data for reference
     original_raw_log: str = Field(..., description="The original raw log string.")
@@ -41,4 +41,4 @@ class NormalizedLogEvent(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional structured metadata about the event.")
 
     # Time of normalization
-    normalized_at: datetime.datetime = Field(default_factory=datetime.datetime.now, description="Timestamp when the event was normalized.")
+    normalized_at: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc), description="Timestamp when the event was normalized.")

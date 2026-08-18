@@ -1,5 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from typing import List, Optional, Dict, Any
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, List, Optional, Dict, Any
 import os
 import asyncio
 import logging
@@ -7,8 +8,18 @@ from pathlib import Path
 import json
 from utils.logger import AGENT_OUTPUT_LOG_PATH # Import the path to the structured log file
 
-router = APIRouter()
 logger = logging.getLogger("phantomnet_agent.log_streaming_api")
+
+@asynccontextmanager
+async def log_streaming_lifespan(_: Any) -> AsyncIterator[None]:
+    task = asyncio.create_task(manager.broadcast_logs_from_queue())
+    try:
+        yield
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+router = APIRouter(lifespan=log_streaming_lifespan)
 
 class ConnectionManager:
     def __init__(self):
@@ -74,7 +85,7 @@ async def get_recent_logs_from_file(file_path: Path, num_lines: int) -> List[Dic
     logs = []
     if not file_path.exists():
         return logs
-    
+
     try:
         # Read the file in reverse to get the most recent lines efficiently
         # This is a basic implementation; for very large files, more optimized solutions exist
@@ -97,7 +108,7 @@ async def get_recent_logs_from_file(file_path: Path, num_lines: int) -> List[Dic
                     buffer = bytearray() # Clear buffer for next line
                 elif char != '\n':
                     buffer.extend(char.encode('utf-8'))
-            
+
             if buffer and len(logs) < num_lines: # Add the last line if any
                 line = buffer[::-1].decode('utf-8')
                 try:
@@ -106,7 +117,7 @@ async def get_recent_logs_from_file(file_path: Path, num_lines: int) -> List[Dic
                     logger.warning(f"Could not parse log line as JSON: {line[:100]}...")
     except Exception as e:
         logger.error(f"Error reading log file {file_path}: {e}")
-    
+
     return logs[::-1] # Return in chronological order
 
 
@@ -116,8 +127,3 @@ async def tail_agent_logs(lines: int = Query(100, ge=1, le=1000)) -> List[Dict[s
     Returns the most recent N structured log entries from logs/agent_output.log.
     """
     return await get_recent_logs_from_file(AGENT_OUTPUT_LOG_PATH, lines)
-
-# Start the background task for broadcasting logs from the queue
-@router.on_event("startup")
-async def startup_event():
-    asyncio.create_task(manager.broadcast_logs_from_queue())

@@ -1,238 +1,196 @@
-import pytest
 import asyncio
-from unittest.mock import AsyncMock, patch, MagicMock
-import httpx
 import json
+from unittest.mock import AsyncMock, MagicMock
 
-# Import the Transport implementations
+import httpx
+import pytest
+
 from phantomnet_agent.bus.http_bus import HttpTransport
-from phantomnet_agent.bus.redis_bus import RedisTransport
 from phantomnet_agent.bus.kafka_bus import KafkaTransport
-from phantomnet_agent.schemas.events import AgentEvent
+from phantomnet_agent.bus.redis_bus import RedisTransport
 from phantomnet_agent.schemas.actions import AgentAction
 
-# --- HttpTransport Tests ---
-@pytest.mark.asyncio
-async def test_http_transport_send_event_success():
-    mock_async_client = MagicMock(spec=httpx.AsyncClient)
-    mock_async_client.post = AsyncMock(return_value=MagicMock(raise_for_status=MagicMock()))
-    mock_async_client.aclose = AsyncMock()
-
-    with patch('bus.http_bus.httpx.AsyncClient', return_value=mock_async_client):
-        transport = HttpTransport("http://test-endpoint.com/events")
-        
-        event_payload = {
-            "agent_id": "test-http",
-            "timestamp": 123.45,
-            "event_type": "test_event",
-            "payload": {"message": "hello"}
-        }
-        await transport.send_event("any_topic", event_payload)
-        
-        mock_async_client.post.assert_called_once()
-        assert mock_async_client.post.call_args[0][0] == "http://test-endpoint.com/events"
-        assert json.loads(mock_async_client.post.call_args[1]['json']) == event_payload
-        
-        await transport.close()
-        mock_async_client.aclose.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_http_transport_send_event_failure():
-    mock_async_client = MagicMock(spec=httpx.AsyncClient)
+async def test_http_transport_send_event_success(monkeypatch):
+    mock_client = MagicMock(spec=httpx.AsyncClient)
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError("Bad Request", request=MagicMock(), response=mock_response)
-    mock_response.status_code = 400
-    mock_response.text = "Bad Request"
-    mock_async_client.post = AsyncMock(side_effect=httpx.HTTPStatusError("Bad Request", request=MagicMock(), response=mock_response))
-    mock_async_client.aclose = AsyncMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_client.post = AsyncMock(return_value=mock_response)
+    mock_client.aclose = AsyncMock()
+    monkeypatch.setattr("phantomnet_agent.bus.http_bus.httpx.AsyncClient", MagicMock(return_value=mock_client))
 
-    with patch('bus.http_bus.httpx.AsyncClient', return_value=mock_async_client):
-        transport = HttpTransport("http://test-endpoint.com/events")
-        
-        event_payload = {
+    transport = HttpTransport("http://test-endpoint.com")
+    await transport.connect()
+    event_payload = {
+        "agent_id": "test-http",
+        "timestamp": "2026-01-01T00:00:00Z",
+        "event_type": "test_event",
+        "payload": {"message": "hello"},
+    }
+    await transport.send_event(event_payload)
+
+    mock_client.post.assert_awaited_once()
+    assert mock_client.post.call_args.args[0] == "/api/v1/events/ingest"
+    assert mock_client.post.call_args.kwargs["json"] == event_payload
+    await transport.disconnect()
+    mock_client.aclose.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_http_transport_send_event_failure(monkeypatch):
+    mock_client = MagicMock(spec=httpx.AsyncClient)
+    mock_response = MagicMock(status_code=400, text="Bad Request")
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "Bad Request", request=MagicMock(), response=mock_response
+    )
+    mock_client.post = AsyncMock(return_value=mock_response)
+    mock_client.aclose = AsyncMock()
+    monkeypatch.setattr("phantomnet_agent.bus.http_bus.httpx.AsyncClient", MagicMock(return_value=mock_client))
+
+    transport = HttpTransport("http://test-endpoint.com")
+    await transport.connect()
+    await transport.send_event(
+        {
             "agent_id": "test-http-fail",
-            "timestamp": 123.45,
+            "timestamp": "2026-01-01T00:00:00Z",
             "event_type": "test_event",
-            "payload": {"message": "hello"}
+            "payload": {"message": "hello"},
         }
-        await transport.send_event("any_topic", event_payload)
-        
-        mock_async_client.post.assert_called_once()
-        # Check that error was logged (requires capturing logs, which is more complex)
-        
-        await transport.close()
-        mock_async_client.aclose.assert_called_once()
+    )
+
+    mock_client.post.assert_awaited_once()
+    await transport.disconnect()
+
 
 @pytest.mark.asyncio
 async def test_http_transport_receive_commands():
-    transport = HttpTransport("http://test-endpoint.com/events")
-    # HttpTransport's receive_commands should yield nothing
-    async for command in await transport.receive_commands("any_topic"):
-        assert False, "HttpTransport should not yield any commands"
+    transport = HttpTransport("http://test-endpoint.com")
+    received_commands = [command async for command in transport.receive_commands("any_topic")]
+    assert received_commands == []
 
 
-# --- RedisTransport Tests ---
+def _redis_client_stub():
+    client = MagicMock()
+    client.ping = AsyncMock()
+    client.xadd = AsyncMock()
+    client.close = AsyncMock()
+    pubsub = MagicMock()
+    pubsub.subscribe = AsyncMock()
+    pubsub.unsubscribe = AsyncMock()
+    pubsub.close = AsyncMock()
+    client.pubsub.return_value = pubsub
+    return client, pubsub
+
+
 @pytest.mark.asyncio
 async def test_redis_transport_send_event(monkeypatch):
-    mock_redis = AsyncMock()
-    mock_redis.xadd = AsyncMock()
-    
-    monkeypatch.setattr("bus.redis_bus.redis.from_url", MagicMock(return_value=mock_redis))
-
-    transport = RedisTransport(
-        url="redis://localhost:6379/0",
-        events_channel="events",
-        commands_channel="commands"
-    )
+    mock_redis, _ = _redis_client_stub()
+    monkeypatch.setattr("phantomnet_agent.bus.redis_bus.redis.from_url", MagicMock(return_value=mock_redis))
+    transport = RedisTransport("redis://localhost:6379/0", "events", "commands")
     await transport.connect()
 
     event_payload = {
         "agent_id": "test-redis",
-        "timestamp": 123.45,
+        "timestamp": "2026-01-01T00:00:00Z",
         "event_type": "test_event",
-        "payload": {"data": "test"}
+        "payload": {"data": "test"},
     }
-    await transport.send_event("events", event_payload)
+    await transport.send_event(event_payload)
 
-    mock_redis.xadd.assert_called_once()
-    assert mock_redis.xadd.call_args[0][0] == "events"
-    sent_data = json.loads(mock_redis.xadd.call_args[0][1]['data'])
-    assert sent_data == event_payload
+    mock_redis.xadd.assert_awaited_once()
+    assert mock_redis.xadd.call_args.args[0] == "events"
+    assert json.loads(mock_redis.xadd.call_args.args[1]["data"]) == event_payload
+    await transport.disconnect()
 
-    await transport.close()
 
 @pytest.mark.asyncio
 async def test_redis_transport_receive_commands(monkeypatch):
-    mock_redis = AsyncMock()
-    mock_pubsub = AsyncMock()
-    mock_pubsub.subscribe = AsyncMock()
-    mock_pubsub.get_message = AsyncMock()
-    mock_pubsub.unsubscribe = AsyncMock()
-    mock_pubsub.close = AsyncMock()
-    mock_redis.pubsub.return_value = mock_pubsub
-    
-    monkeypatch.setattr("bus.redis_bus.redis.from_url", MagicMock(return_value=mock_redis))
-
-    transport = RedisTransport(
-        url="redis://localhost:6379/0",
-        events_channel="events",
-        commands_channel="commands"
-    )
+    mock_redis, _ = _redis_client_stub()
+    monkeypatch.setattr("phantomnet_agent.bus.redis_bus.redis.from_url", MagicMock(return_value=mock_redis))
+    transport = RedisTransport("redis://localhost:6379/0", "events", "commands")
     await transport.connect()
-
-    # Simulate a command message
-    command_data = {
-        "agent_id": "test-redis",
-        "action_id": "1",
-        "action_type": "process_kill",
-        "timestamp": 123.45,
-        "payload": {"pid": 123}
-    }
-    mock_pubsub.get_message.side_effect = [
-        {"type": "subscribe", "channel": "commands"}, # Ignore this
-        {"type": "message", "channel": "commands", "data": json.dumps(command_data)},
-        {"type": "message", "channel": "commands", "data": "invalid json"}, # Simulate error
-        None, # No more messages
-    ]
+    transport._listener_task = asyncio.create_task(asyncio.sleep(3600))
+    await transport._command_queue.put(
+        AgentAction(
+            agent_id="test-redis",
+            action_id="1",
+            action_type="process_kill",
+            timestamp=123.45,
+            payload={"pid": 123},
+        )
+    )
 
     received_commands = []
-    # Using a timeout to ensure the test doesn't hang
-    with pytest.raises(asyncio.TimeoutError):
-        async for command in transport.receive_commands("commands"):
-            received_commands.append(command)
-            if len(received_commands) == 1: # Only expect one valid command
-                break # Exit the loop after processing the first valid command
-            await asyncio.sleep(0.01) # Yield control
+    async for command in transport.receive_commands("commands"):
+        received_commands.append(command)
+        break
 
     assert len(received_commands) == 1
     assert received_commands[0].action_type == "process_kill"
     assert received_commands[0].payload["pid"] == 123
-
-    await transport.close()
-    mock_pubsub.unsubscribe.assert_called_once_with("commands")
-    mock_pubsub.close.assert_called_once()
+    await transport.disconnect()
 
 
-# --- KafkaTransport Tests ---
+def _kafka_client_stubs():
+    producer = MagicMock()
+    producer.start = AsyncMock()
+    producer.stop = AsyncMock()
+    producer.send_and_wait = AsyncMock()
+    consumer = MagicMock()
+    consumer.start = AsyncMock()
+    consumer.stop = AsyncMock()
+    return producer, consumer
+
+
 @pytest.mark.asyncio
 async def test_kafka_transport_send_event(monkeypatch):
-    mock_producer = AsyncMock()
-    mock_producer.start = AsyncMock()
-    mock_producer.send_and_wait = AsyncMock()
-    mock_producer.stop = AsyncMock()
-
-    monkeypatch.setattr("bus.kafka_bus.AIOKafkaProducer", MagicMock(return_value=mock_producer))
-    monkeypatch.setattr("bus.kafka_bus.AIOKafkaConsumer", AsyncMock()) # Don't need consumer for send test
-
-    transport = KafkaTransport(
-        bootstrap_servers="localhost:9092",
-        events_topic="events",
-        commands_topic="commands",
-        consumer_group_id="test_group"
-    )
+    mock_producer, mock_consumer = _kafka_client_stubs()
+    monkeypatch.setattr("phantomnet_agent.bus.kafka_bus.AIOKafkaProducer", MagicMock(return_value=mock_producer))
+    monkeypatch.setattr("phantomnet_agent.bus.kafka_bus.AIOKafkaConsumer", MagicMock(return_value=mock_consumer))
+    transport = KafkaTransport("localhost:9092", "events", "commands", "test_group")
     await transport.connect()
 
     event_payload = {
         "agent_id": "test-kafka",
-        "timestamp": 123.45,
+        "timestamp": "2026-01-01T00:00:00Z",
         "event_type": "test_event",
-        "payload": {"key": "value"}
+        "payload": {"key": "value"},
     }
-    await transport.send_event("events", event_payload)
+    await transport.send_event(event_payload)
 
-    mock_producer.send_and_wait.assert_called_once()
-    assert mock_producer.send_and_wait.call_args[0][0] == "events"
-    sent_data = json.loads(mock_producer.send_and_wait.call_args[0][1].decode('utf-8'))
-    assert sent_data == event_payload
-
-    await transport.close()
-    mock_producer.stop.assert_called_once()
+    mock_producer.send_and_wait.assert_awaited_once()
+    assert mock_producer.send_and_wait.call_args.args[0] == "events"
+    assert json.loads(mock_producer.send_and_wait.call_args.args[1].decode("utf-8")) == event_payload
+    await transport.disconnect()
+    mock_producer.stop.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_kafka_transport_receive_commands(monkeypatch):
-    mock_producer = AsyncMock()
-    mock_consumer = AsyncMock()
-    mock_consumer.start = AsyncMock()
-    mock_consumer.stop = AsyncMock()
-
-    # Create an async generator for mock_consumer.__aiter__
-    async def mock_aiter_messages():
-        yield MagicMock(value=json.dumps({
-            "agent_id": "test-kafka",
-            "action_id": "1",
-            "action_type": "process_kill",
-            "timestamp": 123.45,
-            "payload": {"pid": 123}
-        }).encode('utf-8'))
-        yield MagicMock(value=b"invalid json") # Simulate bad message
-        await asyncio.sleep(0.1) # Simulate some delay
-
-    mock_consumer.__aiter__.return_value = mock_aiter_messages()
-
-    monkeypatch.setattr("bus.kafka_bus.AIOKafkaProducer", MagicMock(return_value=mock_producer))
-    monkeypatch.setattr("bus.kafka_bus.AIOKafkaConsumer", MagicMock(return_value=mock_consumer))
-
-    transport = KafkaTransport(
-        bootstrap_servers="localhost:9092",
-        events_topic="events",
-        commands_topic="commands",
-        consumer_group_id="test_group"
-    )
+    mock_producer, mock_consumer = _kafka_client_stubs()
+    monkeypatch.setattr("phantomnet_agent.bus.kafka_bus.AIOKafkaProducer", MagicMock(return_value=mock_producer))
+    monkeypatch.setattr("phantomnet_agent.bus.kafka_bus.AIOKafkaConsumer", MagicMock(return_value=mock_consumer))
+    transport = KafkaTransport("localhost:9092", "events", "commands", "test_group")
     await transport.connect()
+    transport._listener_task = asyncio.create_task(asyncio.sleep(3600))
+    await transport._command_queue.put(
+        AgentAction(
+            agent_id="test-kafka",
+            action_id="1",
+            action_type="process_kill",
+            timestamp=123.45,
+            payload={"pid": 123},
+        )
+    )
 
     received_commands = []
-    # Using a timeout to ensure the test doesn't hang
-    with pytest.raises(asyncio.TimeoutError):
-        async for command in transport.receive_commands("commands"):
-            received_commands.append(command)
-            if len(received_commands) == 1: # Only expect one valid command
-                break
-            await asyncio.sleep(0.01) # Yield control
-    
+    async for command in transport.receive_commands("commands"):
+        received_commands.append(command)
+        break
+
     assert len(received_commands) == 1
     assert received_commands[0].action_type == "process_kill"
     assert received_commands[0].payload["pid"] == 123
-
-    await transport.close()
-    mock_consumer.stop.assert_called_once()
+    await transport.disconnect()
+    mock_consumer.stop.assert_awaited_once()

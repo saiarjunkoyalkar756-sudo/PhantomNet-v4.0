@@ -1,6 +1,7 @@
 # collectors/process_collector.py
 import asyncio
 import logging
+from datetime import datetime, timezone
 from typing import Dict, Any, TYPE_CHECKING
 
 from collectors.base import Collector
@@ -28,12 +29,22 @@ class ProcessCollector(Collector):
             try:
                 processes = await self.adapter.get_process_list()
                 for proc_info in processes:
+                    cmdline = proc_info.get("cmdline", "")
+                    if isinstance(cmdline, list):
+                        cmdline = " ".join(str(part) for part in cmdline)
                     event = ProcessEvent(
-                        agent_id="agent-id-placeholder", # Will be filled by main agent
-                        timestamp=asyncio.get_event_loop().time(),
-                        payload=proc_info
+                        agent_id=self.config.get("agent_id", "agent-id-placeholder"),
+                        timestamp=datetime.now(timezone.utc),
+                        payload=proc_info,
+                        pid=proc_info.get("pid", 0),
+                        name=proc_info.get("name", "unknown"),
+                        executable=proc_info.get("executable", proc_info.get("exe", "")),
+                        cmdline=cmdline,
+                        username=proc_info.get("username", "unknown"),
+                        status=proc_info.get("status", "unknown"),
+                        parent_pid=proc_info.get("parent_pid", proc_info.get("ppid")),
                     )
-                    await self.orchestrator.ingest_event(event.dict())
+                    await self.orchestrator.ingest_event(event.model_dump())
                 logger.debug(f"Collected and sent {len(processes)} process events.")
             except Exception as e:
                 logger.error(f"Error in ProcessCollector: {e}")

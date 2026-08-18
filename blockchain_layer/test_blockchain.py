@@ -1,5 +1,6 @@
 import sys
 import os
+from pathlib import Path
 # Prevent shadowing of global backend_api by local blockchain_layer/backend_api
 for path in list(sys.path):
     if "blockchain_layer" in path:
@@ -9,7 +10,7 @@ for path in list(sys.path):
             pass
 if "" in sys.path:
     sys.path.remove("")
-sys.path.insert(0, "/home/joyhark522/PhantomNet-v4.0")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest
 import json
@@ -23,15 +24,9 @@ from backend_api.shared.database import Base, Block, Transaction, SessionLocal #
 
 # Define a fixture for an in-memory SQLite database session for testing
 @pytest.fixture(scope="function")
-def db_session_factory():
-    # Define the database file path in a temporary location inside the workspace
-    db_file_path = os.path.join(
-        "/home/joyhark522/PhantomNet-v4.0",
-        f"test_db_blockchain_{os.getpid()}.db",
-    )
-
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(db_file_path), exist_ok=True)
+def db_session_factory(tmp_path):
+    # Use pytest-managed storage so each test runs independently of a developer home directory.
+    db_file_path = str(tmp_path / f"test_db_blockchain_{os.getpid()}.db")
 
     # Physically delete the database file before each test to ensure a clean slate
     if os.path.exists(db_file_path):

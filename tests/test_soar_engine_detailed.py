@@ -7,16 +7,21 @@ from backend_api.soar_engine.consumer import (
 from backend_api.soar_engine.models import Playbook, PlaybookStep, PlaybookRun, PlaybookStatus
 
 def test_block_ip_action():
-    """Verify that the block_ip SOAR action executes successfully."""
-    result = block_ip("192.168.1.50")
+    """Verify that an allowlisted block action is truthful in default dry-run mode."""
+    result = block_ip("198.51.100.42")
     assert result["status"] == "success"
-    assert "192.168.1.50" in result["detail"]
+    assert result["enforced"] is False
+    assert result["verified"] is False
+    assert "Dry-run" in result["detail"]
+
 
 def test_isolate_host_action():
-    """Verify that the isolate_host SOAR action executes successfully."""
+    """Verify that unsupported host isolation does not claim enforcement."""
     result = isolate_host("compromised-server")
-    assert result["status"] == "success"
-    assert "compromised-server" in result["detail"]
+    assert result["status"] == "failure"
+    assert result["enforced"] is False
+    assert "requires a configured endpoint-management provider" in result["detail"]
+
 
 def test_create_ticket_action():
     """Verify that the create_ticket action initiates ticket creation in ITSM."""

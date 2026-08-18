@@ -25,7 +25,13 @@ class CognitiveCore:
 
         self.ethical_layer = EthicalAI()
         self.p2p_node = P2PNode("0.0.0.0", 9999, self)
-        self.p2p_node.start()
+        self._p2p_started = False
+
+    async def start_p2p(self) -> None:
+        """Start P2P networking explicitly from the owning async lifecycle."""
+        if not self._p2p_started:
+            await self.p2p_node.start()
+            self._p2p_started = True
 
     def analyze_threat(self, data):
         # Symbolic analysis

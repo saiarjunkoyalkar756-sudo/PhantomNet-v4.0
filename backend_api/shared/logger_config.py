@@ -15,11 +15,8 @@ def get_log_queue() -> asyncio.Queue:
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = None
-            
+        loop = None
+
     if loop not in _log_queues:
         _log_queues[loop] = asyncio.Queue()
     return _log_queues[loop]

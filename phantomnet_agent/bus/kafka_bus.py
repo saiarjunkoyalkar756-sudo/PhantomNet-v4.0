@@ -5,10 +5,11 @@ from typing import Dict, Any, AsyncGenerator, Optional, List
 
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from aiokafka.errors import KafkaError, NoBrokersAvailable
+from pydantic import ValidationError
 
 from phantomnet_agent.bus.base import Transport
+from phantomnet_agent.schemas.actions import AgentAction
 from utils.logger import get_logger # Use the structured logger
-from core.state import get_agent_state # For updating agent state
 
 class KafkaTransport(Transport):
     """
@@ -19,7 +20,7 @@ class KafkaTransport(Transport):
     MAX_RETRIES: int = 3
     DLQ_TOPIC: str = "phantomnet.events.dlq"
 
-    def __init__(self, bootstrap_servers: str, events_topic: str, commands_topic: str, consumer_group_id: str):
+    def __init__(self, bootstrap_servers: str, events_topic: str, commands_topic: str, consumer_group_id: str, agent_state: Optional[Any] = None):
         self.logger = get_logger("phantomnet_agent.bus.kafka")
         self.bootstrap_servers = bootstrap_servers
         self.events_topic = events_topic
@@ -31,6 +32,7 @@ class KafkaTransport(Transport):
         self._command_queue: asyncio.Queue = asyncio.Queue()
         self._dead_letter_queue: List[Dict[str, Any]] = []  # In-memory DLQ for reconnect replay
         self.connected: bool = False
+        self.agent_state = agent_state
         self.logger.info(f"KafkaTransport initialized for bootstrap_servers: {self.bootstrap_servers}")
 
     async def connect(self):
@@ -48,18 +50,20 @@ class KafkaTransport(Transport):
             await self.consumer.start()
             self.connected = True
             self.logger.info(f"Connected to Kafka at {self.bootstrap_servers}")
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_kafka", "connected", {"bootstrap_servers": self.bootstrap_servers})
+            self._update_component_health("connected", {"bootstrap_servers": self.bootstrap_servers})
         except (KafkaError, NoBrokersAvailable, ConnectionRefusedError) as e:
             self.connected = False
             self.logger.warning(f"Failed to connect to Kafka at {self.bootstrap_servers}: {e}. Kafka bus will operate in no-op mode.", extra={"error": str(e)})
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_kafka", "disconnected", {"bootstrap_servers": self.bootstrap_servers, "reason": "Connection failed"})
+            self._update_component_health("disconnected", {"bootstrap_servers": self.bootstrap_servers, "reason": "Connection failed"})
         except Exception as e:
             self.connected = False
             self.logger.error(f"Unexpected error connecting to Kafka at {self.bootstrap_servers}: {e}", exc_info=True)
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_kafka", "error", {"bootstrap_servers": self.bootstrap_servers, "reason": "Unexpected error", "details": str(e)})
+            self._update_component_health("error", {"bootstrap_servers": self.bootstrap_servers, "reason": "Unexpected error", "details": str(e)})
+
+    def _update_component_health(self, status: str, details: Dict[str, Any]) -> None:
+        """Report transport health only when a state dependency was explicitly supplied."""
+        if self.agent_state is not None:
+            self.agent_state.update_component_health("bus_kafka", status, details)
 
     async def disconnect(self):
         """Closes the Kafka producer and consumer and stops the listener task."""
@@ -74,8 +78,7 @@ class KafkaTransport(Transport):
         if self.consumer:
             await self.consumer.stop()
         self.logger.info("Kafka transport disconnected.")
-        agent_state = get_agent_state()
-        agent_state.update_component_health("bus_kafka", "disconnected", {"bootstrap_servers": self.bootstrap_servers})
+        self._update_component_health("disconnected", {"bootstrap_servers": self.bootstrap_servers})
 
     async def send_event(self, event_data: Dict[str, Any]):
         """Sends an event to the configured Kafka events topic with retry + DLQ fallback."""
@@ -127,10 +130,8 @@ class KafkaTransport(Transport):
                 )
         except Exception:
             pass  # DLQ topic publish is best-effort
-        agent_state = get_agent_state()
-        agent_state.update_component_health(
-            "bus_kafka", "degraded",
-            {"reason": "Event moved to DLQ", "dlq_size": len(self._dead_letter_queue)}
+        self._update_component_health(
+            "degraded", {"reason": "Event moved to DLQ", "dlq_size": len(self._dead_letter_queue)}
         )
 
     async def flush_dlq(self) -> int:
@@ -167,23 +168,22 @@ class KafkaTransport(Transport):
                 if self._listener_task.cancelled(): # Check for cancellation
                     break
                 try:
-                    data = json.loads(msg.value.decode('utf-8'))
-                    await self._command_queue.put(data) # Put command data into queue
-                    self.logger.debug(f"Received command from Kafka: {data.get('action_type')}", extra={"command": data})
-                except json.JSONDecodeError as e:
-                    self.logger.warning(f"Received malformed JSON command from Kafka: {e}", extra={"raw_message": msg.value.decode('utf-8', errors='ignore')})
+                    data = json.loads(msg.value.decode("utf-8"))
+                    command = AgentAction(**data)
+                    await self._command_queue.put(command)
+                    self.logger.debug(f"Received command from Kafka: {command.action_type}", extra={"command": command.model_dump()})
+                except (json.JSONDecodeError, ValidationError) as e:
+                    self.logger.warning(f"Received malformed command from Kafka: {e}", extra={"raw_message": msg.value.decode("utf-8", errors="ignore")})
                 except Exception as e:
                     self.logger.error(f"Error processing message from Kafka: {e}", exc_info=True)
         except asyncio.CancelledError:
             self.logger.info("Kafka command listener task cancelled.")
         except KafkaError as e:
             self.logger.error(f"Kafka error during command consumption: {e}", exc_info=True)
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_kafka", "degraded", {"reason": "Command consumption error", "details": str(e)})
+            self._update_component_health("degraded", {"reason": "Command consumption error", "details": str(e)})
         except Exception as e:
             self.logger.error(f"An unexpected error occurred in Kafka command listener: {e}", exc_info=True)
-            agent_state = get_agent_state()
-            agent_state.update_component_health("bus_kafka", "error", {"reason": "Unexpected error in listener", "details": str(e)})
+            self._update_component_health("error", {"reason": "Unexpected error in listener", "details": str(e)})
 
     async def receive_commands(self, commands_topic: str) -> AsyncGenerator[Any, None]:
         """

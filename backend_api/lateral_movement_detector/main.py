@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 router = APIRouter()
 
 class LateralMovementDetection(BaseModel):
-    detection_id: str = Field(..., example="LM-2023-001")
+    detection_id: str = Field(..., json_schema_extra={"example": "LM-2023-001"})
     timestamp: datetime.datetime
     event_type: str
     technique_id: Optional[str] = None

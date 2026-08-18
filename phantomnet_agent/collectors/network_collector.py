@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime, timezone
 from typing import Dict, Any, List, TYPE_CHECKING
 
 from collectors.base import Collector
@@ -37,11 +38,19 @@ class NetworkCollector(Collector):
                 
                 if conn_tuple not in self.known_connections:
                     event = NetworkEvent(
-                        agent_id="agent-id-placeholder",
-                        timestamp=asyncio.get_event_loop().time(),
-                        payload=conn_info
+                        agent_id=self.config.get("agent_id", "agent-id-placeholder"),
+                        timestamp=datetime.now(timezone.utc),
+                        payload=conn_info,
+                        local_address=conn_info.get("local_address", ""),
+                        local_port=conn_info.get("local_port", 0),
+                        remote_address=conn_info.get("remote_address", ""),
+                        remote_port=conn_info.get("remote_port", 0),
+                        protocol=conn_info.get("protocol", "unknown"),
+                        direction=conn_info.get("direction", "unknown"),
+                        status=conn_info.get("status", "unknown"),
+                        process_pid=conn_info.get("process_pid"),
                     )
-                    await self.orchestrator.ingest_event(event.dict())
+                    await self.orchestrator.ingest_event(event.model_dump())
 
             self.known_connections = current_connections
             logger.debug(f"Collected and sent {len(current_connections)} network connection events.")

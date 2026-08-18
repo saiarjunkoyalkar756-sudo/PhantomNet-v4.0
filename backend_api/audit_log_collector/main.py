@@ -1,7 +1,7 @@
 from backend_api.shared.service_factory import create_phantom_service
 from backend_api.core.response import success_response, error_response
 from fastapi import APIRouter, FastAPI, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from .database import get_db
@@ -18,8 +18,8 @@ app = create_phantom_service(
 app.include_router(router)
 
 class AuditLogBase(BaseModel):
-    raw_log_data: str = Field(..., example="User 'admin' logged in from 192.168.1.100")
-    action: str = Field(..., example="login")
+    raw_log_data: str = Field(..., json_schema_extra={"example": "User 'admin' logged in from 192.168.1.100"})
+    action: str = Field(..., json_schema_extra={"example": "login"})
     timestamp: Optional[datetime.datetime] = None
     event_id: Optional[str] = None
     actor_id: Optional[str] = None
@@ -33,15 +33,14 @@ class AuditLogCreate(AuditLogBase):
     pass
 
 class AuditLogResponse(AuditLogBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     ingested_at: datetime.datetime
 
-    class Config:
-        from_attributes = True
-
 @router.post("/ingest/", status_code=status.HTTP_201_CREATED)
 async def ingest_single_audit_log(audit_log: AuditLogCreate, db: Session = Depends(get_db)):
-    db_audit = crud.create_audit_log(db=db, **audit_log.dict())
+    db_audit = crud.create_audit_log(db=db, **audit_log.model_dump())
     try:
         from blockchain_layer.blockchain_client import submit_alert_to_ledger
         metadata = audit_log.metadata or {}
@@ -60,7 +59,7 @@ async def ingest_single_audit_log(audit_log: AuditLogCreate, db: Session = Depen
 async def ingest_batch_audit_logs(audit_logs: List[AuditLogCreate], db: Session = Depends(get_db)):
     created_logs = []
     for audit_log in audit_logs:
-        db_audit = crud.create_audit_log(db=db, **audit_log.dict())
+        db_audit = crud.create_audit_log(db=db, **audit_log.model_dump())
         created_logs.append(db_audit)
         try:
             from blockchain_layer.blockchain_client import submit_alert_to_ledger

@@ -8,7 +8,6 @@ from packaging.version import Version, InvalidVersion # For robust version compa
 from pydantic import ValidationError
 
 from schemas.plugins import PluginManifest # Import PluginManifest from schemas
-from core.state import get_agent_state # For getting agent_state.version
 from utils.logger import get_logger # Use the structured logger
 
 # Remove the redundant PluginManifest class definition from here
@@ -31,11 +30,13 @@ class PluginLoader:
     """
     Discovers, loads, and validates plugins from specified paths.
     """
-    def __init__(self, plugin_dirs: List[Path], allowed_permissions: List[str]):
+    def __init__(self, plugin_dirs: List[Path], allowed_permissions: List[str], agent_state: Optional[Any] = None, agent_version: str = "0.0.1"):
         self.logger = get_logger("phantomnet_agent.plugins.loader")
         self.plugin_dirs = plugin_dirs
         self.allowed_permissions = allowed_permissions
-        self.agent_version = Version(get_agent_state().version) # Agent's current version for compatibility
+        self.agent_state = agent_state
+        resolved_version = getattr(agent_state, "version", agent_version)
+        self.agent_version = Version(resolved_version)
         self.loaded_plugins: Dict[str, Plugin] = {}
         self.logger.info(f"PluginLoader initialized for agent version: {self.agent_version}")
 

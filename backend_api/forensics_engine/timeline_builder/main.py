@@ -9,22 +9,22 @@ router = APIRouter()
 
 class TimelineEvent(BaseModel):
     timestamp: datetime.datetime = Field(..., description="Timestamp of the event.")
-    event_type: str = Field(..., example="process_creation", description="Type of forensic event (e.g., 'file_modification', 'network_connection').")
+    event_type: str = Field(..., json_schema_extra={"example": "process_creation"}, description="Type of forensic event (e.g., 'file_modification', 'network_connection').")
     description: str = Field(..., description="Description of the event.")
-    source: str = Field(..., example="syslog", description="Source of the event data (e.g., 'syslog', 'memory_dump', 'disk_image').")
+    source: str = Field(..., json_schema_extra={"example": "syslog"}, description="Source of the event data (e.g., 'syslog', 'memory_dump', 'disk_image').")
     details: Dict[str, Any] = Field(default_factory=dict, description="Detailed forensic information about the event.")
 
 class TimelineRequest(BaseModel):
-    asset_id: str = Field(..., example="compromised-server-01")
+    asset_id: str = Field(..., json_schema_extra={"example": "compromised-server-01"})
     start_time: Optional[datetime.datetime] = None
     end_time: Optional[datetime.datetime] = None
-    data_sources: List[str] = Field(default_factory=list, example=["logs", "memory", "disk_image"])
+    data_sources: List[str] = Field(default_factory=list, json_schema_extra={"example": ["logs", "memory", "disk_image"]})
 
 class TimelineResponse(BaseModel):
     job_id: str = Field(..., description="ID of the associated forensic job.")
-    asset_id: str = Field(..., example="compromised-server-01")
+    asset_id: str = Field(..., json_schema_extra={"example": "compromised-server-01"})
     timeline_events: List[TimelineEvent] = Field(default_factory=list)
-    status: str = Field(..., example="completed")
+    status: str = Field(..., json_schema_extra={"example": "completed"})
 
 @router.post("/build/", response_model=TimelineResponse)
 async def build_forensic_timeline(request: TimelineRequest):

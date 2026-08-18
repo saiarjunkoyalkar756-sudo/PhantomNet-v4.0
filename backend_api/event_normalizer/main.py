@@ -10,9 +10,10 @@ from datetime import datetime, timezone
 from backend_api.shared.kafka_topics import RAW_TELEMETRY as SOURCE_TOPIC, NORMALIZED_EVENTS as DESTINATION_TOPIC
 from backend_api.shared.kafka_client import ResilientKafkaConsumer, ResilientKafkaProducer
 from backend_api.core_config import SAFE_MODE
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Request
+from phantomnet_core.contracts import CONTRACT_VERSION, EventEnvelope
 
 # --- Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
@@ -31,16 +32,28 @@ def normalize_event(event_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Normalization logic with Genetic Provenance Tagging.
     """
-    event_data['normalized_at'] = datetime.now(timezone.utc).isoformat()
-    event_data['platform_schema_version'] = '1.0.0'
-    
-    tenant_id_str = event_data.get('tenant_id')
-    event_data['tenant_id'] = str(UUID(tenant_id_str)) if tenant_id_str else str(DEFAULT_TENANT_ID)
-    
-    # Tag event with hardware-bound DNA
-    event_data = dna_engine.tag_event(event_data)
-    
-    return event_data
+    tenant_id_str = event_data.get("tenant_id")
+    tenant_id = str(UUID(tenant_id_str)) if tenant_id_str else str(DEFAULT_TENANT_ID)
+    envelope = EventEnvelope(
+        schema_version=CONTRACT_VERSION,
+        event_id=str(event_data.get("event_id") or event_data.get("id") or uuid4()),
+        timestamp=event_data.get("timestamp", datetime.now(timezone.utc)),
+        tenant_id=tenant_id,
+        source=str(event_data.get("source", "unknown")),
+        event_type=str(event_data.get("event_type", "generic_event")),
+        severity=str(event_data.get("severity", "informational")).lower(),
+        payload=event_data.get("payload", event_data),
+        correlation_id=event_data.get("correlation_id"),
+        trace_id=event_data.get("trace_id"),
+        tags=event_data.get("tags", []),
+        provenance={"normalizer": "event-normalizer", "legacy_schema_version": event_data.get("platform_schema_version")},
+    )
+    normalized_event = envelope.model_dump(mode="json")
+    normalized_event["normalized_at"] = datetime.now(timezone.utc).isoformat()
+    normalized_event["platform_schema_version"] = CONTRACT_VERSION
+
+    # Tag event with hardware-bound DNA after normalization.
+    return dna_engine.tag_event(normalized_event)
 
 def process_event(raw_event: Dict[str, Any]):
     """Processes a single telemetry event, normalizes it, and sends it to the destination topic."""

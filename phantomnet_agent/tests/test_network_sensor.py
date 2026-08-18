@@ -46,7 +46,7 @@ def test_process_dns_packet(network_sensor):
             "client_ip": "1.2.3.4",
             "domain_name": "google.com.",
             "record_type": 1,
-            "entropy": pytest.approx(2.5216406363433186)
+            "entropy": pytest.approx(2.6635327548042547)
         }
     })
     
@@ -59,7 +59,7 @@ def test_process_dns_packet(network_sensor):
             "client_ip": "1.2.3.4",
             "domain_name": "asdfghjklqwertyuiopzxcvbnm.com.",
             "record_type": 1,
-            "entropy": pytest.approx(4.700439718141092),
+            "entropy": pytest.approx(4.696131794257842),
             "is_suspicious": True,
             "suspicion_reason": "High entropy"
         }

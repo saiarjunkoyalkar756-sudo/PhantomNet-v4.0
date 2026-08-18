@@ -156,15 +156,16 @@ class NetworkSensor(Thread):
             
     def process_dns_packet(self, packet):
         if DNS in packet and packet[DNS].qr == 0: # It's a query
-            domain = packet[DNS].qd.qname.decode('utf-8')
+            question = packet[DNS].qd[0]
+            domain = question.qname.decode("utf-8")
             entropy = self.calculate_domain_entropy(domain)
-            
+
             dns_query_data = {
                 "timestamp": time.time(),
                 "client_ip": packet[IP].src,
                 "domain_name": domain,
-                "record_type": packet[DNS].qd.qtype,
-                "entropy": entropy
+                "record_type": question.qtype,
+                "entropy": entropy,
             }
             
             # DNS Anomaly Detection
@@ -176,6 +177,7 @@ class NetworkSensor(Thread):
 
 
     def calculate_domain_entropy(self, domain: str) -> float:
+        # Shannon entropy: H = -sum(p * log2(p) for p in character frequencies).
         p, lns = {}, len(domain)
         for c in domain:
             p[c] = p.get(c, 0) + 1

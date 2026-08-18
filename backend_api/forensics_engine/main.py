@@ -13,7 +13,7 @@ import asyncio
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, FastAPI
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 router = APIRouter()
 router.include_router(timeline_router, prefix="/timeline", tags=["timeline_builder"])
@@ -21,12 +21,14 @@ router.include_router(evidence_router, prefix="/evidence", tags=["evidence_colle
 
 # Define Models
 class ForensicJobCreate(BaseModel):
-    target_asset_id: str = Field(..., example="compromised-server-01")
-    job_type: str = Field(..., example="full_investigation")
-    requested_by: Optional[str] = Field(None, example="analyst_alice")
+    target_asset_id: str = Field(..., json_schema_extra={"example": "compromised-server-01"})
+    job_type: str = Field(..., json_schema_extra={"example": "full_investigation"})
+    requested_by: Optional[str] = Field(None, json_schema_extra={"example": "analyst_alice"})
     parameters: Optional[Dict[str, Any]] = Field(None)
 
 class ForensicJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     job_id: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
@@ -36,10 +38,10 @@ class ForensicJobResponse(BaseModel):
     job_type: str
     parameters: Dict[str, Any]
 
-    class Config:
-        from_attributes = True
 
 class ForensicReportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     report_id: str
     job_id: str
     created_at: datetime.datetime
@@ -50,8 +52,6 @@ class ForensicReportResponse(BaseModel):
     report_path: Optional[str]
     findings: Dict[str, Any]
 
-    class Config:
-        from_attributes = True
 
 async def _perform_forensic_tasks_in_background(job_id: str, job_type: str, target_asset_id: str, parameters: Dict[str, Any], db: Session):
     logger.info(f"Starting forensic job {job_id}")
