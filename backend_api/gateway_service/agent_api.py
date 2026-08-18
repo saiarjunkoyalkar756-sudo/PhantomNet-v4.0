@@ -44,7 +44,8 @@ from backend_api.shared.security_utils import (
 from backend_api.shared.crl_utils import is_certificate_revoked, revoke_certificate
 from backend_api.shared.message_bus import message_bus
 from backend_api.shared.telemetry_ingest import TelemetryIngestService, TelemetryIngestConfig
-from backend_api.iam_service.auth_methods import get_current_user, UserRole, has_role
+from backend_api.iam_service.auth_methods import get_current_user
+from backend_api.iam_service.policy import require_capability
 from backend_api.core.logging import logger as pn_logger
 from backend_api.core.response import success_response, error_response
 
@@ -67,7 +68,7 @@ telemetry_ingest_service_instance = TelemetryIngestService(
 )
 
 @router.post("/agents/bootstrap-token")
-async def create_bootstrap_token(current_user: User = Depends(has_role([UserRole.ADMIN]))):
+async def create_bootstrap_token(current_user: User = Depends(require_capability("agents:bootstrap"))):
     """Generates a single-use bootstrap token."""
     token = secrets.token_hex(32)
     expiration = datetime.utcnow().timestamp() + 300
@@ -215,7 +216,7 @@ async def list_agents(
 async def approve_agent(
     agent_id: int, 
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(has_role([UserRole.ADMIN]))
+    current_user: User = Depends(require_capability("agents:approve"))
 ):
     """Approves an agent from quarantine."""
     stmt = select(Agent).where(Agent.id == agent_id)

@@ -1,7 +1,10 @@
+from types import SimpleNamespace
+
+from fastapi import HTTPException
 import pytest
 
 from backend_api.audit_log_collector.integrity import append_record, verify_chain
-from backend_api.iam_service.policy import authorize, require_authorized
+from backend_api.iam_service.policy import authorize, require_authorized, require_capability
 
 
 def test_central_rbac_enforces_privileged_capabilities():
@@ -11,6 +14,22 @@ def test_central_rbac_enforces_privileged_capabilities():
     assert authorize("admin", "response:approve").allowed is True
     with pytest.raises(PermissionError):
         require_authorized("viewer", "config:write")
+
+
+@pytest.mark.asyncio
+async def test_capability_dependency_enforces_named_high_impact_operations():
+    analyst = SimpleNamespace(role="analyst")
+    admin = SimpleNamespace(role="admin")
+
+    assert authorize("analyst", "agents:command").allowed is True
+    assert authorize("analyst", "agents:approve").allowed is False
+    assert await require_capability("agents:command")(analyst) is analyst
+    assert await require_capability("agents:approve")(admin) is admin
+
+    with pytest.raises(HTTPException) as denied:
+        await require_capability("agents:approve")(analyst)
+    assert denied.value.status_code == 403
+    assert "agents:approve" in str(denied.value.detail)
 
 
 def test_audit_chain_detects_payload_and_link_tampering():

@@ -5,9 +5,10 @@ from kafka import KafkaProducer
 import json
 import os
 from uuid import UUID
+from datetime import datetime
 import logging
 
-from iam_service.auth_methods import get_current_user, has_role, UserRole
+from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User # Import User model
 
 logger = logging.getLogger("phantomnet_gateway.agent_command_api")
@@ -41,7 +42,7 @@ class AgentCommandPayload(BaseModel):
 async def send_agent_command(
     agent_id: str,
     command: AgentCommandPayload,
-    current_user: User = Depends(has_role([UserRole.ADMIN, UserRole.ANALYST])) # RBAC
+    current_user: User = Depends(require_capability("agents:command"))
 ):
     """
     Sends a command to a specific agent via the Kafka agent-commands topic.

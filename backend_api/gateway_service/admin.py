@@ -11,7 +11,7 @@ from backend_api.shared.database import (
     BlacklistedIP,
 )
 from backend_api.shared.schemas import UserInDB
-from backend_api.iam_service.auth_methods import has_role, UserRole
+from backend_api.iam_service.policy import require_capability
 from backend_api.core.response import success_response, error_response
 from backend_api.core.logging import logger as pn_logger
 
@@ -25,7 +25,7 @@ class BlacklistRequest(BaseModel):
 async def add_to_blacklist(
     blacklist_request: BlacklistRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(has_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_capability("blacklist:write")),
 ):
     stmt = select(BlacklistedIP).where(BlacklistedIP.ip_address == blacklist_request.ip_address)
     result = await db.execute(stmt)
@@ -55,7 +55,7 @@ async def add_to_blacklist(
 async def remove_from_blacklist(
     blacklist_request: BlacklistRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(has_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_capability("blacklist:write")),
 ):
     stmt = select(BlacklistedIP).where(BlacklistedIP.ip_address == blacklist_request.ip_address)
     result = await db.execute(stmt)
@@ -80,7 +80,7 @@ async def remove_from_blacklist(
 @router.get("/users")
 async def get_users(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(has_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_capability("users:read")),
     search: Optional[str] = Query(None, description="Search by username"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
@@ -98,7 +98,7 @@ async def get_users(
 @router.get("/blacklist/list")
 async def list_blacklist(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(has_role([UserRole.ADMIN])),
+    current_user: User = Depends(require_capability("blacklist:write")),
 ):
     stmt = select(BlacklistedIP)
     result = await db.execute(stmt)
