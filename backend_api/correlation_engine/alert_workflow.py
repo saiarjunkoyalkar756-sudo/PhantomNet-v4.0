@@ -110,7 +110,8 @@ class AlertWorkflow:
                 active_alert.last_seen = now
                 active_alert.occurrence_count += 1
                 await session.commit()
-                await session.refresh(active_alert)
+                # The committed state is fully derived from the active governed record
+                # and this detection; no server-generated contract field needs refresh.
                 return AlertWorkflowResult(_to_contract(active_alert), created=False, suppressed=True)
 
             alert = AlertRecord(
@@ -151,7 +152,8 @@ class AlertWorkflow:
             )
             session.add(row)
             await session.commit()
-            await session.refresh(row)
+            # The alert contract contains only explicitly supplied governed fields, so
+            # avoid a second read solely to hydrate a value we already own.
             return AlertWorkflowResult(_to_contract(row), created=True, suppressed=False)
 
     async def list_for_tenant(self, tenant_id: str, limit: int = 100) -> list[AlertRecord]:

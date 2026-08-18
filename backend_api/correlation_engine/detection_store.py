@@ -88,7 +88,8 @@ class DetectionRepository:
                 if duplicate is None:
                     raise
                 return _to_contract(duplicate), False
-            await session.refresh(row)
+            # All fields exposed by the contract are explicit governed inputs. With
+            # expire_on_commit=False, no post-commit refresh round trip is required.
             return _to_contract(row), True
 
     async def list_for_tenant(self, tenant_id: str, limit: int = 100) -> list[DetectionRecord]:

@@ -1,0 +1,49 @@
+{
+  "endpoint_actions": 0,
+  "environment": "temporary_sqlite_and_controlled_bas_fixtures",
+  "external_calls": 0,
+  "interpretation": [
+    "Persistence and alert creation are measured independently with fresh records.",
+    "The full path includes broker envelope validation, rule evaluation, persistence, and alert creation.",
+    "Independent stage timings overlap with object construction and are directional rather than additive."
+  ],
+  "sample_count": 150,
+  "stages_ms": {
+    "alert_creation_and_suppression_lookup": {
+      "max": 4.025,
+      "mean": 2.673,
+      "p50": 2.603,
+      "p95": 3.306,
+      "p99": 3.963
+    },
+    "detection_persistence": {
+      "max": 3.517,
+      "mean": 2.661,
+      "p50": 2.623,
+      "p95": 3.085,
+      "p99": 3.228
+    },
+    "evaluation_including_normalization": {
+      "max": 0.059,
+      "mean": 0.025,
+      "p50": 0.024,
+      "p95": 0.025,
+      "p99": 0.04
+    },
+    "full_normalize_to_detection_and_alert": {
+      "max": 5.754,
+      "mean": 4.746,
+      "p50": 4.647,
+      "p95": 5.508,
+      "p99": 5.598
+    },
+    "normalization": {
+      "max": 0.055,
+      "mean": 0.016,
+      "p50": 0.015,
+      "p95": 0.017,
+      "p99": 0.03
+    }
+  },
+  "warmup_count": 20
+}
