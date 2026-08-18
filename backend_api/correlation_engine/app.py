@@ -5,6 +5,8 @@ from .consumer import start_kafka_consumer
 from .database import init_db, get_all_rules, upsert_rule
 from .alert_workflow import AlertWorkflow, init_alert_workflow_store
 from .detection_store import DetectionRepository, init_detection_store
+from .ingestion import CanonicalBrokerProcessor
+from .ingestion_reliability import IngestionDeadLetterRepository, init_ingestion_dead_letter_store
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
 from loguru import logger
@@ -18,6 +20,7 @@ async def correlation_startup(app: FastAPI):
     await init_db()
     await init_detection_store()
     await init_alert_workflow_store()
+    await init_ingestion_dead_letter_store()
     app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
     logger.info("Kafka consumer task started.")
 
@@ -29,6 +32,8 @@ async def correlation_shutdown(app: FastAPI):
 
 detection_repository = DetectionRepository()
 alert_workflow = AlertWorkflow()
+dead_letter_repository = IngestionDeadLetterRepository()
+replay_processor = CanonicalBrokerProcessor(detection_repository, alert_workflow=alert_workflow)
 
 app = create_phantom_service(
     name="Correlation Engine",
@@ -69,6 +74,36 @@ async def list_alerts(
     """Return tenant-scoped analyst alert workflows derived from canonical detections."""
     alerts = await alert_workflow.list_for_tenant(str(current_user.tenant_id), limit=limit)
     return success_response(data=[alert.model_dump(mode="json") for alert in alerts])
+
+
+@app.get("/ingestion/dead-letters")
+async def list_ingestion_dead_letters(
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return durable failed canonical deliveries for the authenticated tenant only."""
+    records = await dead_letter_repository.list_for_tenant(str(current_user.tenant_id), limit=limit)
+    return success_response(data=[record.model_dump(mode="json") for record in records])
+
+
+@app.post("/ingestion/dead-letters/{dead_letter_id}/replay")
+async def replay_ingestion_dead_letter(
+    dead_letter_id: str,
+    current_user: User = Depends(require_capability("cases:write")),
+):
+    """Explicitly replay one tenant-owned failed delivery; this route has no response capability."""
+    try:
+        record = await dead_letter_repository.replay(
+            tenant_id=str(current_user.tenant_id),
+            dead_letter_id=dead_letter_id,
+            actor=current_user.username,
+            processor=replay_processor.process,
+        )
+    except LookupError:
+        return error_response(code="NOT_FOUND", message="Dead-letter record not found.", status_code=404)
+    except ValueError as exc:
+        return error_response(code="INVALID_DEAD_LETTER_REPLAY", message=str(exc), status_code=409)
+    return success_response(data=record.model_dump(mode="json"))
 
 
 @app.patch("/alerts/{alert_id}/status")

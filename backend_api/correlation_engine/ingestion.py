@@ -64,10 +64,12 @@ class CanonicalBrokerProcessor:
             persisted.append(stored_detection)
             if created:
                 created_ids.append(stored_detection.detection_id)
-                if self._alert_workflow is not None:
-                    alert_workflows.append(await self._alert_workflow.ingest_detection(stored_detection))
             else:
                 duplicate_ids.append(stored_detection.detection_id)
+            if self._alert_workflow is not None:
+                # AlertWorkflow treats an already-linked detection as a transport duplicate.
+                # Calling it on replay repairs a failed post-detection workflow without new alerts.
+                alert_workflows.append(await self._alert_workflow.ingest_detection(stored_detection))
 
         return BrokerIngestionResult(
             event=event,

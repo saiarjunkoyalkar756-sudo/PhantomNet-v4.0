@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import json
+from hashlib import sha256
 import httpx
 import os
 from kafka import KafkaConsumer
@@ -10,8 +11,14 @@ from .database import get_all_rules
 from .alert_workflow import AlertWorkflow
 from .detection_store import DetectionRepository
 from .ingestion import CanonicalBrokerProcessor, BrokerIngestionResult
+from .ingestion_reliability import (
+    BrokerDeliveryRecordedError,
+    IngestionDeadLetterRepository,
+    ReliableCanonicalIngestion,
+)
 from backend_api.core_config import SAFE_MODE
 from backend_api.shared.kafka_topics import NORMALIZED_EVENTS
+from phantomnet_core.contracts import BrokerDeliveryMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +36,8 @@ broker_processor = CanonicalBrokerProcessor(
     DetectionRepository(),
     alert_workflow=AlertWorkflow(),
 )
+dead_letter_repository = IngestionDeadLetterRepository()
+reliable_ingestion = ReliableCanonicalIngestion(broker_processor.process, dead_letter_repository)
 
 
 def get_threat_intelligence_enricher():
@@ -54,9 +63,16 @@ async def map_event_with_mitre(event: dict) -> list:
         logger.error(f"An unexpected error during MITRE mapping: {e}", exc_info=True)
     return []
 
-async def _process_event_async(event: dict) -> BrokerIngestionResult:
-    """Persist governed detections before any optional enrichment or rule evaluation."""
-    ingestion = await broker_processor.process(event)
+async def _process_event_async(
+    event: dict,
+    delivery: BrokerDeliveryMetadata | None = None,
+) -> BrokerIngestionResult:
+    """Persist governed detections before optional enrichment; failed broker deliveries retain evidence."""
+    ingestion = (
+        await reliable_ingestion.process_delivery(event, delivery)
+        if delivery is not None
+        else await broker_processor.process(event)
+    )
     canonical_event = ingestion.event.model_dump(mode="json")
     logger.info(
         "Canonical event accepted",
@@ -103,7 +119,8 @@ async def start_kafka_consumer():
                 bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
                 group_id=GROUP_ID,
                 auto_offset_reset='earliest',
-                value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+                enable_auto_commit=False,
+                value_deserializer=lambda x: x.decode("utf-8", errors="replace")
             )
             logger.info("Successfully connected to Kafka.")
         except NoBrokersAvailable:
@@ -114,13 +131,40 @@ async def start_kafka_consumer():
     try:
         for message in consumer:
             try:
-                event = message.value
-                logger.info(f"Received event: {event}")
-                await _process_event_async(event)
-            except json.JSONDecodeError:
-                logger.error(f"Failed to decode Kafka message as JSON: {message.value}")
-            except Exception as e:
-                logger.error(f"Error processing message: {e}", exc_info=True)
+                delivery = BrokerDeliveryMetadata(
+                    topic=message.topic,
+                    partition=message.partition,
+                    offset=message.offset,
+                )
+                event = json.loads(message.value)
+                logger.info("Received canonical broker event", topic=delivery.topic, partition=delivery.partition, offset=delivery.offset)
+                await _process_event_async(event, delivery)
+                consumer.commit()
+            except BrokerDeliveryRecordedError as exc:
+                logger.error(
+                    "Canonical broker delivery was dead-lettered; committing offset after durable receipt.",
+                    dead_letter_id=exc.receipt.dead_letter_id,
+                    error_code=exc.receipt.error_code,
+                )
+                consumer.commit()
+            except json.JSONDecodeError as exc:
+                raw_digest = sha256(message.value.encode("utf-8")).hexdigest()
+                delivery = BrokerDeliveryMetadata(topic=message.topic, partition=message.partition, offset=message.offset)
+                receipt, _ = await dead_letter_repository.record_failure(
+                    {"broker_payload_sha256": raw_digest, "content_type": "invalid_json"},
+                    delivery,
+                    exc,
+                )
+                logger.error(
+                    "Invalid JSON broker delivery was dead-lettered; committing offset after durable receipt.",
+                    dead_letter_id=receipt.dead_letter_id,
+                )
+                consumer.commit()
+            except Exception as exc:
+                logger.error(
+                    "Canonical broker delivery failed before durable evidence; offset was not committed.",
+                    error_type=type(exc).__name__,
+                )
     except Exception as e:
         logger.critical(f"Critical error in Kafka consumer loop: {e}", exc_info=True)
     finally:

@@ -107,9 +107,12 @@ async def test_canonical_broker_processor_creates_one_alert_after_new_detection_
 
         assert len(first_delivery.alert_workflows) == 1
         assert first_delivery.alert_workflows[0].created is True
-        assert retry_delivery.alert_workflows == ()
+        assert len(retry_delivery.alert_workflows) == 1
+        assert retry_delivery.alert_workflows[0].created is False
+        assert retry_delivery.alert_workflows[0].suppressed is True
         alerts = await workflow.list_for_tenant(TENANT_ID)
         assert len(alerts) == 1
         assert alerts[0].detection_ids == list(first_delivery.created_detection_ids)
+        assert alerts[0].occurrence_count == 1
     finally:
         await engine.dispose()

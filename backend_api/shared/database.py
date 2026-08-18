@@ -690,3 +690,30 @@ def create_db_and_tables(engine_obj=None):
 test_db_url = "sqlite:///./test.db"
 test_engine = create_engine(test_db_url, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
+
+class IngestionDeadLetterRow(Base):
+    """Durable broker failure evidence keyed by one source delivery; replay is always explicit."""
+
+    __tablename__ = "ingestion_dead_letters"
+    __table_args__ = (
+        UniqueConstraint("topic", "partition", "offset", name="uq_ingestion_dead_letter_delivery"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    dead_letter_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True, index=True)
+    event_id = Column(String, nullable=True, index=True)
+    topic = Column(String, nullable=False)
+    partition = Column(Integer, nullable=False)
+    offset = Column(Integer, nullable=False)
+    message_hash = Column(String, nullable=False, index=True)
+    payload = Column(JSONB, nullable=False)
+    error_code = Column(String, nullable=False, index=True)
+    error_type = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="open", index=True)
+    attempt_count = Column(Integer, nullable=False, default=1)
+    first_failed_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    last_failed_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    replayed_at = Column(DateTime(timezone=True), nullable=True)
+    replayed_by = Column(String, nullable=True)

@@ -105,8 +105,11 @@ class AlertWorkflow:
                 .order_by(AnalystAlertRow.last_seen.desc())
             )
             if active_alert is not None:
-                if detection.detection_id not in active_alert.detection_ids:
-                    active_alert.detection_ids = [*active_alert.detection_ids, detection.detection_id]
+                if detection.detection_id in active_alert.detection_ids:
+                    # At-least-once broker delivery may replay the same durable detection.
+                    # Preserve the analyst record exactly rather than counting duplicate transport.
+                    return AlertWorkflowResult(_to_contract(active_alert), created=False, suppressed=True)
+                active_alert.detection_ids = [*active_alert.detection_ids, detection.detection_id]
                 active_alert.last_seen = now
                 active_alert.occurrence_count += 1
                 await session.commit()

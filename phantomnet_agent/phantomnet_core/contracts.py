@@ -377,3 +377,56 @@ class ContainmentExecutionEvidence(BaseModel):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
+
+
+class BrokerDeliveryMetadata(BaseModel):
+    """Immutable broker coordinates for one canonical delivery; used for idempotent failure receipts."""
+
+    schema_version: str = CONTRACT_VERSION
+    topic: str = Field(min_length=1, max_length=255)
+    partition: int = Field(ge=0)
+    offset: int = Field(ge=0)
+    received_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @field_validator("received_at")
+    @classmethod
+    def require_timezone_aware_delivery_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
+class IngestionDeadLetterRecord(BaseModel):
+    """Durable canonical ingestion failure evidence; replay remains an analyst-controlled operation."""
+
+    schema_version: str = CONTRACT_VERSION
+    dead_letter_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: Optional[str] = None
+    event_id: Optional[str] = None
+    delivery: BrokerDeliveryMetadata
+    message_hash: str = Field(min_length=64, max_length=64)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    error_code: str = Field(min_length=1, max_length=120)
+    error_type: str = Field(min_length=1, max_length=120)
+    status: Literal["open", "replayed", "discarded"] = "open"
+    attempt_count: int = Field(default=1, ge=1)
+    first_failed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_failed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    replayed_at: Optional[datetime] = None
+    replayed_by: Optional[str] = None
+
+    @field_validator("first_failed_at", "last_failed_at", "replayed_at")
+    @classmethod
+    def require_timezone_aware_dead_letter_timestamp(cls, value: Optional[datetime]) -> Optional[datetime]:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    @field_validator("message_hash")
+    @classmethod
+    def require_sha256_digest(cls, value: str) -> str:
+        if not re.fullmatch(r"[a-f0-9]{64}", value):
+            raise ValueError("message_hash must be a lowercase SHA-256 hexadecimal digest.")
+        return value
