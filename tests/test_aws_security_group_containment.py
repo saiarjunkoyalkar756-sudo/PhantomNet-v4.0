@@ -258,3 +258,121 @@ async def test_governed_service_routes_approved_cloud_block_through_signed_audit
         assert all(row.signature and row.signature_key_id == "test-aws-key" for row in audit_rows)
     finally:
         await engine.dispose()
+
+
+class StubbornRevokeEc2Client(FakeEc2Client):
+    def revoke_security_group_ingress(self, **kwargs):
+        self.revoke_calls.append(kwargs)
+        return {"Return": True, "ResponseMetadata": {"RequestId": "stubborn-revoke"}}
+
+
+class NoRestoreEc2Client(FakeEc2Client):
+    def authorize_security_group_ingress(self, **kwargs):
+        self.authorize_calls.append(kwargs)
+        return {"Return": True, "ResponseMetadata": {"RequestId": "no-restore"}}
+
+
+class EndlessPageEc2Client(FakeEc2Client):
+    def describe_security_group_rules(self, **kwargs):
+        if kwargs.get("SecurityGroupRuleIds"):
+            return super().describe_security_group_rules(**kwargs)
+        return {"SecurityGroupRules": [], "NextToken": "still-more"}
+
+
+def test_aws_config_loader_accepts_explicit_valid_allowlists_and_disables_invalid_mapping(monkeypatch):
+    monkeypatch.setenv("PHANTOMNET_AWS_SECURITY_GROUP_CONTAINMENT_ENABLED", "true")
+    monkeypatch.setenv("PHANTOMNET_AWS_TENANT_SECURITY_GROUP_ALLOWLIST", f'{{"{TENANT_ID}":["{SECURITY_GROUP_ID}"]}}')
+    monkeypatch.setenv("PHANTOMNET_AWS_ALLOWED_REGIONS", REGION)
+    monkeypatch.setenv("PHANTOMNET_AWS_ALLOWED_ACCOUNT_IDS", ACCOUNT_ID)
+    monkeypatch.setenv("PHANTOMNET_AWS_ALLOWED_CIDRS", "203.0.113.42/24")
+
+    config = AwsSecurityGroupAdapterConfig.from_environment()
+    assert config.enabled is True
+    assert config.tenant_security_groups[TENANT_ID] == frozenset({SECURITY_GROUP_ID})
+    assert config.allowed_cidrs == frozenset({CIDR})
+    assert config.configuration_error is None
+
+    monkeypatch.setenv("PHANTOMNET_AWS_TENANT_SECURITY_GROUP_ALLOWLIST", "[]")
+    invalid = AwsSecurityGroupAdapterConfig.from_environment()
+    assert invalid.enabled is False
+    assert invalid.configuration_error and "JSON object" in invalid.configuration_error
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {**_request().parameters, "cidr_ipv4": "2001:db8::/64"},
+        {**_request().parameters, "from_port": 444, "to_port": 443},
+        {**_request().parameters, "protocol": "-1"},
+    ],
+)
+def test_aws_security_group_adapter_rejects_invalid_or_overbroad_parameter_contract_before_mutation(parameters):
+    ec2 = FakeEc2Client()
+    request = _request(parameters=parameters)
+    result = _adapter(ec2, FakeStsClient()).execute(request, _approval(request))
+
+    assert result["enforced"] is False
+    assert result["verified"] is False
+    assert "Invalid AWS Security Group containment parameters" in result["detail"]
+    assert ec2.revoke_calls == []
+
+
+def test_aws_security_group_adapter_rejects_wrong_action_and_rejected_approval_before_mutation():
+    ec2 = FakeEc2Client()
+    action_request = _request(action="isolate_endpoint")
+    rejected_action = _adapter(ec2, FakeStsClient()).execute(action_request, _approval(action_request))
+    assert rejected_action["enforced"] is False
+    assert "Unsupported" in rejected_action["detail"]
+
+    request = _request()
+    rejected_approval = _approval(request).model_copy(update={"decision": "rejected"})
+    rejected = _adapter(ec2, FakeStsClient()).execute(request, rejected_approval)
+    assert rejected["enforced"] is False
+    assert "explicitly approved" in rejected["detail"]
+    assert ec2.revoke_calls == []
+
+
+def test_aws_security_group_adapter_fails_closed_when_caller_identity_cannot_be_verified_or_revoke_readback_is_still_present():
+    request = _request()
+    identity_failure = _adapter(FakeEc2Client(), FakeStsClient(error=FakeAwsError("AccessDenied"))).execute(request, _approval(request))
+    assert identity_failure["enforced"] is False
+    assert identity_failure["verified"] is False
+    assert "caller identity verification failed" in identity_failure["detail"]
+
+    stubborn_ec2 = StubbornRevokeEc2Client()
+    stubborn = _adapter(stubborn_ec2, FakeStsClient()).execute(request, _approval(request))
+    assert stubborn["enforced"] is False
+    assert stubborn["verified"] is False
+    assert "still present" in stubborn["detail"]
+    assert len(stubborn_ec2.revoke_calls) == 1
+
+
+def test_aws_security_group_rollback_refuses_duplicate_permission_and_unverified_restoration():
+    request = _request()
+    approval = _approval(request)
+    duplicate_ec2 = FakeEc2Client()
+    duplicate = _adapter(duplicate_ec2, FakeStsClient()).rollback(request, approval)
+    assert duplicate["verified"] is False
+    assert "already present" in duplicate["detail"]
+    assert duplicate_ec2.authorize_calls == []
+
+    no_restore_ec2 = NoRestoreEc2Client()
+    adapter = _adapter(no_restore_ec2, FakeStsClient())
+    assert adapter.execute(request, approval)["verified"] is True
+    no_restore = adapter.rollback(request, approval)
+    assert no_restore["verified"] is False
+    assert "could not verify" in no_restore["detail"]
+    assert len(no_restore_ec2.authorize_calls) == 1
+
+
+def test_aws_security_group_rule_lookup_has_a_hard_pagination_bound_and_falls_back_to_exception_class_name():
+    adapter = _adapter(EndlessPageEc2Client(), FakeStsClient())
+    with pytest.raises(RuntimeError, match="pagination safety bound"):
+        adapter._find_matching_rule(EndlessPageEc2Client(), _request().parameters and adapter._parse_and_authorize(_request(), _approval(_request()))[0])
+
+    class OpaqueCloudError(Exception):
+        pass
+
+    failure = _adapter(FakeEc2Client(revoke_error=OpaqueCloudError()), FakeStsClient()).execute(_request(), _approval(_request()))
+    assert failure["enforced"] is False
+    assert "OpaqueCloudError" in failure["detail"]
