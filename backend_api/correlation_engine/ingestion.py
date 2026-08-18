@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,6 +13,7 @@ from phantomnet_core.contracts import CONTRACT_VERSION, DetectionRecord, EventEn
 
 
 DetectionEvaluator = Callable[[Mapping[str, Any]], DetectionRecord | None]
+AsyncDetectionEvaluator = Callable[[EventEnvelope], Awaitable[Sequence[DetectionRecord]]]
 
 
 @dataclass(frozen=True)
@@ -36,10 +37,12 @@ class CanonicalBrokerProcessor:
         self,
         repository: DetectionRepository,
         evaluators: Sequence[DetectionEvaluator] = (evaluate_normalized_baseline_event,),
+        async_evaluators: Sequence[AsyncDetectionEvaluator] = (),
         alert_workflow: AlertWorkflow | None = None,
     ):
         self._repository = repository
         self._evaluators = tuple(evaluators)
+        self._async_evaluators = tuple(async_evaluators)
         self._alert_workflow = alert_workflow
 
     async def process(self, message: Mapping[str, Any]) -> BrokerIngestionResult:
@@ -55,10 +58,15 @@ class CanonicalBrokerProcessor:
         alert_workflows: list[AlertWorkflowResult] = []
         normalized_message = dict(message)
 
+        candidates: list[DetectionRecord] = []
         for evaluator in self._evaluators:
             detection = evaluator(normalized_message)
-            if detection is None:
-                continue
+            if detection is not None:
+                candidates.append(detection)
+        for evaluator in self._async_evaluators:
+            candidates.extend(await evaluator(event))
+
+        for detection in candidates:
             self._validate_detection_binding(event, detection)
             stored_detection, created = await self._repository.persist(detection)
             persisted.append(stored_detection)

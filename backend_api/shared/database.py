@@ -717,3 +717,49 @@ class IngestionDeadLetterRow(Base):
     last_failed_at = Column(DateTime(timezone=True), nullable=False, index=True)
     replayed_at = Column(DateTime(timezone=True), nullable=True)
     replayed_by = Column(String, nullable=True)
+
+
+class GovernedCorrelationRuleRow(Base):
+    """Tenant-owned deterministic correlation rule; no response action is persisted here."""
+
+    __tablename__ = "governed_correlation_rules"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uq_governed_correlation_rule_tenant_name"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    rule_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    version = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    event_types = Column(JSONB, nullable=False)
+    predicates = Column(JSONB, nullable=False)
+    severity = Column(String, nullable=False, index=True)
+    mitre_techniques = Column(JSONB, nullable=False)
+    mitre_tactics = Column(JSONB, nullable=False)
+    correlation_key_fields = Column(JSONB, nullable=False)
+    threshold = Column(Integer, nullable=False)
+    window_seconds = Column(Integer, nullable=False)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class CorrelationMatchEvidenceRow(Base):
+    """One idempotent event-to-rule match used for bounded correlation threshold evidence."""
+
+    __tablename__ = "correlation_match_evidence"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "rule_id", "event_id", name="uq_correlation_match_event"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    match_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    rule_id = Column(String, ForeignKey("governed_correlation_rules.rule_id"), nullable=False, index=True)
+    event_id = Column(String, nullable=False, index=True)
+    correlation_key = Column(String, nullable=False, index=True)
+    matched_predicates = Column(JSONB, nullable=False)
+    evaluated_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    detection_id = Column(String, nullable=True, index=True)

@@ -1,11 +1,11 @@
 from fastapi import Depends, FastAPI, Query
 
 from backend_api.shared.service_factory import create_phantom_service
-from .consumer import start_kafka_consumer
+from .consumer import broker_processor, governed_correlation_repository, start_kafka_consumer
 from .database import init_db, get_all_rules, upsert_rule
 from .alert_workflow import AlertWorkflow, init_alert_workflow_store
 from .detection_store import DetectionRepository, init_detection_store
-from .ingestion import CanonicalBrokerProcessor
+from .governed_correlation import init_governed_correlation_store
 from .ingestion_reliability import IngestionDeadLetterRepository, init_ingestion_dead_letter_store
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
@@ -14,6 +14,7 @@ import asyncio
 from pydantic import BaseModel
 from typing import List, Optional
 from backend_api.core.response import success_response, error_response
+from phantomnet_core.contracts import GovernedCorrelationRule
 
 async def correlation_startup(app: FastAPI):
     # Startup: Initialize DB and background consumer
@@ -21,6 +22,7 @@ async def correlation_startup(app: FastAPI):
     await init_detection_store()
     await init_alert_workflow_store()
     await init_ingestion_dead_letter_store()
+    await init_governed_correlation_store()
     app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
     logger.info("Kafka consumer task started.")
 
@@ -33,7 +35,7 @@ async def correlation_shutdown(app: FastAPI):
 detection_repository = DetectionRepository()
 alert_workflow = AlertWorkflow()
 dead_letter_repository = IngestionDeadLetterRepository()
-replay_processor = CanonicalBrokerProcessor(detection_repository, alert_workflow=alert_workflow)
+replay_processor = broker_processor
 
 app = create_phantom_service(
     name="Correlation Engine",
@@ -74,6 +76,35 @@ async def list_alerts(
     """Return tenant-scoped analyst alert workflows derived from canonical detections."""
     alerts = await alert_workflow.list_for_tenant(str(current_user.tenant_id), limit=limit)
     return success_response(data=[alert.model_dump(mode="json") for alert in alerts])
+
+
+@app.get("/governed-rules")
+async def list_governed_rules(
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return only the authenticated tenant's deterministic correlation definitions."""
+    rules = await governed_correlation_repository.list_rules(str(current_user.tenant_id))
+    return success_response(data=[rule.model_dump(mode="json") for rule in rules])
+
+
+@app.post("/governed-rules", status_code=201)
+async def upsert_governed_rule(
+    rule: GovernedCorrelationRule,
+    current_user: User = Depends(require_capability("rules:write")),
+):
+    """Create or update a tenant-owned advisory correlation rule with structured predicates only."""
+    if rule.tenant_id != str(current_user.tenant_id):
+        return error_response(code="TENANT_SCOPE_MISMATCH", message="Rule tenant scope must match the authenticated user.", status_code=403)
+    stored = await governed_correlation_repository.upsert(rule)
+    return success_response(data=stored.model_dump(mode="json"))
+
+
+@app.get("/governed-rules/quality")
+async def governed_rule_quality(
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return tenant-owned rule match and threshold-detection counts without automatic tuning or response."""
+    return success_response(data=await governed_correlation_repository.quality_summary(str(current_user.tenant_id)))
 
 
 @app.get("/ingestion/dead-letters")

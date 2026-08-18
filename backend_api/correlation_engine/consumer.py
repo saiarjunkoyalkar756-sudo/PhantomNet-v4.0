@@ -11,6 +11,7 @@ from .database import get_all_rules
 from .alert_workflow import AlertWorkflow
 from .detection_store import DetectionRepository
 from .ingestion import CanonicalBrokerProcessor, BrokerIngestionResult
+from .governed_correlation import GovernedCorrelationEngine, GovernedCorrelationRepository
 from .ingestion_reliability import (
     BrokerDeliveryRecordedError,
     IngestionDeadLetterRepository,
@@ -32,8 +33,11 @@ MITRE_MAPPER_URL = "http://mitre_attack_mapper:8000"
 
 # --- Global Instances ---
 ti_enricher = None
+governed_correlation_repository = GovernedCorrelationRepository()
+governed_correlation_engine = GovernedCorrelationEngine(governed_correlation_repository)
 broker_processor = CanonicalBrokerProcessor(
     DetectionRepository(),
+    async_evaluators=(governed_correlation_engine.evaluate_event,),
     alert_workflow=AlertWorkflow(),
 )
 dead_letter_repository = IngestionDeadLetterRepository()

@@ -8,7 +8,7 @@ from hashlib import sha256
 from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 CONTRACT_VERSION = "1.0.0"
@@ -430,3 +430,110 @@ class IngestionDeadLetterRecord(BaseModel):
         if not re.fullmatch(r"[a-f0-9]{64}", value):
             raise ValueError("message_hash must be a lowercase SHA-256 hexadecimal digest.")
         return value
+
+
+class CorrelationPredicate(BaseModel):
+    """One bounded structured comparison over a canonical event field; never a raw query expression."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    field: str = Field(min_length=1, max_length=128)
+    operator: Literal["equals", "contains", "gte", "lte", "in"]
+    value: Any
+
+    @field_validator("field")
+    @classmethod
+    def validate_field_path(cls, value: str) -> str:
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.]{0,127}", value) or "__" in value:
+            raise ValueError("predicate field must be a bounded dot-delimited canonical path.")
+        return value
+
+    @field_validator("value")
+    @classmethod
+    def validate_literal_value(cls, value: Any) -> Any:
+        scalar = (str, int, float, bool)
+        if isinstance(value, scalar):
+            return value
+        if isinstance(value, list) and 1 <= len(value) <= 100 and all(isinstance(item, scalar) for item in value):
+            return value
+        raise ValueError("predicate value must be a scalar or a bounded list of scalars.")
+
+
+class GovernedCorrelationRule(BaseModel):
+    """A tenant-owned deterministic correlation rule with advisory detection output only."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: str = CONTRACT_VERSION
+    rule_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    version: str = Field(min_length=3, max_length=40)
+    name: str = Field(min_length=3, max_length=160)
+    description: str = Field(min_length=3, max_length=1000)
+    event_types: List[str] = Field(min_length=1, max_length=32)
+    predicates: List[CorrelationPredicate] = Field(min_length=1, max_length=10)
+    severity: Literal["informational", "low", "medium", "high", "critical"]
+    mitre_techniques: List[str] = Field(min_length=1, max_length=16)
+    mitre_tactics: List[str] = Field(min_length=1, max_length=16)
+    correlation_key_fields: List[str] = Field(default_factory=list, max_length=5)
+    threshold: int = Field(default=1, ge=1, le=100)
+    window_seconds: int = Field(default=300, ge=1, le=86_400)
+    enabled: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_tenant_id(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("version")
+    @classmethod
+    def validate_governed_rule_version(cls, value: str) -> str:
+        if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", value):
+            raise ValueError("governed rule version must be a dotted numeric version.")
+        return value
+
+    @field_validator("mitre_techniques")
+    @classmethod
+    def validate_governed_rule_mitre_techniques(cls, values: List[str]) -> List[str]:
+        normalized = [value.upper() for value in values]
+        if any(not MITRE_TECHNIQUE_PATTERN.fullmatch(value) for value in normalized):
+            raise ValueError("MITRE techniques must use T#### or T####.### format")
+        return normalized
+
+    @field_validator("event_types", "correlation_key_fields")
+    @classmethod
+    def validate_canonical_field_names(cls, values: List[str]) -> List[str]:
+        for value in values:
+            if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.]{0,127}", value) or "__" in value:
+                raise ValueError("event types and correlation key fields must be bounded canonical names.")
+        return values
+
+
+class CorrelationMatchEvidence(BaseModel):
+    """Bounded evidence that a tenant-owned rule matched canonical telemetry; it has no response fields."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    rule_id: str
+    rule_version: str
+    tenant_id: str
+    event_id: str
+    correlation_key: str
+    match_count: int = Field(ge=1)
+    threshold: int = Field(ge=1)
+    window_seconds: int = Field(ge=1)
+    matched_predicates: List[str] = Field(default_factory=list, max_length=10)
+    evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    automatic_enforcement: bool = False
+
+    @field_validator("evaluated_at")
+    @classmethod
+    def require_timezone_aware_correlation_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
