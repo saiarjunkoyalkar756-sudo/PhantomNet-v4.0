@@ -134,6 +134,8 @@ async def test_controlled_end_to_end_soc_workflow_covers_detection_to_containmen
         assert case_created is True
         assert completed_playbook.status == "completed"
         assert completed_playbook.evidence["execution_dispatched"] is False
+        tenant_cases = await harness.case_workflow.list_cases(TENANT_ID)
+        assert [tenant_case.case_id for tenant_case in tenant_cases] == [case.case_id]
 
         forwarder, token = await harness.forwarders.register(TENANT_ID, "e2e-wazuh-forwarder", "e2e-admin")
         streamed = await harness.forwarders.stream_batch(

@@ -310,3 +310,15 @@ class CaseWorkflow:
                 .order_by(CasePlaybookRunRow.requested_at.desc())
             )
             return [_run_contract(row) for row in rows]
+
+    async def list_cases(self, tenant_id: str, limit: int = 100) -> list[CaseRecord]:
+        """Return the newest tenant-owned governed cases for read-only graph projection."""
+        safe_limit = max(1, min(limit, 500))
+        async with self._session_factory() as session:
+            rows = await session.scalars(
+                select(InvestigationCaseRow)
+                .where(InvestigationCaseRow.tenant_id == UUID(tenant_id))
+                .order_by(InvestigationCaseRow.updated_at.desc())
+                .limit(safe_limit)
+            )
+            return [_case_contract(row) for row in rows]

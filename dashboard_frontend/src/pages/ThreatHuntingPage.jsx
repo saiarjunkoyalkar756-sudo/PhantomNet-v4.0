@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Activity, BookmarkPlus, Bot, Database, Search, ShieldCheck, Sparkles } from 'lucide-react';
+import { Activity, BookmarkPlus, Bot, Database, Network, Search, ShieldCheck, Sparkles } from 'lucide-react';
 
 import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
   fetchSavedHunts,
   saveHunt,
 } from '@/services/threatHunting.service';
+import { analyzeAttackPath, refreshAttackGraph } from '@/services/attackPath.service';
 
 const severityColors = {
   critical: '#ef4444',
@@ -44,6 +45,11 @@ const ThreatHuntingPage = () => {
   const [automatedHunts, setAutomatedHunts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [attackSource, setAttackSource] = useState('');
+  const [attackTarget, setAttackTarget] = useState('');
+  const [attackAnalysis, setAttackAnalysis] = useState(null);
+  const [graphProjection, setGraphProjection] = useState(null);
+  const [isGraphLoading, setIsGraphLoading] = useState(false);
 
   const filters = useMemo(() => {
     const next = [];
@@ -117,6 +123,40 @@ const ThreatHuntingPage = () => {
       setError(requestError.message || 'Saved hunt execution failed.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const refreshGraph = async () => {
+    setIsGraphLoading(true);
+    setError('');
+    try {
+      setGraphProjection(await refreshAttackGraph());
+      setAttackAnalysis(null);
+    } catch (requestError) {
+      setError(requestError.message || 'Graph refresh requires analyst evidence and appropriate administrator access.');
+    } finally {
+      setIsGraphLoading(false);
+    }
+  };
+
+  const analyzeGraph = async () => {
+    if (!attackSource.trim() || !attackTarget.trim()) {
+      setError('Provide both governed graph node identifiers before analyzing a path.');
+      return;
+    }
+    setIsGraphLoading(true);
+    setError('');
+    try {
+      setAttackAnalysis(await analyzeAttackPath({
+        source_node_id: attackSource.trim(),
+        target_node_id: attackTarget.trim(),
+        max_hops: 4,
+        max_paths: 10,
+      }));
+    } catch (requestError) {
+      setError(requestError.message || 'No tenant-scoped evidence path is currently available. Refresh the graph after new evidence arrives.');
+    } finally {
+      setIsGraphLoading(false);
     }
   };
 
@@ -197,6 +237,23 @@ const ThreatHuntingPage = () => {
               </button>
             ))}
             {!Object.keys(automatedHunts).length && <p className="text-sm text-muted-foreground">No automated hunt summaries available.</p>}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card className="xl:col-span-2 border-border/60 bg-card/70">
+          <CardHeader className="border-b border-border/50">
+            <CardTitle className="flex items-center gap-2 text-base"><Network className="h-4 w-4 text-primary" /> Evidence-backed attack paths</CardTitle>
+            <p className="text-sm text-muted-foreground">Tenant-scoped traversal only. Node IDs are canonical evidence references such as <code>case:&lt;id&gt;</code> and <code>asset:&lt;id&gt;</code>; graph analysis never triggers response or containment.</p>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-5">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2"><Label htmlFor="attack-source">Source node</Label><Input id="attack-source" value={attackSource} onChange={(event) => setAttackSource(event.target.value)} placeholder="case:&lt;case-id&gt;" /></div>
+              <div className="space-y-2"><Label htmlFor="attack-target">Target node</Label><Input id="attack-target" value={attackTarget} onChange={(event) => setAttackTarget(event.target.value)} placeholder="asset:&lt;asset-id&gt;" /></div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3"><Button variant="outline" onClick={refreshGraph} disabled={isGraphLoading}><Database className="mr-2 h-4 w-4" />{isGraphLoading ? 'Refreshing…' : 'Refresh tenant graph'}</Button><Button onClick={analyzeGraph} disabled={isGraphLoading}><Network className="mr-2 h-4 w-4" />Analyze path</Button>{graphProjection && <span className="text-xs text-muted-foreground">Snapshot: {graphProjection.node_count} nodes · {graphProjection.edge_count} evidence edges</span>}</div>
+            <div className="space-y-2">{attackAnalysis?.paths?.map((path, index) => <div key={`${path.node_ids.join('-')}-${index}`} className="rounded-md border border-primary/20 bg-primary/5 p-3"><div className="flex items-center justify-between gap-4"><p className="text-xs font-semibold uppercase tracking-wider text-primary">Path {index + 1} · risk {path.risk_score} · {path.hop_count} hops</p><span className="text-xs text-muted-foreground">{path.evidence_ids.length} evidence references</span></div><p className="mt-2 break-all font-mono text-xs text-foreground/90">{path.node_ids.join('  →  ')}</p></div>)}{attackAnalysis && !attackAnalysis.paths?.length && <p className="rounded-md border border-border/60 p-3 text-sm text-muted-foreground">No bounded attack path connects these tenant-owned evidence nodes.</p>}{!attackAnalysis && <p className="rounded-md border border-border/60 p-3 text-sm text-muted-foreground">Refresh the graph to project current governed evidence, then analyze an explicit bounded path.</p>}</div>
           </CardContent>
         </Card>
       </div>
