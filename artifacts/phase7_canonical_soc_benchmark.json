@@ -1,0 +1,38 @@
+{
+  "containment_governance": {
+    "adapter_calls": [
+      "execute",
+      "rollback"
+    ],
+    "audit_chain_valid": true,
+    "audit_record_count": 4,
+    "execution_status": "verified",
+    "latency_ms": 20.848,
+    "rollback_status": "rolled_back"
+  },
+  "endpoint_actions": 0,
+  "environment": "isolated_sqlite_and_simulated_adapters",
+  "external_calls": 0,
+  "limitations": [
+    "In-memory application components and temporary SQLite only.",
+    "No Kafka/Redpanda, PostgreSQL, Redis, Neo4j, Docker Compose, endpoint agent, or external provider was exercised.",
+    "Results are regression evidence, not a production sizing or throughput commitment."
+  ],
+  "pipeline": {
+    "latency_ms": {
+      "max": 12.102,
+      "p50": 7.842,
+      "p95": 10.367,
+      "p99": 10.917
+    },
+    "samples": 120,
+    "throughput_events_per_second": 122.77
+  },
+  "wazuh_stream": {
+    "automatic_enforcement": false,
+    "batch_size": 25,
+    "canonical_event_count": 50,
+    "integrity_created": 25,
+    "latency_ms": 233.427
+  }
+}
