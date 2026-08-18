@@ -128,3 +128,49 @@ async def test_active_readiness_fails_closed_when_security_posture_has_blocking_
     assert result["readiness"] == "not_ready"
     assert result["status"] == "degraded"
     assert result["security_posture"]["blocking_controls"] == ["aws_security_group_containment"]
+
+
+def test_runtime_posture_reports_regional_replication_as_disabled_or_fails_closed_when_enabled_without_secure_configuration():
+    disabled = assess_runtime_posture(safe_mode=False, environment={})
+    assert disabled["controls"]["telemetry_replication"] == {
+        "status": "disabled",
+        "reason": "transport_disabled_by_default",
+    }
+
+    missing_broker = assess_runtime_posture(
+        safe_mode=False,
+        environment={"PHANTOMNET_TELEMETRY_REPLICATION_ENABLED": "true"},
+    )
+    assert missing_broker["controls"]["telemetry_replication"] == {
+        "status": "not_ready",
+        "reason": "missing_regional_broker_configuration",
+    }
+
+    strict_plaintext = assess_runtime_posture(
+        safe_mode=False,
+        environment={
+            "ENVIRONMENT": "production",
+            "PHANTOMNET_TELEMETRY_REPLICATION_ENABLED": "true",
+            "PHANTOMNET_REPLICATION_KAFKA_BOOTSTRAP_SERVERS": "regional-broker.example.test:9092",
+            "PHANTOMNET_REPLICATION_KAFKA_SECURITY_PROTOCOL": "PLAINTEXT",
+        },
+    )
+    assert strict_plaintext["controls"]["telemetry_replication"] == {
+        "status": "not_ready",
+        "reason": "tls_required_in_strict_environment",
+    }
+
+    secured = assess_runtime_posture(
+        safe_mode=False,
+        environment={
+            "PHANTOMNET_TELEMETRY_REPLICATION_ENABLED": "true",
+            "PHANTOMNET_REPLICATION_KAFKA_BOOTSTRAP_SERVERS": "regional-broker.example.test:9093",
+            "PHANTOMNET_REPLICATION_KAFKA_SECURITY_PROTOCOL": "SSL",
+        },
+    )
+    assert secured["controls"]["telemetry_replication"] == {
+        "status": "ready",
+        "reason": "secured_transport_configured",
+        "security_protocol": "SSL",
+        "mtls_configured": False,
+    }

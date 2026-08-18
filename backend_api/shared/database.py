@@ -763,3 +763,67 @@ class CorrelationMatchEvidenceRow(Base):
     matched_predicates = Column(JSONB, nullable=False)
     evaluated_at = Column(DateTime(timezone=True), nullable=False, index=True)
     detection_id = Column(String, nullable=True, index=True)
+
+
+class ResponseAutomationPolicyRow(Base):
+    """Policy that creates approval-required containment requests; it never executes an adapter."""
+
+    __tablename__ = "response_automation_policies"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uq_response_automation_policy_tenant_name"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    policy_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    trigger_rule_ids = Column(JSONB, nullable=False)
+    minimum_severity = Column(String, nullable=False)
+    action = Column(String, nullable=False)
+    target = Column(String, nullable=False)
+    asset_id = Column(String, nullable=True)
+    parameters = Column(JSONB, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class TelemetryReplicationTargetRow(Base):
+    """Configured telemetry-only regional stream target; no response channel metadata is stored."""
+
+    __tablename__ = "telemetry_replication_targets"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "target_region", "stream_name", name="uq_telemetry_replication_target"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    target_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    target_region = Column(String, nullable=False, index=True)
+    stream_name = Column(String, nullable=False)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class TelemetryReplicationReceiptRow(Base):
+    """One idempotent delivery receipt for a canonical telemetry envelope replicated to a regional target."""
+
+    __tablename__ = "telemetry_replication_receipts"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "target_id", "event_id", name="uq_telemetry_replication_event"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    receipt_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    target_id = Column(String, ForeignKey("telemetry_replication_targets.target_id"), nullable=False, index=True)
+    event_id = Column(String, nullable=False, index=True)
+    source_region = Column(String, nullable=False)
+    target_region = Column(String, nullable=False)
+    payload_hash = Column(String, nullable=False, index=True)
+    status = Column(String, nullable=False, default="pending", index=True)
+    attempt_count = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    delivered_at = Column(DateTime(timezone=True), nullable=True)
+    error_code = Column(String, nullable=True)

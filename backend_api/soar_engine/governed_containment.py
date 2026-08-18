@@ -167,6 +167,10 @@ class GovernedContainmentService:
         if not self._audit_signing_key or not self._audit_key_id:
             raise PermissionError("Containment execution requires configured HMAC-signed audit evidence.")
 
+    def require_signed_audit_configuration(self) -> None:
+        """Guard proposal creation so no high-impact request exists without HMAC audit capability."""
+        self._require_signed_execution_audit()
+
     async def request(self, request: ContainmentRequest) -> tuple[ContainmentRequest, bool]:
         if not request.requires_approval or request.automatic_enforcement:
             raise ValueError("High-impact containment requests must require approval and cannot be automatic.")

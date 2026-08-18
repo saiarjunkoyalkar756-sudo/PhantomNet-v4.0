@@ -12,12 +12,23 @@ from .alert_workflow import AlertWorkflow
 from .detection_store import DetectionRepository
 from .ingestion import CanonicalBrokerProcessor, BrokerIngestionResult
 from .governed_correlation import GovernedCorrelationEngine, GovernedCorrelationRepository
+from .telemetry_replication import (
+    TelemetryReplicationRepository,
+    TelemetryReplicationService,
+    configured_telemetry_replication_transport,
+)
 from .ingestion_reliability import (
     BrokerDeliveryRecordedError,
     IngestionDeadLetterRepository,
     ReliableCanonicalIngestion,
 )
 from backend_api.core_config import SAFE_MODE
+from backend_api.soar_engine.governed_containment import GovernedContainmentService
+from backend_api.soar_engine.response_automation import (
+    GovernedResponseProposalService,
+    ResponseAutomationPolicyRepository,
+    ResponseProposalObserver,
+)
 from backend_api.shared.kafka_topics import NORMALIZED_EVENTS
 from phantomnet_core.contracts import BrokerDeliveryMetadata
 
@@ -35,9 +46,23 @@ MITRE_MAPPER_URL = "http://mitre_attack_mapper:8000"
 ti_enricher = None
 governed_correlation_repository = GovernedCorrelationRepository()
 governed_correlation_engine = GovernedCorrelationEngine(governed_correlation_repository)
+response_policy_repository = ResponseAutomationPolicyRepository()
+response_proposal_service = GovernedResponseProposalService(
+    response_policy_repository,
+    GovernedContainmentService(),
+)
+response_proposal_observer = ResponseProposalObserver(response_proposal_service)
+telemetry_replication_repository = TelemetryReplicationRepository()
+telemetry_replication_service = TelemetryReplicationService(
+    telemetry_replication_repository,
+    transport=configured_telemetry_replication_transport(),
+    source_region=os.getenv("PHANTOMNET_REGION", "local"),
+)
 broker_processor = CanonicalBrokerProcessor(
     DetectionRepository(),
     async_evaluators=(governed_correlation_engine.evaluate_event,),
+    event_observers=(telemetry_replication_service.replicate_event,),
+    detection_observers=(response_proposal_observer.observe,),
     alert_workflow=AlertWorkflow(),
 )
 dead_letter_repository = IngestionDeadLetterRepository()

@@ -1,12 +1,20 @@
 from fastapi import Depends, FastAPI, Query
 
 from backend_api.shared.service_factory import create_phantom_service
-from .consumer import broker_processor, governed_correlation_repository, start_kafka_consumer
+from .consumer import (
+    broker_processor,
+    governed_correlation_repository,
+    response_policy_repository,
+    start_kafka_consumer,
+    telemetry_replication_repository,
+)
 from .database import init_db, get_all_rules, upsert_rule
 from .alert_workflow import AlertWorkflow, init_alert_workflow_store
 from .detection_store import DetectionRepository, init_detection_store
 from .governed_correlation import init_governed_correlation_store
+from .telemetry_replication import init_telemetry_replication_store
 from .ingestion_reliability import IngestionDeadLetterRepository, init_ingestion_dead_letter_store
+from backend_api.soar_engine.response_automation import init_response_automation_store
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
 from loguru import logger
@@ -14,7 +22,11 @@ import asyncio
 from pydantic import BaseModel
 from typing import List, Optional
 from backend_api.core.response import success_response, error_response
-from phantomnet_core.contracts import GovernedCorrelationRule
+from phantomnet_core.contracts import (
+    GovernedCorrelationRule,
+    ResponseAutomationPolicy,
+    TelemetryReplicationTarget,
+)
 
 async def correlation_startup(app: FastAPI):
     # Startup: Initialize DB and background consumer
@@ -23,6 +35,8 @@ async def correlation_startup(app: FastAPI):
     await init_alert_workflow_store()
     await init_ingestion_dead_letter_store()
     await init_governed_correlation_store()
+    await init_response_automation_store()
+    await init_telemetry_replication_store()
     app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
     logger.info("Kafka consumer task started.")
 
@@ -76,6 +90,58 @@ async def list_alerts(
     """Return tenant-scoped analyst alert workflows derived from canonical detections."""
     alerts = await alert_workflow.list_for_tenant(str(current_user.tenant_id), limit=limit)
     return success_response(data=[alert.model_dump(mode="json") for alert in alerts])
+
+
+@app.get("/response-policies")
+async def list_response_policies(
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """List tenant-owned policies that can propose, but never execute, high-impact response."""
+    policies = await response_policy_repository.list_for_tenant(str(current_user.tenant_id))
+    return success_response(data=[policy.model_dump(mode="json") for policy in policies])
+
+
+@app.post("/response-policies", status_code=201)
+async def upsert_response_policy(
+    policy: ResponseAutomationPolicy,
+    current_user: User = Depends(require_capability("config:write")),
+):
+    """Configure an approval-only response proposal policy for the authenticated tenant."""
+    if policy.tenant_id != str(current_user.tenant_id):
+        return error_response(code="TENANT_SCOPE_MISMATCH", message="Policy tenant scope must match the authenticated user.", status_code=403)
+    stored = await response_policy_repository.upsert(policy)
+    return success_response(data=stored.model_dump(mode="json"))
+
+
+@app.get("/telemetry-replication/targets")
+async def list_replication_targets(
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """List telemetry-only regional targets owned by the authenticated tenant."""
+    targets = await telemetry_replication_repository.list_targets(str(current_user.tenant_id))
+    return success_response(data=[target.model_dump(mode="json") for target in targets])
+
+
+@app.post("/telemetry-replication/targets", status_code=201)
+async def upsert_replication_target(
+    target: TelemetryReplicationTarget,
+    current_user: User = Depends(require_capability("config:write")),
+):
+    """Configure a tenant-scoped telemetry-only target; transport credentials remain deployment managed."""
+    if target.tenant_id != str(current_user.tenant_id):
+        return error_response(code="TENANT_SCOPE_MISMATCH", message="Target tenant scope must match the authenticated user.", status_code=403)
+    stored = await telemetry_replication_repository.upsert_target(target)
+    return success_response(data=stored.model_dump(mode="json"))
+
+
+@app.get("/telemetry-replication/receipts")
+async def list_replication_receipts(
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """List tenant-owned regional telemetry delivery receipts without exposing transport credentials."""
+    receipts = await telemetry_replication_repository.list_receipts(str(current_user.tenant_id), limit=limit)
+    return success_response(data=[receipt.model_dump(mode="json") for receipt in receipts])
 
 
 @app.get("/governed-rules")

@@ -115,6 +115,31 @@ def assess_runtime_posture(
             endpoint_override_configured=bool(aws_endpoint_override),
         )
 
+    replication_enabled = _enabled(values, "PHANTOMNET_TELEMETRY_REPLICATION_ENABLED")
+    replication_brokers = values.get("PHANTOMNET_REPLICATION_KAFKA_BOOTSTRAP_SERVERS", "").strip()
+    replication_protocol = values.get("PHANTOMNET_REPLICATION_KAFKA_SECURITY_PROTOCOL", "SSL").strip().upper()
+    replication_mtls_configured = all(
+        values.get(key, "").strip()
+        for key in (
+            "PHANTOMNET_REPLICATION_KAFKA_SSL_CAFILE",
+            "PHANTOMNET_REPLICATION_KAFKA_SSL_CERTFILE",
+            "PHANTOMNET_REPLICATION_KAFKA_SSL_KEYFILE",
+        )
+    )
+    if not replication_enabled:
+        controls["telemetry_replication"] = _control("disabled", "transport_disabled_by_default")
+    elif not replication_brokers:
+        controls["telemetry_replication"] = _control("not_ready", "missing_regional_broker_configuration")
+    elif deployment_environment in STRICT_ENVIRONMENTS and replication_protocol != "SSL":
+        controls["telemetry_replication"] = _control("not_ready", "tls_required_in_strict_environment")
+    else:
+        controls["telemetry_replication"] = _control(
+            "ready" if replication_protocol == "SSL" else "degraded",
+            "secured_transport_configured" if replication_protocol == "SSL" else "non_tls_transport_configured",
+            security_protocol=replication_protocol,
+            mtls_configured=replication_mtls_configured,
+        )
+
     graph_backend = values.get("PHANTOMNET_GRAPH_BACKEND", "memory").strip().lower()
     if graph_backend not in {"memory", "neo4j"}:
         controls["graph_backend"] = _control("not_ready", "unsupported_graph_backend")

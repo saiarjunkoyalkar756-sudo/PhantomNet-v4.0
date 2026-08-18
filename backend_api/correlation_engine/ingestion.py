@@ -14,6 +14,8 @@ from phantomnet_core.contracts import CONTRACT_VERSION, DetectionRecord, EventEn
 
 DetectionEvaluator = Callable[[Mapping[str, Any]], DetectionRecord | None]
 AsyncDetectionEvaluator = Callable[[EventEnvelope], Awaitable[Sequence[DetectionRecord]]]
+AsyncEventObserver = Callable[[EventEnvelope], Awaitable[Any]]
+AsyncDetectionObserver = Callable[[DetectionRecord], Awaitable[Any]]
 
 
 @dataclass(frozen=True)
@@ -38,11 +40,15 @@ class CanonicalBrokerProcessor:
         repository: DetectionRepository,
         evaluators: Sequence[DetectionEvaluator] = (evaluate_normalized_baseline_event,),
         async_evaluators: Sequence[AsyncDetectionEvaluator] = (),
+        event_observers: Sequence[AsyncEventObserver] = (),
+        detection_observers: Sequence[AsyncDetectionObserver] = (),
         alert_workflow: AlertWorkflow | None = None,
     ):
         self._repository = repository
         self._evaluators = tuple(evaluators)
         self._async_evaluators = tuple(async_evaluators)
+        self._event_observers = tuple(event_observers)
+        self._detection_observers = tuple(detection_observers)
         self._alert_workflow = alert_workflow
 
     async def process(self, message: Mapping[str, Any]) -> BrokerIngestionResult:
@@ -78,6 +84,12 @@ class CanonicalBrokerProcessor:
                 # AlertWorkflow treats an already-linked detection as a transport duplicate.
                 # Calling it on replay repairs a failed post-detection workflow without new alerts.
                 alert_workflows.append(await self._alert_workflow.ingest_detection(stored_detection))
+            if created:
+                for observer in self._detection_observers:
+                    await observer(stored_detection)
+
+        for observer in self._event_observers:
+            await observer(event)
 
         return BrokerIngestionResult(
             event=event,

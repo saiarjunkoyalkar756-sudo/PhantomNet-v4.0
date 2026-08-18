@@ -537,3 +537,126 @@ class CorrelationMatchEvidence(BaseModel):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
+
+
+class ResponseAutomationPolicy(BaseModel):
+    """A tenant-owned policy that may create a containment request but can never execute it automatically."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    policy_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    name: str = Field(min_length=3, max_length=160)
+    enabled: bool = True
+    trigger_rule_ids: List[str] = Field(default_factory=list, max_length=32)
+    minimum_severity: Literal["informational", "low", "medium", "high", "critical"] = "high"
+    action: Literal["isolate_endpoint", "block_indicator", "remediate_configuration"]
+    target: str = Field(min_length=1, max_length=255)
+    asset_id: Optional[str] = Field(default=None, max_length=255)
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    requires_approval: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("requires_approval")
+    @classmethod
+    def require_response_policy_approval(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("response automation policies must require human approval.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_response_policy_automatic_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("response automation policies cannot enable automatic enforcement.")
+        return value
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_response_policy_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("parameters")
+    @classmethod
+    def validate_response_policy_parameters(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        if len(value) > 32:
+            raise ValueError("response policy parameters are limited to 32 entries.")
+        if any(not isinstance(key, str) or len(key) > 128 for key in value):
+            raise ValueError("response policy parameter keys must be bounded strings.")
+        return value
+
+
+class TelemetryReplicationTarget(BaseModel):
+    """A tenant-owned telemetry replication destination; it cannot transport response or audit commands."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    target_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    target_region: str = Field(min_length=2, max_length=64)
+    stream_name: str = Field(min_length=3, max_length=255)
+    enabled: bool = True
+    telemetry_only: bool = True
+
+    @field_validator("telemetry_only")
+    @classmethod
+    def require_telemetry_only_replication(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("replication targets must remain telemetry-only.")
+        return value
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_replication_target_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+
+class TelemetryReplicationReceipt(BaseModel):
+    """Append-only receipt for one telemetry envelope delivery to one regional target."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    receipt_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    target_id: str
+    event_id: str
+    source_region: str = Field(min_length=2, max_length=64)
+    target_region: str = Field(min_length=2, max_length=64)
+    payload_hash: str = Field(min_length=64, max_length=64)
+    status: Literal["pending", "delivered", "failed"] = "pending"
+    attempt_count: int = Field(default=1, ge=1)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    delivered_at: Optional[datetime] = None
+    error_code: Optional[str] = None
+    automatic_enforcement: bool = False
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_replication_automatic_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("telemetry replication cannot enable automatic enforcement.")
+        return value
+
+    @field_validator("payload_hash")
+    @classmethod
+    def validate_replication_hash(cls, value: str) -> str:
+        if not re.fullmatch(r"[a-f0-9]{64}", value):
+            raise ValueError("payload_hash must be a lowercase SHA-256 hexadecimal digest.")
+        return value
+
+    @field_validator("created_at", "delivered_at")
+    @classmethod
+    def validate_replication_timestamps(cls, value: Optional[datetime]) -> Optional[datetime]:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
