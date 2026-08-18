@@ -6,7 +6,7 @@ import os
 from typing import Optional
 
 from loguru import logger
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,7 +23,11 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    SAFE_MODE: bool = Field(default=True, description="Disable real integrations by default.")
+    SAFE_MODE: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("PHANTOMNET_SAFE_MODE", "SAFE_MODE"),
+        description="Disable real integrations by default.",
+    )
 
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://phantomnet@localhost:5432/phantomnet",

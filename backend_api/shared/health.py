@@ -14,6 +14,7 @@ import psycopg2
 import redis
 
 from backend_api.core_config import SAFE_MODE
+from backend_api.shared.runtime_posture import assess_runtime_posture
 from backend_api.shared.settings import settings
 
 
@@ -148,6 +149,7 @@ async def run_standard_health_check(required_dependencies: Iterable[str] | None 
     checks = await asyncio.gather(*(HEALTH_CHECKS[name]() for name in dependency_names))
     components = dict(zip(dependency_names, checks, strict=True))
     unhealthy = [name for name, result in components.items() if result["status"] == "unhealthy"]
+    security_posture = assess_runtime_posture(safe_mode=SAFE_MODE)
 
     if SAFE_MODE:
         return {
@@ -156,11 +158,14 @@ async def run_standard_health_check(required_dependencies: Iterable[str] | None 
             "mode": "safe",
             "components": components,
             "required_dependencies": list(dependency_names),
+            "security_posture": security_posture,
         }
+    ready = not unhealthy and security_posture["status"] == "ready"
     return {
-        "status": "healthy" if not unhealthy else "degraded",
-        "readiness": "ready" if not unhealthy else "not_ready",
+        "status": "healthy" if ready else "degraded",
+        "readiness": "ready" if ready else "not_ready",
         "mode": "active",
         "components": components,
         "required_dependencies": list(dependency_names),
+        "security_posture": security_posture,
     }
