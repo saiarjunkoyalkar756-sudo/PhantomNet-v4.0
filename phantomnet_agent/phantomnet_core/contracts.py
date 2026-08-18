@@ -64,3 +64,29 @@ class DetectionRule(BaseModel):
         if value.count(".") < 1:
             raise ValueError("rule version must be a dotted version string")
         return value
+
+
+class DetectionRecord(BaseModel):
+    """A versioned, tenant-scoped detection result produced from a canonical event."""
+
+    schema_version: str = CONTRACT_VERSION
+    detection_id: str = Field(default_factory=lambda: str(uuid4()))
+    detected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    rule_id: str
+    rule_version: str
+    event_id: str
+    tenant_id: str
+    correlation_id: Optional[str] = None
+    severity: Literal["informational", "low", "medium", "high", "critical"]
+    title: str
+    status: Literal["detected", "suppressed"] = "detected"
+    evidence: Dict[str, Any] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list)
+    automatic_enforcement: bool = False
+
+    @field_validator("detected_at")
+    @classmethod
+    def require_timezone_aware_detected_at(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)

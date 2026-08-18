@@ -46,7 +46,11 @@ def normalize_event(event_data: Dict[str, Any]) -> Dict[str, Any]:
         correlation_id=event_data.get("correlation_id"),
         trace_id=event_data.get("trace_id"),
         tags=event_data.get("tags", []),
-        provenance={"normalizer": "event-normalizer", "legacy_schema_version": event_data.get("platform_schema_version")},
+        provenance={
+            **event_data.get("provenance", {}),
+            "normalizer": "event-normalizer",
+            "legacy_schema_version": event_data.get("platform_schema_version"),
+        },
     )
     normalized_event = envelope.model_dump(mode="json")
     normalized_event["normalized_at"] = datetime.now(timezone.utc).isoformat()
