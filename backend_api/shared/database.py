@@ -314,6 +314,51 @@ class SavedHuntRow(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
 
+class EndpointAssetRow(Base):
+    """Current endpoint inventory state reported by a trusted agent or read-only integration."""
+    __tablename__ = "endpoint_assets"
+    __table_args__ = (UniqueConstraint("tenant_id", "agent_id", name="uq_endpoint_asset_tenant_agent"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    asset_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    agent_id = Column(String, nullable=False, index=True)
+    hostname = Column(String, nullable=False, index=True)
+    platform = Column(String, nullable=False)
+    os_version = Column(String, nullable=True)
+    ip_addresses = Column(JSONB, nullable=False)
+    software = Column(JSONB, nullable=False)
+    tags = Column(JSONB, nullable=False)
+    source = Column(String, nullable=False)
+    last_seen = Column(DateTime(timezone=True), nullable=False, index=True)
+    evidence = Column(JSONB, nullable=False)
+
+
+class HostIntegrityObservationRow(Base):
+    """Append-only endpoint integrity evidence; ingestion does not execute host actions."""
+    __tablename__ = "host_integrity_observations"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "source", "source_event_id", name="uq_integrity_source_event"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    observation_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    asset_id = Column(String, ForeignKey("endpoint_assets.asset_id"), nullable=False, index=True)
+    agent_id = Column(String, nullable=False, index=True)
+    source_event_id = Column(String, nullable=False)
+    source = Column(String, nullable=False)
+    check_type = Column(String, nullable=False)
+    status = Column(String, nullable=False, index=True)
+    severity = Column(String, nullable=False, index=True)
+    observed_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    path = Column(String, nullable=True)
+    observed_hash = Column(String, nullable=True)
+    expected_hash = Column(String, nullable=True)
+    evidence = Column(JSONB, nullable=False)
+    automatic_enforcement = Column(Boolean, nullable=False, default=False)
+
+
 class ForensicRecord(Base):
     __tablename__ = "forensic_records"
     id = Column(Integer, primary_key=True, index=True)

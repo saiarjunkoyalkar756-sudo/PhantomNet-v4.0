@@ -213,3 +213,56 @@ class PlaybookRunRecord(BaseModel):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
+
+
+class HostAssetRecord(BaseModel):
+    """Tenant-scoped endpoint inventory evidence from an agent or read-only endpoint integration."""
+
+    schema_version: str = CONTRACT_VERSION
+    asset_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    agent_id: str = Field(min_length=1, max_length=128)
+    hostname: str = Field(min_length=1, max_length=255)
+    platform: str = Field(min_length=1, max_length=80)
+    os_version: Optional[str] = Field(default=None, max_length=160)
+    ip_addresses: List[str] = Field(default_factory=list, max_length=32)
+    software: List[Dict[str, str]] = Field(default_factory=list, max_length=2048)
+    tags: List[str] = Field(default_factory=list, max_length=64)
+    source: Literal["phantomnet-agent", "wazuh"]
+    last_seen: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    evidence: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("last_seen")
+    @classmethod
+    def require_timezone_aware_asset_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
+class IntegrityObservation(BaseModel):
+    """A host integrity observation that records evidence without changing the endpoint."""
+
+    schema_version: str = CONTRACT_VERSION
+    observation_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    asset_id: str
+    agent_id: str = Field(min_length=1, max_length=128)
+    source_event_id: str = Field(min_length=1, max_length=255)
+    source: Literal["phantomnet-agent", "wazuh"]
+    check_type: Literal["file", "process", "registry", "configuration"]
+    status: Literal["baseline_match", "modified", "missing", "error"]
+    severity: Literal["informational", "low", "medium", "high", "critical"]
+    observed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    path: Optional[str] = Field(default=None, max_length=2048)
+    observed_hash: Optional[str] = Field(default=None, max_length=128)
+    expected_hash: Optional[str] = Field(default=None, max_length=128)
+    evidence: Dict[str, Any] = Field(default_factory=dict)
+    automatic_enforcement: bool = False
+
+    @field_validator("observed_at")
+    @classmethod
+    def require_timezone_aware_integrity_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)

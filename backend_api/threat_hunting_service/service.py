@@ -16,6 +16,8 @@ from backend_api.shared.database import (
     AnalystAlertRow,
     AsyncSessionLocal,
     DetectionRecordRow,
+    EndpointAssetRow,
+    HostIntegrityObservationRow,
     InvestigationCaseRow,
     SavedHuntRow,
     engine,
@@ -24,7 +26,7 @@ from backend_api.shared.database import (
 
 SessionFactory = Callable[[], AsyncSession]
 MAX_HUNT_RESULTS = 200
-HUNT_DATASETS = {"detections", "alerts", "cases"}
+HUNT_DATASETS = {"detections", "alerts", "cases", "assets", "integrity"}
 
 
 class HuntFilter(BaseModel):
@@ -42,7 +44,7 @@ class HuntFilter(BaseModel):
 
 
 class HuntRequest(BaseModel):
-    dataset: Literal["detections", "alerts", "cases"]
+    dataset: Literal["detections", "alerts", "cases", "assets", "integrity"]
     filters: list[HuntFilter] = Field(default_factory=list, max_length=10)
     limit: int = Field(default=100, ge=1, le=MAX_HUNT_RESULTS)
 
@@ -101,6 +103,21 @@ FIELD_MAP = {
         "assigned_to": InvestigationCaseRow.assigned_to,
         "title": InvestigationCaseRow.title,
     },
+    "assets": {
+        "agent_id": EndpointAssetRow.agent_id,
+        "hostname": EndpointAssetRow.hostname,
+        "platform": EndpointAssetRow.platform,
+        "source": EndpointAssetRow.source,
+    },
+    "integrity": {
+        "asset_id": HostIntegrityObservationRow.asset_id,
+        "agent_id": HostIntegrityObservationRow.agent_id,
+        "source": HostIntegrityObservationRow.source,
+        "check_type": HostIntegrityObservationRow.check_type,
+        "status": HostIntegrityObservationRow.status,
+        "severity": HostIntegrityObservationRow.severity,
+        "path": HostIntegrityObservationRow.path,
+    },
 }
 
 
@@ -145,6 +162,37 @@ def _alert_result(row: AnalystAlertRow) -> dict[str, Any]:
     }
 
 
+def _asset_result(row: EndpointAssetRow) -> dict[str, Any]:
+    return {
+        "record_type": "asset",
+        "asset_id": row.asset_id,
+        "agent_id": row.agent_id,
+        "hostname": row.hostname,
+        "platform": row.platform,
+        "source": row.source,
+        "timestamp": _utc(row.last_seen),
+        "tags": list(row.tags),
+        "software_count": len(row.software),
+        "evidence": dict(row.evidence),
+    }
+
+
+def _integrity_result(row: HostIntegrityObservationRow) -> dict[str, Any]:
+    return {
+        "record_type": "integrity",
+        "observation_id": row.observation_id,
+        "asset_id": row.asset_id,
+        "agent_id": row.agent_id,
+        "source": row.source,
+        "check_type": row.check_type,
+        "status": row.status,
+        "severity": row.severity,
+        "path": row.path,
+        "timestamp": _utc(row.observed_at),
+        "evidence": dict(row.evidence),
+    }
+
+
 def _case_result(row: InvestigationCaseRow) -> dict[str, Any]:
     return {
         "record_type": "case",
@@ -182,8 +230,8 @@ class ThreatHuntingService:
                 continue
             if filter_item.field not in allowed:
                 raise ValueError(f"Field '{filter_item.field}' cannot be searched in {request.dataset}.")
-            if filter_item.operator == "contains" and filter_item.field not in {"title"}:
-                raise ValueError("contains is limited to the title field.")
+            if filter_item.operator == "contains" and filter_item.field not in {"title", "hostname", "path"}:
+                raise ValueError("contains is limited to title, hostname, or path fields.")
 
     @staticmethod
     def _apply_sql_filters(statement: Any, request: HuntRequest) -> tuple[Any, list[HuntFilter]]:
@@ -221,16 +269,22 @@ class ThreatHuntingService:
             "detections": DetectionRecordRow,
             "alerts": AnalystAlertRow,
             "cases": InvestigationCaseRow,
+            "assets": EndpointAssetRow,
+            "integrity": HostIntegrityObservationRow,
         }[request.dataset]
         serializer = {
             "detections": _detection_result,
             "alerts": _alert_result,
             "cases": _case_result,
+            "assets": _asset_result,
+            "integrity": _integrity_result,
         }[request.dataset]
         order_column = {
             "detections": DetectionRecordRow.detected_at,
             "alerts": AnalystAlertRow.last_seen,
             "cases": InvestigationCaseRow.updated_at,
+            "assets": EndpointAssetRow.last_seen,
+            "integrity": HostIntegrityObservationRow.observed_at,
         }[request.dataset]
 
         statement = select(model).where(model.tenant_id == UUID(tenant_id)).order_by(order_column.desc())
@@ -316,9 +370,13 @@ class ThreatHuntingService:
         detection_data = await self.hunt(tenant_id, HuntRequest(dataset="detections", limit=MAX_HUNT_RESULTS))
         alert_data = await self.hunt(tenant_id, HuntRequest(dataset="alerts", limit=MAX_HUNT_RESULTS))
         case_data = await self.hunt(tenant_id, HuntRequest(dataset="cases", limit=MAX_HUNT_RESULTS))
+        asset_data = await self.hunt(tenant_id, HuntRequest(dataset="assets", limit=MAX_HUNT_RESULTS))
+        integrity_data = await self.hunt(tenant_id, HuntRequest(dataset="integrity", limit=MAX_HUNT_RESULTS))
         detections = detection_data["results"]
         alerts = alert_data["results"]
         cases = case_data["results"]
+        assets = asset_data["results"]
+        integrity = integrity_data["results"]
         severity_counts = Counter(item["severity"] for item in alerts)
         status_counts = Counter(item["status"] for item in alerts)
         mitre_counts = Counter(
@@ -334,6 +392,8 @@ class ThreatHuntingService:
                 "active_alerts": sum(status_counts[status] for status in ("new", "triaged", "in_progress")),
                 "critical_alerts": severity_counts["critical"],
                 "open_cases": sum(1 for case in cases if case["status"] in open_case_statuses),
+                "endpoint_assets": len(assets),
+                "integrity_findings": sum(1 for item in integrity if item["status"] in {"modified", "missing", "error"}),
             },
             "alerts_by_severity": [
                 {"severity": severity, "count": severity_counts[severity]}
