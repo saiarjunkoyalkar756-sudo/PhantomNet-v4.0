@@ -4,7 +4,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from phantomnet_agent.main import run_collectors, initialize_agent_state
+from phantomnet_agent.main import run_collectors, initialize_agent_state, shutdown_collectors
 from phantomnet_core.os_adapter import get_os, OS_WINDOWS, supports_ebpf
 
 @pytest.fixture(autouse=True)
@@ -56,7 +56,8 @@ async def initialized_agent_state_windows():
     }
     state.orchestrator = AsyncMock() # Mock orchestrator for collectors
     state.adapter = MagicMock() # Mock adapter for OS operations
-    return state
+    yield state
+    await shutdown_collectors(state)
 
 @pytest.mark.asyncio
 async def test_windows_ebpf_collectors_not_start(initialized_agent_state_windows):

@@ -258,6 +258,45 @@ class AnalystAlertRow(Base):
     triaged_by = Column(String, nullable=True)
 
 
+class InvestigationCaseRow(Base):
+    """Durable analyst investigation lifecycle linked to tenant-owned alerts."""
+    __tablename__ = "investigation_cases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    alert_ids = Column(JSONB, nullable=False)
+    title = Column(String, nullable=False)
+    severity = Column(String, nullable=False, index=True)
+    status = Column(String, nullable=False, default="new", index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_by = Column(String, nullable=False)
+    assigned_to = Column(String, nullable=True)
+    evidence = Column(JSONB, nullable=False)
+    timeline = Column(JSONB, nullable=False)
+
+
+class CasePlaybookRunRow(Base):
+    """Durable non-executing playbook lifecycle evidence for one investigation case."""
+    __tablename__ = "case_playbook_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    run_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    case_id = Column(String, ForeignKey("investigation_cases.case_id"), nullable=False, index=True)
+    playbook_id = Column(String, nullable=False)
+    playbook_version = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="requested", index=True)
+    requires_approval = Column(Boolean, nullable=False, default=True)
+    requested_by = Column(String, nullable=False)
+    approved_by = Column(String, nullable=True)
+    requested_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    evidence = Column(JSONB, nullable=False)
+
+
 class ForensicRecord(Base):
     __tablename__ = "forensic_records"
     id = Column(Integer, primary_key=True, index=True)

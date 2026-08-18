@@ -509,7 +509,9 @@ async def run_collectors(agent_state: Any, orchestrator: Orchestrator):
                             simulator_config = config.collectors["ebpf_simulator"].dict()
                             simulator = simulator_class(orchestrator, adapter, simulator_config)
                             agent_state.collectors["ebpf_simulator"] = simulator
-                            asyncio.create_task(simulator.start())
+                            agent_state.collector_tasks["ebpf_simulator"] = asyncio.create_task(
+                                simulator.start(), name="collector:ebpf_simulator"
+                            )
                             logger.info("EbpfSimulator started.")
                 else:
                     logger.warning(f"EbpfSimulator is not enabled in config. Cannot fallback for {collector_name}.")
@@ -525,10 +527,41 @@ async def run_collectors(agent_state: Any, orchestrator: Orchestrator):
             if hasattr(collector, "agent_id"):
                 collector.agent_id = agent_state.agent_id
             agent_state.collectors[collector_name] = collector
-            asyncio.create_task(collector.start()) # Run in background
+            agent_state.collector_tasks[collector_name] = asyncio.create_task(
+                collector.start(), name=f"collector:{collector_name}"
+            )
         else:
             logger.warning(f"Unknown collector type in config: {collector_name}")
 
+
+async def shutdown_collectors(agent_state: Any) -> None:
+    """Stop, cancel, and await tracked collector tasks without leaving pending loops behind."""
+    collector_items = list(agent_state.collectors.items())
+    stop_errors = []
+    for name, collector in collector_items:
+        if getattr(collector, "running", False):
+            try:
+                await collector.stop()
+                logger.info(f"Collector '{name}' stopped.")
+            except Exception as exc:
+                stop_errors.append((name, exc))
+
+    tasks = list(getattr(agent_state, "collector_tasks", {}).items())
+    for _, task in tasks:
+        if not task.done():
+            task.cancel()
+    results = await asyncio.gather(*(task for _, task in tasks), return_exceptions=True)
+    task_errors = [
+        (name, result)
+        for (name, _), result in zip(tasks, results, strict=True)
+        if isinstance(result, Exception) and not isinstance(result, asyncio.CancelledError)
+    ]
+    agent_state.collector_tasks.clear()
+    if stop_errors or task_errors:
+        details = "; ".join(
+            [f"{name}: {type(error).__name__}" for name, error in [*stop_errors, *task_errors]]
+        )
+        raise RuntimeError(f"Collector shutdown encountered failures: {details}")
 
 
 async def run_api(agent_state: Any, host: str = "127.0.0.1", port: int = 8000):
@@ -1012,11 +1045,8 @@ async def main():
             finally:
                 logger.info("Performing graceful shutdown of all components...")
                 
-                # Stop collectors
-                for name, collector in agent_state.collectors.items():
-                    if collector.running:
-                        await collector.stop()
-                        logger.info(f"Collector '{name}' stopped.")
+                # Stop and await collectors before closing the event loop.
+                await shutdown_collectors(agent_state)
 
                 # Stop AgentHealthMonitor
                 await health_monitor.stop()

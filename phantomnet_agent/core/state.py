@@ -36,6 +36,7 @@ class AgentState(BaseModel):
     
     # Store instances of collectors and plugins, which can be queried for their internal state
     collectors: Dict[str, Any] = Field(default_factory=dict) # Stores collector instances
+    collector_tasks: Dict[str, Any] = Field(default_factory=dict) # Background task handles for deterministic shutdown
     plugins: Dict[str, Any] = Field(default_factory=dict)   # Stores loaded plugin instances
     
     # Track health of various components using the ComponentHealth model
@@ -64,7 +65,7 @@ class AgentState(BaseModel):
         Converts datetime objects to ISO format strings for JSON serialization.
         """
         # Use model_dump to get a serializable dict, and then process datetime fields
-        snapshot = self.model_dump(exclude={'collectors', 'plugins', 'orchestrator', 'config', 'jwt_manager'})
+        snapshot = self.model_dump(exclude={'collectors', 'collector_tasks', 'plugins', 'orchestrator', 'config', 'jwt_manager'})
 
         # Convert top-level datetime fields in snapshot
         if 'started_at' in snapshot and isinstance(snapshot['started_at'], datetime):

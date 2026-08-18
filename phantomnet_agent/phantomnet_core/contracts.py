@@ -152,3 +152,64 @@ class AlertRecord(BaseModel):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
+
+
+class CaseRecord(BaseModel):
+    """A tenant-scoped investigation case linked to one or more analyst alerts."""
+
+    schema_version: str = CONTRACT_VERSION
+    case_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    alert_ids: List[str] = Field(min_length=1)
+    title: str
+    severity: Literal["informational", "low", "medium", "high", "critical"]
+    status: Literal["new", "triaged", "in_progress", "resolved", "closed"] = "new"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str
+    assigned_to: Optional[str] = None
+    evidence: Dict[str, Any] = Field(default_factory=dict)
+    timeline: List[Dict[str, Any]] = Field(default_factory=list)
+
+    @field_validator("created_at", "updated_at")
+    @classmethod
+    def require_timezone_aware_case_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
+class PlaybookRunRecord(BaseModel):
+    """A case-bound playbook lifecycle record; state changes never execute containment directly."""
+
+    schema_version: str = CONTRACT_VERSION
+    run_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    case_id: str
+    playbook_id: str
+    playbook_version: str
+    status: Literal[
+        "requested",
+        "awaiting_approval",
+        "approved",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+    ] = "requested"
+    requires_approval: bool = True
+    requested_by: str
+    approved_by: Optional[str] = None
+    requested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    evidence: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("requested_at", "started_at", "completed_at")
+    @classmethod
+    def require_timezone_aware_playbook_timestamp(cls, value: Optional[datetime]) -> Optional[datetime]:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
