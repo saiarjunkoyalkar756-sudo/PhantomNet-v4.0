@@ -1,0 +1,9 @@
+services:
+  localstack:
+    image: ${LOCALSTACK_IMAGE:-localstack/localstack:latest}
+    environment:
+      SERVICES: ec2,sts
+      DEBUG: "0"
+      PERSISTENCE: "0"
+    ports:
+      - "4566:4566"

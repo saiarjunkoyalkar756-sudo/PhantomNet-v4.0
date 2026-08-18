@@ -12,6 +12,7 @@ from backend_api.shared.database import Base, ContainmentAuditRecordRow
 from backend_api.soar_engine.aws_security_group_adapter import (
     AwsSecurityGroupAdapterConfig,
     AwsSecurityGroupContainmentAdapter,
+    _boto3_client_kwargs,
 )
 from backend_api.soar_engine.governed_containment import GovernedContainmentService
 from backend_api.soar_engine.response_adapter_router import GovernedResponseAdapterRouter
@@ -277,6 +278,17 @@ class EndlessPageEc2Client(FakeEc2Client):
         if kwargs.get("SecurityGroupRuleIds"):
             return super().describe_security_group_rules(**kwargs)
         return {"SecurityGroupRules": [], "NextToken": "still-more"}
+
+
+def test_boto3_client_kwargs_use_an_explicit_localstack_endpoint_only_when_configured(monkeypatch):
+    monkeypatch.delenv("PHANTOMNET_AWS_ENDPOINT_URL", raising=False)
+    assert _boto3_client_kwargs(REGION) == {"region_name": REGION}
+
+    monkeypatch.setenv("PHANTOMNET_AWS_ENDPOINT_URL", "http://127.0.0.1:4566/")
+    assert _boto3_client_kwargs(REGION) == {
+        "region_name": REGION,
+        "endpoint_url": "http://127.0.0.1:4566",
+    }
 
 
 def test_aws_config_loader_accepts_explicit_valid_allowlists_and_disables_invalid_mapping(monkeypatch):

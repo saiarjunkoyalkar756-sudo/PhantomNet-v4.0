@@ -119,7 +119,7 @@ def _boto3_ec2_client(region: str):
         import boto3
     except ImportError as exc:  # pragma: no cover - exercised only in misconfigured deployments
         raise RuntimeError("AWS Security Group containment requires the boto3 package.") from exc
-    return boto3.client("ec2", region_name=region)
+    return boto3.client("ec2", **_boto3_client_kwargs(region))
 
 
 def _boto3_sts_client(region: str):
@@ -127,7 +127,16 @@ def _boto3_sts_client(region: str):
         import boto3
     except ImportError as exc:  # pragma: no cover - exercised only in misconfigured deployments
         raise RuntimeError("AWS Security Group containment requires the boto3 package.") from exc
-    return boto3.client("sts", region_name=region)
+    return boto3.client("sts", **_boto3_client_kwargs(region))
+
+
+def _boto3_client_kwargs(region: str) -> dict[str, str]:
+    """Use the operator-managed AWS endpoint, if any; LocalStack tests set it explicitly."""
+    kwargs = {"region_name": region}
+    endpoint_url = os.getenv("PHANTOMNET_AWS_ENDPOINT_URL", "").strip()
+    if endpoint_url:
+        kwargs["endpoint_url"] = endpoint_url.rstrip("/")
+    return kwargs
 
 
 class AwsSecurityGroupContainmentAdapter:
