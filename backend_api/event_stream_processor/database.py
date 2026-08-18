@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 
 def get_db_connection():
     """Establishes a connection to the PostgreSQL database."""
-    db_pass = os.environ.get("DB_PASSWORD", "changeme")
+    db_pass = os.environ.get("DB_PASSWORD")
+    if not db_pass:
+        logger.critical("Event-stream database connection blocked: DB_PASSWORD is not configured")
+        raise RuntimeError("DB_PASSWORD must be configured before connecting to the event-stream database")
     try:
         conn = psycopg2.connect(
             dbname="phantomnet",
