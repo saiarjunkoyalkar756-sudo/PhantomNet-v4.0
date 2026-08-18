@@ -10,13 +10,13 @@ from pydantic import BaseModel, Field
 from backend_api.core.response import success_response
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
-from backend_api.soar_engine.endpoint_containment_adapter import EndpointContainmentAdapter
 from backend_api.soar_engine.governed_containment import GovernedContainmentService
+from backend_api.soar_engine.response_adapter_router import GovernedResponseAdapterRouter
 from phantomnet_core.contracts import ContainmentApproval, ContainmentRequest
 
 
 router = APIRouter(prefix="/governed-containment", tags=["Governed Containment"])
-containment_service = GovernedContainmentService(adapter=EndpointContainmentAdapter())
+containment_service = GovernedContainmentService(adapter=GovernedResponseAdapterRouter())
 
 
 class ContainmentRequestCreate(BaseModel):
