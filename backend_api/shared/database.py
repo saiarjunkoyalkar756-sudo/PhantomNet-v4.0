@@ -359,6 +359,41 @@ class HostIntegrityObservationRow(Base):
     automatic_enforcement = Column(Boolean, nullable=False, default=False)
 
 
+class WazuhForwarderRow(Base):
+    """Tenant-bound read-only forwarder registration; only a token digest is stored."""
+    __tablename__ = "wazuh_forwarders"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_wazuh_forwarder_tenant_name"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    forwarder_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    token_digest = Column(String, nullable=False)
+    token_prefix = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="active", index=True)
+    created_by = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    last_seen_at = Column(DateTime(timezone=True), nullable=True)
+    last_sequence = Column(Integer, nullable=False, default=0)
+
+
+class WazuhForwarderBatchRow(Base):
+    """Replay-protection receipt for one ordered telemetry batch."""
+    __tablename__ = "wazuh_forwarder_batches"
+    __table_args__ = (
+        UniqueConstraint("forwarder_id", "sequence", name="uq_wazuh_forwarder_sequence"),
+        UniqueConstraint("forwarder_id", "batch_id", name="uq_wazuh_forwarder_batch"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    forwarder_id = Column(String, ForeignKey("wazuh_forwarders.forwarder_id"), nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    batch_id = Column(String, nullable=False)
+    sequence = Column(Integer, nullable=False)
+    received_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    alert_count = Column(Integer, nullable=False)
+
+
 class ForensicRecord(Base):
     __tablename__ = "forensic_records"
     id = Column(Integer, primary_key=True, index=True)

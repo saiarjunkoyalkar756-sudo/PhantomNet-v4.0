@@ -266,3 +266,35 @@ class IntegrityObservation(BaseModel):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
+
+
+class WazuhForwarderRecord(BaseModel):
+    """A tenant-bound, telemetry-only Wazuh-compatible forwarder registration."""
+
+    schema_version: str = CONTRACT_VERSION
+    forwarder_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    name: str = Field(min_length=3, max_length=120)
+    status: Literal["active", "revoked"] = "active"
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_seen_at: Optional[datetime] = None
+    last_sequence: int = Field(default=0, ge=0)
+    automatic_enforcement: bool = False
+
+    @field_validator("created_at", "last_seen_at")
+    @classmethod
+    def require_timezone_aware_forwarder_timestamp(cls, value: Optional[datetime]) -> Optional[datetime]:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
+class WazuhTelemetryBatch(BaseModel):
+    """A bounded, ordered batch accepted only from its registered tenant-bound forwarder."""
+
+    batch_id: str = Field(min_length=8, max_length=128)
+    sequence: int = Field(ge=1)
+    alerts: List[Dict[str, Any]] = Field(min_length=1, max_length=250)

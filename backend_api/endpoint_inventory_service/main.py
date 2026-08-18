@@ -4,20 +4,27 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from fastapi import Depends, HTTPException, Query
+from fastapi import Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 
 from backend_api.core.response import success_response
+from backend_api.endpoint_inventory_service.forwarders import (
+    ForwarderAuthenticationError,
+    ForwarderReplayError,
+    WazuhForwarderService,
+    init_forwarder_store,
+)
 from backend_api.endpoint_inventory_service.ingestion import EndpointTelemetryIngestion
 from backend_api.endpoint_inventory_service.repository import EndpointInventoryRepository, init_endpoint_inventory_store
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
 from backend_api.shared.service_factory import create_phantom_service
-from phantomnet_core.contracts import HostAssetRecord, IntegrityObservation
+from phantomnet_core.contracts import HostAssetRecord, IntegrityObservation, WazuhTelemetryBatch
 
 
 async def endpoint_inventory_startup(_app) -> None:
     await init_endpoint_inventory_store()
+    await init_forwarder_store()
 
 
 app = create_phantom_service(
@@ -28,10 +35,15 @@ app = create_phantom_service(
 )
 repository = EndpointInventoryRepository()
 ingestion = EndpointTelemetryIngestion(repository)
+forwarders = WazuhForwarderService(ingestion=ingestion)
 
 
 class WazuhAlertRequest(BaseModel):
     alert: Dict[str, Any]
+
+
+class WazuhForwarderRegistrationRequest(BaseModel):
+    name: str
 
 
 @app.post("/assets", status_code=201)
@@ -96,6 +108,62 @@ async def ingest_wazuh_alert(
         data["observation"] = result["observation"].model_dump(mode="json")
         data["integrity_created"] = result["integrity_created"]
     return success_response(data=data)
+
+
+@app.post("/wazuh/forwarders", status_code=201)
+async def register_wazuh_forwarder(
+    request: WazuhForwarderRegistrationRequest,
+    current_user: User = Depends(require_capability("config:write")),
+):
+    try:
+        forwarder, token = await forwarders.register(str(current_user.tenant_id), request.name, current_user.username)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return success_response(
+        data={
+            "forwarder": forwarder.model_dump(mode="json"),
+            "forwarder_token": token,
+            "token_delivery": "shown_once",
+            "adapter_mode": "read_only_streaming",
+            "automatic_enforcement": False,
+        }
+    )
+
+
+@app.get("/wazuh/forwarders")
+async def list_wazuh_forwarders(current_user: User = Depends(require_capability("config:write"))):
+    records = await forwarders.list_for_tenant(str(current_user.tenant_id))
+    return success_response(data=[record.model_dump(mode="json") for record in records])
+
+
+@app.delete("/wazuh/forwarders/{forwarder_id}")
+async def revoke_wazuh_forwarder(
+    forwarder_id: str,
+    current_user: User = Depends(require_capability("config:write")),
+):
+    try:
+        record = await forwarders.revoke(str(current_user.tenant_id), forwarder_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Forwarder not found.") from exc
+    return success_response(data=record.model_dump(mode="json"))
+
+
+@app.post("/wazuh/forwarders/{forwarder_id}/stream", status_code=202)
+async def stream_wazuh_telemetry(
+    forwarder_id: str,
+    batch: WazuhTelemetryBatch,
+    x_phantomnet_forwarder_token: str = Header(..., min_length=16),
+):
+    """Receive one authenticated live Wazuh telemetry batch for its registered tenant."""
+    try:
+        result = await forwarders.stream_batch(forwarder_id, x_phantomnet_forwarder_token, batch)
+    except ForwarderAuthenticationError as exc:
+        raise HTTPException(status_code=401, detail="Forwarder authentication failed.") from exc
+    except ForwarderReplayError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (LookupError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return success_response(data=result)
 
 
 @app.get("/assets")
