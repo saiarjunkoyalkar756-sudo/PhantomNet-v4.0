@@ -394,6 +394,74 @@ class WazuhForwarderBatchRow(Base):
     alert_count = Column(Integer, nullable=False)
 
 
+class ContainmentRequestRow(Base):
+    """High-impact response intent; execution is impossible until a separate approval exists."""
+    __tablename__ = "containment_requests"
+    __table_args__ = (UniqueConstraint("tenant_id", "idempotency_key", name="uq_containment_tenant_idempotency"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    request_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    action = Column(String, nullable=False)
+    target = Column(String, nullable=False, index=True)
+    asset_id = Column(String, nullable=True, index=True)
+    playbook_id = Column(String, nullable=True)
+    requested_by = Column(String, nullable=False)
+    requested_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    status = Column(String, nullable=False, default="requested", index=True)
+    idempotency_key = Column(String, nullable=False)
+    parameters = Column(JSONB, nullable=False)
+    requires_approval = Column(Boolean, nullable=False, default=True)
+    automatic_enforcement = Column(Boolean, nullable=False, default=False)
+
+
+class ContainmentApprovalRow(Base):
+    __tablename__ = "containment_approvals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    approval_id = Column(String, unique=True, nullable=False, index=True)
+    request_id = Column(String, ForeignKey("containment_requests.request_id"), nullable=False, unique=True, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    decision = Column(String, nullable=False)
+    decided_by = Column(String, nullable=False)
+    decided_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    reason = Column(String, nullable=False)
+
+
+class ContainmentExecutionRow(Base):
+    __tablename__ = "containment_executions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    execution_id = Column(String, unique=True, nullable=False, index=True)
+    request_id = Column(String, ForeignKey("containment_requests.request_id"), nullable=False, unique=True, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    approval_id = Column(String, ForeignKey("containment_approvals.approval_id"), nullable=False)
+    adapter = Column(String, nullable=False)
+    status = Column(String, nullable=False, index=True)
+    executed_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    verification = Column(JSONB, nullable=False)
+    rollback_available = Column(Boolean, nullable=False, default=False)
+    rolled_back = Column(Boolean, nullable=False, default=False)
+    audit_record_hash = Column(String, nullable=True)
+
+
+class ContainmentAuditRecordRow(Base):
+    """Per-tenant chained audit evidence for containment lifecycle events."""
+    __tablename__ = "containment_audit_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    record_id = Column(String, unique=True, nullable=False, index=True)
+    timestamp = Column(String, nullable=False)
+    actor_id = Column(String, nullable=True)
+    action = Column(String, nullable=False, index=True)
+    payload = Column(JSONB, nullable=False)
+    previous_hash = Column(String, nullable=False)
+    record_hash = Column(String, nullable=False, unique=True)
+    signature = Column(String, nullable=True)
+    signature_key_id = Column(String, nullable=True)
+
+
 class ForensicRecord(Base):
     __tablename__ = "forensic_records"
     id = Column(Integer, primary_key=True, index=True)

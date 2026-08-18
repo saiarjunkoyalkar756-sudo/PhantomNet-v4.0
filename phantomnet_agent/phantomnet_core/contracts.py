@@ -298,3 +298,82 @@ class WazuhTelemetryBatch(BaseModel):
     batch_id: str = Field(min_length=8, max_length=128)
     sequence: int = Field(ge=1)
     alerts: List[Dict[str, Any]] = Field(min_length=1, max_length=250)
+
+
+class ContainmentRequest(BaseModel):
+    """A tenant-scoped high-impact response request that cannot execute before approval."""
+
+    schema_version: str = CONTRACT_VERSION
+    request_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    action: Literal["isolate_endpoint", "release_endpoint", "block_indicator", "rollback_indicator_block", "remediate_configuration"]
+    target: str = Field(min_length=1, max_length=255)
+    asset_id: Optional[str] = None
+    playbook_id: Optional[str] = None
+    requested_by: str
+    requested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    status: Literal["requested", "approved", "rejected", "executing", "verified", "failed", "rolled_back"] = "requested"
+    idempotency_key: str = Field(min_length=16, max_length=255)
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    requires_approval: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("requested_at")
+    @classmethod
+    def require_timezone_aware_containment_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
+class ContainmentApproval(BaseModel):
+    """A durable human approval or rejection attached to one containment request."""
+
+    approval_id: str = Field(default_factory=lambda: str(uuid4()))
+    request_id: str
+    tenant_id: str
+    decision: Literal["approved", "rejected"]
+    decided_by: str
+    decided_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    reason: str = Field(min_length=3, max_length=500)
+
+    @field_validator("decided_at")
+    @classmethod
+    def require_timezone_aware_approval_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
+class RemediationPlaybookDefinition(BaseModel):
+    """A bounded ordered response definition; all high-impact steps remain approval-gated."""
+
+    playbook_id: str
+    version: str
+    name: str
+    actions: List[Literal["isolate_endpoint", "release_endpoint", "block_indicator", "rollback_indicator_block", "remediate_configuration"]] = Field(min_length=1, max_length=10)
+    requires_approval: bool = True
+    rollback_action: Optional[Literal["release_endpoint", "rollback_indicator_block"]] = None
+
+
+class ContainmentExecutionEvidence(BaseModel):
+    """Adapter outcome and verification evidence for one governed response execution."""
+
+    execution_id: str = Field(default_factory=lambda: str(uuid4()))
+    request_id: str
+    tenant_id: str
+    approval_id: str
+    adapter: str
+    status: Literal["verified", "failed", "rolled_back"]
+    executed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    verification: Dict[str, Any] = Field(default_factory=dict)
+    rollback_available: bool = False
+    rolled_back: bool = False
+    audit_record_hash: Optional[str] = None
+
+    @field_validator("executed_at")
+    @classmethod
+    def require_timezone_aware_execution_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)

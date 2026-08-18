@@ -12,6 +12,8 @@ from .playbook_flow_builder import AIPlaybookGenerator
 from .auto_response_engine import AutoResponseEngine
 from .human_in_the_loop import HumanInTheLoop, ApprovalRequest
 from .models import Playbook, PlaybookStep, PlaybookRun, PlaybookStatus, RemediationAction
+from .governed_api import router as governed_containment_router
+from .governed_containment import init_governed_containment_store
 from backend_api.shared.database import SessionLocal, PlaybookDB, PlaybookRunDB, PlaybookExecutionLogDB
 
 def get_db():
@@ -83,6 +85,7 @@ async def soar_startup(app: FastAPI):
     db = next(get_db())
     load_playbooks(db)
     db.close()
+    await init_governed_containment_store()
     
     app.state.consumer_task = asyncio.create_task(consume_kafka_messages())
     logger.info("SOAR Engine: Kafka consumer task started.")
@@ -262,3 +265,4 @@ async def reject_playbook_step(request_id: str, rejected_by: str = Query(..., de
     return rejected_req
 
 app.include_router(router, prefix="/api")
+app.include_router(governed_containment_router, prefix="/api/soar")
