@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 from functools import wraps
 from asyncio import sleep
 
-from shared.logger_config import logger
+from backend_api.shared.logger_config import logger
 
 logger = logger
 

@@ -7,21 +7,33 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 
 from .database import get_all_rules
-from backend_api.threat_intelligence_service.enrichment import ThreatIntelligenceEnricher
-from core_config import SAFE_MODE
+from .detection_store import DetectionRepository
+from .ingestion import CanonicalBrokerProcessor, BrokerIngestionResult
+from backend_api.core_config import SAFE_MODE
+from backend_api.shared.kafka_topics import NORMALIZED_EVENTS
 
 logger = logging.getLogger(__name__)
 
 # --- Kafka Configuration ---
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'redpanda:29092')
-KAFKA_TOPIC = os.getenv('CORRELATION_KAFKA_TOPIC', 'attack_logs')
+KAFKA_TOPIC = os.getenv("CORRELATION_KAFKA_TOPIC", NORMALIZED_EVENTS)
 GROUP_ID = os.getenv('CORRELATION_KAFKA_GROUP_ID', 'correlation-engine-group')
 
 # --- Service URLs ---
 MITRE_MAPPER_URL = "http://mitre_attack_mapper:8000"
 
 # --- Global Instances ---
-ti_enricher = ThreatIntelligenceEnricher()
+ti_enricher = None
+broker_processor = CanonicalBrokerProcessor(DetectionRepository())
+
+
+def get_threat_intelligence_enricher():
+    """Lazily initialize optional external enrichment after canonical persistence succeeds."""
+    global ti_enricher
+    if ti_enricher is None:
+        from backend_api.threat_intelligence_service.enrichment import ThreatIntelligenceEnricher
+        ti_enricher = ThreatIntelligenceEnricher()
+    return ti_enricher
 
 async def map_event_with_mitre(event: dict) -> list:
     """Calls the MITRE ATT&CK Mapper service to map an event to techniques."""
@@ -38,31 +50,40 @@ async def map_event_with_mitre(event: dict) -> list:
         logger.error(f"An unexpected error during MITRE mapping: {e}", exc_info=True)
     return []
 
-async def _process_event_async(event: dict):
-    """Asynchronous part of event processing in the correlation engine."""
-    # 1. Map event to MITRE ATT&CK techniques
-    mapped_techniques = await map_event_with_mitre(event)
+async def _process_event_async(event: dict) -> BrokerIngestionResult:
+    """Persist governed detections before any optional enrichment or rule evaluation."""
+    ingestion = await broker_processor.process(event)
+    canonical_event = ingestion.event.model_dump(mode="json")
+    logger.info(
+        "Canonical event accepted",
+        event_id=ingestion.event.event_id,
+        tenant_id=ingestion.event.tenant_id,
+        created_detections=len(ingestion.created_detection_ids),
+        duplicate_detections=len(ingestion.duplicate_detection_ids),
+    )
+
+    # Optional enrichment augments correlation context; it never dispatches containment.
+    mapped_techniques = await map_event_with_mitre(canonical_event)
     if mapped_techniques:
-        logger.info(f"Event mapped to MITRE techniques: {mapped_techniques}")
-        event["mitre_techniques"] = mapped_techniques
+        canonical_event["mitre_techniques"] = mapped_techniques
 
-    # 2. Enrich indicators in the event using Threat Intelligence Service
-    if event.get("source_ip"):
-        ti_result = await ti_enricher.enrich_indicator(event["source_ip"], "ip")
+    payload = canonical_event.get("payload", {})
+    source_ip = payload.get("source_ip")
+    if source_ip:
+        ti_result = await get_threat_intelligence_enricher().enrich_indicator(source_ip, "ip")
         if ti_result and ti_result.is_malicious:
-            logger.warning(f"Event involves malicious IP: {event['source_ip']} (Provider: {ti_result.threat_scores[0].provider if ti_result.threat_scores else 'N/A'})")
-            event["ti_enrichment"] = ti_result.model_dump()
-            event["is_malicious_ip"] = True
+            canonical_event["ti_enrichment"] = ti_result.model_dump()
+            canonical_event["is_malicious_ip"] = True
 
-    # 3. Load rules dynamically and apply them
-    rules = get_all_rules()
+    rules = await get_all_rules()
     for rule in rules:
         try:
-            if rule["logic"].get("keyword") and rule["logic"]["keyword"] in str(event):
-                logger.warning(f"Rule '{rule['name']}' matched! Action: {rule['action']}")
-                # In a real system, this would trigger an actual action
-        except Exception as e:
-            logger.error(f"Error applying rule '{rule['name']}': {e}")
+            keyword = rule["logic"].get("keyword")
+            if keyword and keyword in str(canonical_event):
+                logger.warning("Correlation rule matched", rule_name=rule["name"], action=rule["action"])
+        except Exception as exc:
+            logger.error("Correlation rule evaluation failed", rule_name=rule["name"], error_type=type(exc).__name__)
+    return ingestion
 
 async def start_kafka_consumer():
     """Starts the Kafka consumer for the correlation engine."""

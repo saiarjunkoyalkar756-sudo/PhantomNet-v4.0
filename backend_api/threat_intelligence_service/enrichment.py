@@ -6,7 +6,7 @@ import json
 from typing import Dict, Any, List, Optional, Union, Tuple
 from datetime import datetime, timedelta
 
-from shared.logger_config import logger
+from backend_api.shared.logger_config import logger
 from .models import UTMResult, IndicatorBase, ThreatScore, GeoLocation, PortInfo, DomainWhois, FileInfo, CloudResourceInfo
 from .cache import threat_intel_cache, CACHE_TTL_SECONDS
 

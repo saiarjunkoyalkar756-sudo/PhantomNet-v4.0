@@ -15,6 +15,7 @@ from sqlalchemy import (
     Boolean,
     Float,
     ForeignKey,
+    UniqueConstraint,
     text
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as pgUUID
@@ -209,6 +210,29 @@ class NormalizedEvent(Base):
     source = Column(String, nullable=False)
     event_type = Column(String, nullable=False)
     details = Column(JSONB)
+
+class DetectionRecordRow(Base):
+    """Durable canonical detection evidence created from normalized event delivery."""
+    __tablename__ = "detection_records"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "event_id", "rule_id", name="uq_detection_record_event_rule"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    detection_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    event_id = Column(String, nullable=False, index=True)
+    rule_id = Column(String, nullable=False, index=True)
+    rule_version = Column(String, nullable=False)
+    correlation_id = Column(String, nullable=True, index=True)
+    severity = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="detected")
+    detected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    evidence = Column(JSONB, nullable=False)
+    tags = Column(JSONB, nullable=False)
+    automatic_enforcement = Column(Boolean, nullable=False, default=False)
+
 
 class ForensicRecord(Base):
     __tablename__ = "forensic_records"

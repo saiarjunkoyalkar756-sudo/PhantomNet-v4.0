@@ -7,7 +7,7 @@ import asyncio # Import asyncio
 from typing import Optional, Any
 from datetime import datetime, timedelta
 
-from shared.logger_config import logger
+from backend_api.shared.logger_config import logger
 
 logger = logger
 

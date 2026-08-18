@@ -1,6 +1,11 @@
+from fastapi import Depends, FastAPI, Query
+
 from backend_api.shared.service_factory import create_phantom_service
 from .consumer import start_kafka_consumer
 from .database import init_db, get_all_rules, upsert_rule
+from .detection_store import DetectionRepository, init_detection_store
+from backend_api.iam_service.policy import require_capability
+from backend_api.shared.database import User
 from loguru import logger
 import asyncio
 from pydantic import BaseModel
@@ -10,6 +15,7 @@ from backend_api.core.response import success_response, error_response
 async def correlation_startup(app: FastAPI):
     # Startup: Initialize DB and background consumer
     await init_db()
+    await init_detection_store()
     app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
     logger.info("Kafka consumer task started.")
 
@@ -18,6 +24,8 @@ async def correlation_shutdown(app: FastAPI):
         app.state.consumer_task.cancel()
         await asyncio.gather(app.state.consumer_task, return_exceptions=True)
         logger.info("Kafka consumer task stopped.")
+
+detection_repository = DetectionRepository()
 
 app = create_phantom_service(
     name="Correlation Engine",
@@ -34,6 +42,16 @@ class Rule(BaseModel):
     action: str
     severity: str
     enabled: bool = True
+
+@app.get("/detections")
+async def list_detections(
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return durable detection evidence for the authenticated tenant only."""
+    records = await detection_repository.list_for_tenant(str(current_user.tenant_id), limit=limit)
+    return success_response(data=[record.model_dump(mode="json") for record in records])
+
 
 @app.post("/rules", status_code=201)
 async def add_or_update_rule(rule: Rule):
