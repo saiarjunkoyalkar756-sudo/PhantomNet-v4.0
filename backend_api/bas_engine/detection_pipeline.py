@@ -11,7 +11,7 @@ from collections.abc import Callable, Mapping
 from typing import Any, Dict, List
 
 from backend_api.bas_engine.baseline_scenarios import emit_baseline_events
-from phantomnet_core.contracts import DetectionRecord, DetectionRule, EventEnvelope
+from phantomnet_core.contracts import DetectionRecord, DetectionRule, EventEnvelope, MitreEvidence
 
 
 BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
@@ -24,6 +24,8 @@ BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
         severity="high",
         threshold=5,
         conditions={"failed_attempts_gte": 5},
+        mitre_techniques=["T1110"],
+        mitre_tactics=["credential-access"],
         expected_outcome={"detection": True, "automatic_enforcement": False},
     ),
     "BAS-PROC-001": DetectionRule(
@@ -34,6 +36,8 @@ BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
         event_types=["process_event"],
         severity="medium",
         conditions={"process_name": "unexpected-child", "parent": "test-parent"},
+        mitre_techniques=["T1059"],
+        mitre_tactics=["execution"],
         expected_outcome={"detection": True, "automatic_enforcement": False},
     ),
     "BAS-DNS-001": DetectionRule(
@@ -44,6 +48,8 @@ BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
         event_types=["dns_query"],
         severity="medium",
         conditions={"entropy_gte": 3.5, "query_suffix": ".example.test"},
+        mitre_techniques=["T1071.004"],
+        mitre_tactics=["command-and-control"],
         expected_outcome={"detection": True, "automatic_enforcement": False},
     ),
     "BAS-NET-001": DetectionRule(
@@ -54,6 +60,8 @@ BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
         event_types=["network_connection"],
         severity="high",
         conditions={"destination_ip": "203.0.113.42", "destination_port": 443},
+        mitre_techniques=["T1071.001"],
+        mitre_tactics=["command-and-control"],
         expected_outcome={"detection": True, "automatic_enforcement": False},
     ),
     "BAS-FILE-001": DetectionRule(
@@ -64,6 +72,8 @@ BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
         event_types=["file_event"],
         severity="high",
         conditions={"path": "/tmp/phantomnet-lab-sensitive.txt", "operation": "write"},
+        mitre_techniques=["T1565.001"],
+        mitre_tactics=["impact"],
         expected_outcome={"detection": True, "automatic_enforcement": False},
     ),
 }
@@ -118,6 +128,17 @@ def evaluate_normalized_baseline_event(normalized_event: Mapping[str, Any]) -> D
     if rule is None or matcher is None or event.event_type not in rule.event_types or not matcher(event.payload):
         return None
 
+    mitre_evidence = [
+        MitreEvidence(
+            technique_id=technique_id,
+            tactic=rule.mitre_tactics[index] if index < len(rule.mitre_tactics) else "unknown",
+            confidence=1.0,
+            rationale="Governed BAS rule mapping validated against the scenario condition.",
+            evidence_fields=sorted(rule.conditions.keys()),
+        )
+        for index, technique_id in enumerate(rule.mitre_techniques)
+    ]
+
     return DetectionRecord(
         detection_id=f"bas-{event.event_id}-{rule.rule_id}",
         rule_id=rule.rule_id,
@@ -133,7 +154,10 @@ def evaluate_normalized_baseline_event(normalized_event: Mapping[str, Any]) -> D
             "payload_fingerprint": event.payload_fingerprint(),
             "normalized_at": normalized_event.get("normalized_at"),
             "rule_conditions": rule.conditions,
+            "mitre_techniques": rule.mitre_techniques,
+            "mitre_tactics": rule.mitre_tactics,
         },
+        mitre_evidence=mitre_evidence,
         tags=["bas", "controlled", "non-destructive", "detection-validation"],
         automatic_enforcement=False,
     )

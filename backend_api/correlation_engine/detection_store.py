@@ -30,6 +30,7 @@ def _to_contract(row: DetectionRecordRow) -> DetectionRecord:
         title=row.title,
         status=row.status,
         evidence=row.evidence,
+        mitre_evidence=list(row.mitre_evidence),
         tags=row.tags,
         automatic_enforcement=row.automatic_enforcement,
     )
@@ -68,6 +69,7 @@ class DetectionRepository:
                 status=detection.status,
                 detected_at=detection.detected_at,
                 evidence=detection.evidence,
+                mitre_evidence=[evidence.model_dump(mode="json") for evidence in detection.mitre_evidence],
                 tags=detection.tags,
                 automatic_enforcement=detection.automatic_enforcement,
             )

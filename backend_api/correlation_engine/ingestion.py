@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from backend_api.bas_engine.detection_pipeline import evaluate_normalized_baseline_event
+from backend_api.correlation_engine.alert_workflow import AlertWorkflow, AlertWorkflowResult
 from backend_api.correlation_engine.detection_store import DetectionRepository
 from phantomnet_core.contracts import CONTRACT_VERSION, DetectionRecord, EventEnvelope
 
@@ -20,6 +21,7 @@ class BrokerIngestionResult:
     persisted_detections: tuple[DetectionRecord, ...]
     created_detection_ids: tuple[str, ...]
     duplicate_detection_ids: tuple[str, ...]
+    alert_workflows: tuple[AlertWorkflowResult, ...] = ()
 
 
 class CanonicalBrokerProcessor:
@@ -34,9 +36,11 @@ class CanonicalBrokerProcessor:
         self,
         repository: DetectionRepository,
         evaluators: Sequence[DetectionEvaluator] = (evaluate_normalized_baseline_event,),
+        alert_workflow: AlertWorkflow | None = None,
     ):
         self._repository = repository
         self._evaluators = tuple(evaluators)
+        self._alert_workflow = alert_workflow
 
     async def process(self, message: Mapping[str, Any]) -> BrokerIngestionResult:
         event = EventEnvelope.model_validate(message)
@@ -48,6 +52,7 @@ class CanonicalBrokerProcessor:
         persisted: list[DetectionRecord] = []
         created_ids: list[str] = []
         duplicate_ids: list[str] = []
+        alert_workflows: list[AlertWorkflowResult] = []
         normalized_message = dict(message)
 
         for evaluator in self._evaluators:
@@ -59,6 +64,8 @@ class CanonicalBrokerProcessor:
             persisted.append(stored_detection)
             if created:
                 created_ids.append(stored_detection.detection_id)
+                if self._alert_workflow is not None:
+                    alert_workflows.append(await self._alert_workflow.ingest_detection(stored_detection))
             else:
                 duplicate_ids.append(stored_detection.detection_id)
 
@@ -67,6 +74,7 @@ class CanonicalBrokerProcessor:
             persisted_detections=tuple(persisted),
             created_detection_ids=tuple(created_ids),
             duplicate_detection_ids=tuple(duplicate_ids),
+            alert_workflows=tuple(alert_workflows),
         )
 
     @staticmethod

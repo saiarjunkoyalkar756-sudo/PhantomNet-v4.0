@@ -7,6 +7,7 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 
 from .database import get_all_rules
+from .alert_workflow import AlertWorkflow
 from .detection_store import DetectionRepository
 from .ingestion import CanonicalBrokerProcessor, BrokerIngestionResult
 from backend_api.core_config import SAFE_MODE
@@ -24,7 +25,10 @@ MITRE_MAPPER_URL = "http://mitre_attack_mapper:8000"
 
 # --- Global Instances ---
 ti_enricher = None
-broker_processor = CanonicalBrokerProcessor(DetectionRepository())
+broker_processor = CanonicalBrokerProcessor(
+    DetectionRepository(),
+    alert_workflow=AlertWorkflow(),
+)
 
 
 def get_threat_intelligence_enricher():

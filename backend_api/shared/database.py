@@ -230,8 +230,32 @@ class DetectionRecordRow(Base):
     status = Column(String, nullable=False, default="detected")
     detected_at = Column(DateTime(timezone=True), nullable=False, index=True)
     evidence = Column(JSONB, nullable=False)
+    mitre_evidence = Column(JSONB, nullable=False)
     tags = Column(JSONB, nullable=False)
     automatic_enforcement = Column(Boolean, nullable=False, default=False)
+
+
+class AnalystAlertRow(Base):
+    """Durable analyst workflow derived from one or more canonical detections."""
+    __tablename__ = "analyst_alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    alert_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    detection_ids = Column(JSONB, nullable=False)
+    correlation_id = Column(String, nullable=True, index=True)
+    title = Column(String, nullable=False)
+    severity = Column(String, nullable=False, index=True)
+    status = Column(String, nullable=False, default="new", index=True)
+    first_seen = Column(DateTime(timezone=True), nullable=False, index=True)
+    last_seen = Column(DateTime(timezone=True), nullable=False, index=True)
+    occurrence_count = Column(Integer, nullable=False, default=1)
+    suppression_key = Column(String, nullable=False, index=True)
+    suppressed_by_alert_id = Column(String, nullable=True)
+    mitre_evidence = Column(JSONB, nullable=False)
+    evidence = Column(JSONB, nullable=False)
+    case_id = Column(String, nullable=True, index=True)
+    triaged_by = Column(String, nullable=True)
 
 
 class ForensicRecord(Base):
