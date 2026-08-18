@@ -297,6 +297,23 @@ class CasePlaybookRunRow(Base):
     evidence = Column(JSONB, nullable=False)
 
 
+class SavedHuntRow(Base):
+    """A tenant-owned, structured hunt definition with no executable query text."""
+    __tablename__ = "saved_hunts"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_saved_hunt_tenant_name"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    hunt_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    dataset = Column(String, nullable=False)
+    filters = Column(JSONB, nullable=False)
+    created_by = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
 class ForensicRecord(Base):
     __tablename__ = "forensic_records"
     id = Column(Integer, primary_key=True, index=True)

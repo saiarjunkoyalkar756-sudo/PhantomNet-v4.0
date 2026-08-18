@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
 import PageHeader from '@/components/shared/PageHeader';
 import MetricsWidget from '@/features/dashboard/MetricsWidget';
 import WorldAttackMap from '@/features/dashboard/WorldAttackMap';
 import { Button } from '@/components/ui/button';
+import { fetchHuntDashboardSummary } from '@/services/threatHunting.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
     Plus, 
@@ -27,8 +27,8 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/dashboard/executive-summary');
-                setSummary(response.data);
+                const response = await fetchHuntDashboardSummary();
+                setSummary(response);
             } catch (err) {
                 console.error("Failed to fetch dashboard summary:", err);
             }
@@ -40,25 +40,25 @@ const Dashboard = () => {
 
     const metrics = [
         { 
-            title: "Automated Responses", 
-            value: summary?.automated_remediations_count_24h || "450", 
-            change: "100% Autonomous", 
-            icon: Zap, 
-            color: "primary" 
+            title: "Canonical Detections",
+            value: summary?.metrics?.detections ?? "—",
+            change: "Governed evidence pipeline",
+            icon: Zap,
+            color: "primary"
         },
         { 
-            title: "Overall Risk Score", 
-            value: summary?.overall_risk_score || "42", 
-            change: `${summary?.risk_trend_percent_7d || -12.5}% vs last week`, 
-            icon: Brain, 
-            color: summary?.overall_risk_score > 70 ? "destructive" : "secondary" 
+            title: "Active Analyst Alerts",
+            value: summary?.metrics?.active_alerts ?? "—",
+            change: "New, triaged, and in-progress",
+            icon: Brain,
+            color: "secondary"
         },
         { 
-            title: "Manual Escalations", 
-            value: summary?.manual_escalations_count_24h || "3", 
-            change: "Low Analyst Friction", 
-            icon: Shield, 
-            color: "primary" 
+            title: "Open Investigations",
+            value: summary?.metrics?.open_cases ?? "—",
+            change: "Tenant-scoped case lifecycle",
+            icon: Shield,
+            color: "primary"
         },
     ];
 
@@ -131,13 +131,13 @@ const Dashboard = () => {
                         <CardContent className="p-0 h-[350px] overflow-y-auto custom-scrollbar">
                            {!isZenMode ? (
                                 <ul className="divide-y divide-border/30">
-                                    {(summary?.top_attack_vectors || []).map((vector, i) => (
+                                    {(summary?.top_mitre_techniques || []).map((vector, i) => (
                                         <li key={i} className="p-4 hover:bg-primary/5 transition-colors flex items-center justify-between group">
                                             <div className="flex items-center space-x-3">
                                                 <div className="w-1 h-8 bg-primary/20 group-hover:bg-primary rounded-full transition-all" />
                                                 <div>
-                                                    <p className="text-xs font-bold uppercase tracking-tighter">{vector.vector}</p>
-                                                    <p className="text-[10px] text-muted-foreground font-mono">MITRE ATT&CK: T10{i}x</p>
+                                                    <p className="text-xs font-bold uppercase tracking-tighter">MITRE {vector.technique_id}</p>
+                                                    <p className="text-[10px] text-muted-foreground font-mono">Governed detection evidence</p>
                                                 </div>
                                             </div>
                                             <span className="text-xl font-black font-mono opacity-20 group-hover:opacity-100 transition-opacity">
