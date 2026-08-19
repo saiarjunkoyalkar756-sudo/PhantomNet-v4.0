@@ -1,8 +1,10 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 import { Play, Pause, Filter, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+const MotionDiv = motion.div;
 
 const FilterToolbar = ({ isPaused, togglePause, filters, setFilters }) => {
 
@@ -31,7 +33,7 @@ const FilterToolbar = ({ isPaused, togglePause, filters, setFilters }) => {
 
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -109,7 +111,7 @@ const FilterToolbar = ({ isPaused, togglePause, filters, setFilters }) => {
         )}
       </div>
 
-    </motion.div>
+    </MotionDiv>
   );
 };
 

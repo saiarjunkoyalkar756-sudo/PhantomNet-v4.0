@@ -15,6 +15,10 @@ import tempfile
 import time
 from pathlib import Path
 
+from _bootstrap import configure_script_imports
+
+configure_script_imports()
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 

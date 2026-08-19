@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PageHeader from '@/components/shared/PageHeader';
+import React, { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';import PageHeader from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-    ShieldCheck, 
-    ShieldAlert, 
-    Activity, 
-    RefreshCw, 
-    FileText, 
-    Download, 
-    TrendingUp, 
-    Calendar, 
+import {
+    ShieldCheck,
+    ShieldAlert,
+    Activity,
+    RefreshCw,
+    FileText,
+    Download,
+    TrendingUp,
+    Calendar,
     Brain,
     CheckCircle2,
     AlertTriangle,
@@ -21,17 +20,11 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
+const MotionDiv = motion.div;
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
 
-const CompliancePage = () => {
-    const [selectedStandard, setSelectedStandard] = useState('ISO27001'); // 'ISO27001' | 'SOC2' | 'PCIDSS' | 'GDPR'
-    const [loading, setLoading] = useState(false);
-    const [auditing, setAuditing] = useState(false);
-    const [auditProgress, setAuditProgress] = useState(0);
-    const [report, setReport] = useState(null);
-
-    // Dynamic Mock Databases matching backend models
-    const complianceDatabases = {
+const COMPLIANCE_DATABASES = {
         ISO27001: {
             score: 87,
             trend: '+2.4%',
@@ -120,36 +113,45 @@ const CompliancePage = () => {
             ],
             ai_improvement_plan: []
         }
-    };
+};
 
-    useEffect(() => {
-        fetchComplianceData();
+const CompliancePage = () => {
+    const [selectedStandard, setSelectedStandard] = useState('ISO27001');
+    const [auditing, setAuditing] = useState(false);
+    const [auditProgress, setAuditProgress] = useState(0);
+    const [report, setReport] = useState(null);
+
+    const fetchComplianceData = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/v1/compliance/assessments/`);
+            setReport(
+                response.data?.success
+                    ? response.data.data
+                    : COMPLIANCE_DATABASES[selectedStandard],
+            );
+        } catch (err) {
+            console.warn("Compliance assessment API is unavailable; using fallback assessment data.", err);
+            setReport(COMPLIANCE_DATABASES[selectedStandard]);
+        }
     }, [selectedStandard]);
 
-    const fetchComplianceData = async () => {
-        setLoading(true);
-        try {
-            // Attempt to hit dynamic compliance router
-            const response = await axios.get(`${API_BASE_URL}/api/v1/compliance/assessments/`);
-            if (response.data && response.data.success) {
-                // If backend yields custom database details
-                setReport(response.data.data);
-            } else {
-                setReport(complianceDatabases[selectedStandard]);
+    useEffect(() => {
+        let cancelled = false;
+        queueMicrotask(() => {
+            if (!cancelled) {
+                void fetchComplianceData();
             }
-        } catch (err) {
-            // Seamless premium mock failover
-            setReport(complianceDatabases[selectedStandard]);
-        } finally {
-            setLoading(false);
-        }
-    };
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [fetchComplianceData]);
 
     const triggerComplianceAudit = async () => {
         if (auditing) return;
         setAuditing(true);
         setAuditProgress(10);
-        
+
         const steps = [
             { pct: 30, msg: 'Auditing authentication rate limits and PQC configurations...' },
             { pct: 60, msg: 'Analyzing Neo4j lateral vulnerability propagation vectors...' },
@@ -163,8 +165,8 @@ const CompliancePage = () => {
         }
 
         // Simulates new scan result or refreshes
-        setReport(prev => {
-            const current = complianceDatabases[selectedStandard];
+        setReport(() => {
+            const current = COMPLIANCE_DATABASES[selectedStandard];
             return {
                 ...current,
                 score: Math.min(100, current.score + 1), // post audit improvement
@@ -191,15 +193,15 @@ const CompliancePage = () => {
         return <Badge className="bg-blue-500/20 border-blue-500/30 text-blue-300 font-mono text-[9px]">LOW</Badge>;
     };
 
-    const currentStandard = report || complianceDatabases[selectedStandard];
+    const currentStandard = report || COMPLIANCE_DATABASES[selectedStandard];
 
     return (
         <div className="h-full flex flex-col space-y-6">
-            <PageHeader 
+            <PageHeader
                 title="GOVERNANCE, RISK & COMPLIANCE"
                 subtitle="Continuous governance framework mapping, gap analytics, and automated compliance auditing."
                 actions={
-                    <Button 
+                    <Button
                         disabled={auditing}
                         onClick={triggerComplianceAudit}
                         className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs h-9 flex items-center justify-center space-x-2 shadow-[0_0_15px_rgba(139,92,246,0.4)]"
@@ -221,8 +223,8 @@ const CompliancePage = () => {
 
             {/* Framework Select Tabs */}
             <div className="flex bg-muted/40 p-1 rounded-lg border border-white/5 self-start">
-                {Object.keys(complianceDatabases).map((std) => (
-                    <button 
+                {Object.keys(COMPLIANCE_DATABASES).map((std) => (
+                    <button
                         key={std}
                         onClick={() => setSelectedStandard(std)}
                         className={`px-5 py-2 text-xs font-bold rounded-md transition-all ${selectedStandard === std ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
@@ -234,7 +236,7 @@ const CompliancePage = () => {
 
             {auditing && (
                 <div className="w-full bg-[#182030] h-1.5 rounded-full overflow-hidden">
-                    <motion.div 
+                    <MotionDiv
                         className="h-full bg-primary shadow-[0_0_10px_rgba(139,92,246,0.8)]"
                         initial={{ width: 0 }}
                         animate={{ width: `${auditProgress}%` }}
@@ -316,7 +318,7 @@ const CompliancePage = () => {
                                 </div>
                                 <div className="flex items-center space-x-3">
                                     <div className="flex-1 bg-[#182030] h-2 rounded-full overflow-hidden">
-                                        <div 
+                                        <div
                                             className={`h-full ${
                                                 area.compliant_percentage >= 90 ? 'bg-emerald-400' :
                                                 area.compliant_percentage >= 75 ? 'bg-amber-500' :

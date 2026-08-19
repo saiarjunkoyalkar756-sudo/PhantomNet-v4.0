@@ -90,7 +90,7 @@ class AIAnalyzer:
                         self.logger.warning(f"Analyzer {type(analyzer).__name__} returned unexpected type: {type(result)}")
             except Exception as e:
                 self.logger.error(f"Error running analyzer {type(analyzer).__name__}: {e}", exc_info=True)
-        
+
         if not results:
             results.append({
                 "attack_type": "Simulated Anomaly",
@@ -158,3 +158,24 @@ class AIAnalyzer:
             self.logger.error(f"Error during full AI analysis for event {event_id}: {e}. Returning failed analysis result.", exc_info=True)
 
         return analysis_result
+
+
+def analyze_attack(payload: str) -> str:
+    """Return the first supported attack classification for legacy honeypot ingestion.
+
+    This small synchronous entrypoint is intentionally limited to local analyzer evaluation.
+    It does not trigger containment, external requests, or autonomous response actions.
+    """
+    from phantomnet_agent.analyzers.command_injection_analyzer import CommandInjectionAnalyzer
+    from phantomnet_agent.analyzers.ml_analyzer import MLAnalyzer
+    from phantomnet_agent.analyzers.rule_based_analyzer import RuleBasedAnalyzer
+
+    for analyzer in (MLAnalyzer(), RuleBasedAnalyzer(), CommandInjectionAnalyzer()):
+        result = analyzer.analyze(payload)
+        if isinstance(result, str) and result:
+            return result
+        if isinstance(result, dict):
+            classification = result.get("prediction") or result.get("attack_type")
+            if classification and classification != "unknown":
+                return str(classification)
+    return "Unknown"

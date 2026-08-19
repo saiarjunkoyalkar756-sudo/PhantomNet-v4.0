@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 // Dummy data for agents
+const MotionDiv = motion.div;
+
 const initialAgents = [
   {
     id: 'agent-123-abc',
@@ -124,7 +126,7 @@ const AgentsTable = () => {
   ];
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -189,7 +191,7 @@ const AgentsTable = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
       />
-    </motion.div>
+    </MotionDiv>
   );
 };
 

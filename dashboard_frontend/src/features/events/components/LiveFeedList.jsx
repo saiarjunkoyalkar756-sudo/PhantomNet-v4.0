@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';import { Terminal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const MotionDiv = motion.div;
 
 const LiveFeedList = ({ events, onEventClick }) => { // Now accepts events as a prop
   const feedRef = useRef(null);
@@ -35,13 +36,13 @@ const LiveFeedList = ({ events, onEventClick }) => { // Now accepts events as a 
         <Terminal className="text-primary mr-2 animate-pulse" size={18} />
         <span className="font-mono text-primary text-sm">LIVE EVENT FEED</span>
       </div>
-      <motion.div
+      <MotionDiv
         ref={feedRef}
         className="flex-1 overflow-y-auto custom-scrollbar p-3 font-mono text-sm"
       >
         <AnimatePresence initial={false}>
           {events.map((event) => (
-            <motion.div
+            <MotionDiv
               key={event.id}
               variants={itemVariants}
               initial="hidden"
@@ -64,10 +65,10 @@ const LiveFeedList = ({ events, onEventClick }) => { // Now accepts events as a 
                   AI Insight
                 </span>
               )}
-            </motion.div>
+            </MotionDiv>
           ))}
         </AnimatePresence>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

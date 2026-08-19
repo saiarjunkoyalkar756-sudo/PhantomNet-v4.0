@@ -6,7 +6,7 @@ import base64
 import secrets
 import asyncio
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Any
 
 from fastapi import Depends, HTTPException, status, Request
@@ -46,7 +46,7 @@ def get_password_hash(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: Any) -> bool:
     if not hashed_password:
         return False
-    
+
     # Handle string (hex) stored format, convert back to bytes
     if isinstance(hashed_password, str):
         try:
@@ -54,10 +54,10 @@ def verify_password(plain_password: str, hashed_password: Any) -> bool:
         except ValueError:
             if hasattr(hashed_password, "encode"):
                 hashed_password = hashed_password.encode()
-                
+
     if len(hashed_password) < 16:
         return False
-        
+
     salt = hashed_password[:16]
     stored_hash = hashed_password[16:]
     kdf = Scrypt(
@@ -134,7 +134,7 @@ async def calculate_anomaly_score(
         session.device_fingerprint == device_fingerprint
         for session in historical_sessions
     ):
-        score += 0.7 
+        score += 0.7
 
     # Check for new city
     if city and not any(session.city == city for session in historical_sessions):
@@ -153,9 +153,9 @@ async def create_access_token(
 ):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
 
     # Generate JTI
@@ -189,7 +189,7 @@ async def create_access_token(
     session_token = SessionToken(
         jti=jti,
         user_id=user_id,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
         expires_at=expire,
         ip=ip_address,
         user_agent=user_agent,
@@ -245,7 +245,7 @@ async def authenticate_user(
             )
             result = await db.execute(stmt)
             recovery_record = result.scalar_one_or_none()
-            
+
             if not recovery_record or not verify_recovery_code(
                 recovery_code, recovery_record.code_hash
             ):
@@ -260,7 +260,7 @@ async def authenticate_user(
     return user, None
 
 async def get_current_user(
-    request: Request, 
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     # Support both cookie and header
@@ -276,13 +276,13 @@ async def get_current_user(
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -303,7 +303,7 @@ async def get_current_user(
         stmt = select(SessionToken).where(SessionToken.jti == jti)
         result = await db.execute(stmt)
         session_record = result.scalar_one_or_none()
-        
+
         if (
             not session_record
             or not session_record.is_valid
@@ -319,11 +319,11 @@ async def get_current_user(
         )
     except (JWTError, ValueError):
         raise credentials_exception
-        
+
     user = await get_user(db, username=token_data.username)
     if user is None:
         raise credentials_exception
-        
+
     return user
 
 def has_role(required_roles: List[UserRole]):

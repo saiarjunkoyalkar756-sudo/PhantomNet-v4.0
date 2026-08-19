@@ -1,11 +1,13 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect, useRef } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { BookCopy, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FormatSwitch from '@/features/log-viewer/components/FormatSwitch';
 import ActionBar from '@/features/log-viewer/components/ActionBar';
 import LogStreamViewer from '@/features/log-viewer/components/LogStreamViewer';
+
+const MotionDiv = motion.div;
 
 const mockLogs = [
   '{"timestamp": "2023-10-27T10:00:00Z", "level": "INFO", "message": "User login successful", "user": "admin"}',
@@ -34,7 +36,7 @@ const LogViewer = () => {
         // Loop back for continuous simulation
         logIndexRef.current = 0;
         // Optionally clear logs to simulate a new session or continuous stream
-        // setLogs([]); 
+        // setLogs([]);
       }
     }, 1500); // Add a new log every 1.5 seconds
 
@@ -64,13 +66,13 @@ const LogViewer = () => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="font-sans h-full flex flex-col"
     >
-      <PageHeader 
+      <PageHeader
         title="STRUCTURED LOG VIEWER"
         subtitle="Analyze and filter raw system and event logs."
         actions={
@@ -82,13 +84,13 @@ const LogViewer = () => {
             </div>
         }
       />
-      
+
       <ActionBar onCopy={handleCopy} onExport={handleExport} onClear={handleClear} />
 
       <div className="flex-1 min-h-0 mt-4">
         <LogStreamViewer logs={logs} format={format} />
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

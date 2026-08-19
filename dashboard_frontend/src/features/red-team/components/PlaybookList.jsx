@@ -1,10 +1,12 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlayCircle, FileText, XCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StatusChip from '@/components/shared/StatusChip';
+
+const MotionDiv = motion.div;
 
 const playbookData = [
   {
@@ -58,7 +60,7 @@ const PlaybookList = ({ onRunPlaybook, onViewReport }) => {
   return (
     <div className="grid gap-4">
       {playbookData.map((playbook) => (
-        <motion.div
+        <MotionDiv
           key={playbook.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,7 +105,7 @@ const PlaybookList = ({ onRunPlaybook, onViewReport }) => {
               )}
             </div>
           </Card>
-        </motion.div>
+        </MotionDiv>
       ))}
     </div>
   );

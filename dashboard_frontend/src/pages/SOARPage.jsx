@@ -1,39 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PageHeader from '@/components/shared/PageHeader';
+import React, { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';import PageHeader from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Zap, 
-    Clock, 
-    CheckCircle2, 
-    AlertTriangle, 
-    Play, 
-    History, 
-    ShieldAlert, 
-    ShieldCheck, 
-    Cpu, 
-    ArrowRight, 
-    RefreshCw, 
-    ToggleLeft, 
-    ToggleRight, 
-    Terminal, 
+import {
+    Zap,
+    Clock,
+    CheckCircle2,
+    AlertTriangle,
+    Play,
+    History,
+    ShieldAlert,
+    ShieldCheck,
+    Cpu,
+    ArrowRight,
+    RefreshCw,
+    ToggleLeft,
+    ToggleRight,
+    Terminal,
     UserCheck,
     Search,
     AlertCircle
 } from 'lucide-react';
 import soarService from '../services/soar.service';
 
+const MotionDiv = motion.div;
+
+const FALLBACK_PLAYBOOKS = [
+    { id: 'pb-001', name: 'Ransomware Containment', description: 'Automatically disconnects the endpoint from network and takes a secure VSS shadow copy upon sensing massive write system spikes.', type: 'Active Isolation', severity: 'Critical', active: true },
+    { id: 'pb-002', name: 'C2 Threat IP Blocking', description: 'Injects dynamic iptables/firewall rules to block outgoing requests to flagged command & control servers.', type: 'Network Containment', severity: 'High', active: true },
+    { id: 'pb-003', name: 'Phishing Token Revocation', description: 'Terminates active web sessions and rotates authorization tokens of users demonstrating aberrant geographic jumps.', type: 'Session Revocation', severity: 'Medium', active: false },
+    { id: 'pb-004', name: 'AI Honeypot Redirection', description: 'Gracefully redirects suspicious port scanning activities to a synthetic decoy network container.', type: 'Intrusion Deception', severity: 'Low', active: true },
+    { id: 'pb-005', name: 'LDAP Brute Force Mitigation', description: 'Applies rigorous exponential login delays on specific directory service targets after recurrent failures.', type: 'Identity Hardening', severity: 'High', active: true },
+];
+
 const SOARPage = () => {
     const [view, setView] = useState('orchestration'); // 'orchestration' | 'library' | 'history'
     const [playbooks, setPlaybooks] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    
+
     // Interactive states
     const [pendingApprovals, setPendingApprovals] = useState([
         { id: 'app-001', playbook: 'Ransomware Containment', step: 'Isolate Host: DC-01', risk: 'Critical', requestedAt: '2m ago', target: '192.168.10.15' },
@@ -66,29 +73,28 @@ const SOARPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [executionOutput, setExecutionOutput] = useState('');
 
-    useEffect(() => {
-        fetchPlaybooks();
-    }, []);
-
-    const fetchPlaybooks = async () => {
-        setLoading(true);
-        setError(null);
+    const fetchPlaybooks = useCallback(async () => {
         try {
             const response = await soarService.getPlaybooks();
-            // Unwrap response structure if it is nested inside success/data envelope
             const list = response.data?.data || response.data || response;
-            if (Array.isArray(list)) {
-                setPlaybooks(list);
-            } else {
-                setPlaybooks(fallbackPlaybooks);
-            }
+            setPlaybooks(Array.isArray(list) ? list : FALLBACK_PLAYBOOKS);
         } catch (err) {
-            console.warn("Failed to fetch SOAR playbooks from API, using premium mock database:", err);
-            setPlaybooks(fallbackPlaybooks);
-        } finally {
-            setLoading(false);
+            console.warn("Failed to fetch SOAR playbooks from API, using fallback data:", err);
+            setPlaybooks(FALLBACK_PLAYBOOKS);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        queueMicrotask(() => {
+            if (!cancelled) {
+                void fetchPlaybooks();
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [fetchPlaybooks]);
 
     const handleApprove = (id) => {
         const approved = pendingApprovals.find(x => x.id === id);
@@ -121,9 +127,9 @@ const SOARPage = () => {
         setExecutionOutput("Initializing orchestration pipeline...\nResolving node credentials...\nConnecting to target node...\n");
 
         setTimeout(() => {
-            const p = playbooks.find(x => x.id === selectedPlaybookId) || fallbackPlaybooks.find(x => x.id === selectedPlaybookId);
+            const p = playbooks.find(x => x.id === selectedPlaybookId) || FALLBACK_PLAYBOOKS.find(x => x.id === selectedPlaybookId);
             setExecutionOutput(prev => prev + `[+] Playbook [${p?.name}] triggered successfully against target: ${targetInput}.\n[+] Command sequence initiated.\n[+] Countermeasures deployed.\n[+] Execution logged to Immutable Blockchain Ledger.\n[SUCCESS] Node isolated and stabilized.`);
-            
+
             // Add to active executions
             setActiveExecutions(prev => [
                 {
@@ -159,49 +165,31 @@ const SOARPage = () => {
         setBlockedIps(prev => prev.filter(x => x.ip !== ip));
     };
 
-    const filteredPlaybooks = playbooks.filter(p => 
-        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredPlaybooks = playbooks.filter(p =>
+        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const fallbackPlaybooks = [
-        { id: 'pb-001', name: 'Ransomware Containment', description: 'Automatically disconnects the endpoint from network and takes a secure VSS shadow copy upon sensing massive write system spikes.', type: 'Active Isolation', severity: 'Critical', active: true },
-        { id: 'pb-002', name: 'C2 Threat IP Blocking', description: 'Injects dynamic iptables/firewall rules to block outgoing requests to flagged command & control servers.', type: 'Network Containment', severity: 'High', active: true },
-        { id: 'pb-003', name: 'Phishing Token Revocation', description: 'Terminates active web sessions and rotates authorization tokens of users demonstrating aberrant geographic jumps.', type: 'Session Revocation', severity: 'Medium', active: false },
-        { id: 'pb-004', name: 'AI Honeypot Redirection', description: 'Gracefully redirects suspicious port scanning activities to a synthetic decoy network container.', type: 'Intrusion Deception', severity: 'Low', active: true },
-        { id: 'pb-005', name: 'LDAP Brute Force Mitigation', description: 'Applies rigorous exponential login delays on specific directory service targets after recurrent failures.', type: 'Identity Hardening', severity: 'High', active: true }
-    ];
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-    };
-
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: { y: 0, opacity: 1 }
-    };
-
     return (
         <div className="h-full flex flex-col space-y-6">
-            <PageHeader 
+            <PageHeader
                 title="SOAR COMMAND CENTER"
                 subtitle="High-density orchestrator automating active defense, threat mitigation, and node isolation."
                 actions={
                     <div className="flex bg-muted/40 p-1 rounded-lg border border-white/5">
-                        <button 
+                        <button
                             onClick={() => setView('orchestration')}
                             className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${view === 'orchestration' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                         >
                             ORCHESTRATION
                         </button>
-                        <button 
+                        <button
                             onClick={() => setView('library')}
                             className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${view === 'library' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                         >
-                            PLAYBOOKS ({playbooks.length || fallbackPlaybooks.length})
+                            PLAYBOOKS ({playbooks.length || FALLBACK_PLAYBOOKS.length})
                         </button>
-                        <button 
+                        <button
                             onClick={() => setView('history')}
                             className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${view === 'history' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                         >
@@ -275,17 +263,17 @@ const SOARPage = () => {
                             <CardContent className="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-3">
                                 <AnimatePresence>
                                     {pendingApprovals.length === 0 ? (
-                                        <motion.div 
+                                        <MotionDiv
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             className="h-28 flex flex-col items-center justify-center text-muted-foreground text-xs italic"
                                         >
                                             <ShieldCheck className="w-8 h-8 text-emerald-400 mb-2" />
                                             No pending human authorisations. Automated flows running autonomously.
-                                        </motion.div>
+                                        </MotionDiv>
                                     ) : (
                                         pendingApprovals.map((req) => (
-                                            <motion.div 
+                                            <MotionDiv
                                                 key={req.id}
                                                 initial={{ x: -20, opacity: 0 }}
                                                 animate={{ x: 0, opacity: 1 }}
@@ -305,22 +293,22 @@ const SOARPage = () => {
                                                     <p className="text-[8px] text-muted-foreground">{req.requestedAt}</p>
                                                 </div>
                                                 <div className="flex space-x-2">
-                                                    <Button 
-                                                        size="sm" 
+                                                    <Button
+                                                        size="sm"
                                                         onClick={() => handleReject(req.id)}
                                                         className="h-7 bg-red-950/40 hover:bg-red-950 text-red-300 border border-red-900/30 text-[10px] font-bold px-3 transition-all"
                                                     >
                                                         DENY
                                                     </Button>
-                                                    <Button 
-                                                        size="sm" 
+                                                    <Button
+                                                        size="sm"
                                                         onClick={() => handleApprove(req.id)}
                                                         className="h-7 bg-primary hover:bg-primary/95 text-primary-foreground text-[10px] font-bold px-3 shadow-[0_0_10px_rgba(139,92,246,0.3)] transition-all"
                                                     >
                                                         AUTHORIZE
                                                     </Button>
                                                 </div>
-                                            </motion.div>
+                                            </MotionDiv>
                                         ))
                                     )}
                                 </AnimatePresence>
@@ -354,7 +342,7 @@ const SOARPage = () => {
                                             </div>
                                         </div>
                                         <div className="w-full bg-[#182030] h-1 rounded-full overflow-hidden">
-                                            <motion.div 
+                                            <MotionDiv
                                                 className="h-full bg-primary shadow-[0_0_12px_rgba(139,92,246,0.8)]"
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${pb.progress}%` }}
@@ -386,7 +374,7 @@ const SOARPage = () => {
                                                 <SelectValue placeholder="Choose action..." />
                                             </SelectTrigger>
                                             <SelectContent className="bg-[#0b0e14] border-white/5 text-xs text-white">
-                                                {(playbooks.length ? playbooks : fallbackPlaybooks).map(p => (
+                                                {(playbooks.length ? playbooks : FALLBACK_PLAYBOOKS).map(p => (
                                                     <SelectItem key={p.id} value={p.id} className="focus:bg-primary/20 text-xs">
                                                         {p.name}
                                                     </SelectItem>
@@ -396,16 +384,16 @@ const SOARPage = () => {
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Target IP / Asset ID</label>
-                                        <Input 
-                                            placeholder="e.g. 192.168.1.100" 
+                                        <Input
+                                            placeholder="e.g. 192.168.1.100"
                                             value={targetInput}
                                             onChange={(e) => setTargetInput(e.target.value)}
                                             className="bg-background/50 border-white/5 text-xs text-white font-mono h-9"
                                             required
                                         />
                                     </div>
-                                    <Button 
-                                        type="submit" 
+                                    <Button
+                                        type="submit"
                                         disabled={isSubmitting}
                                         className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs h-9 flex items-center justify-center space-x-2"
                                     >
@@ -457,8 +445,8 @@ const SOARPage = () => {
                                                 <p className="text-[10px] text-muted-foreground font-mono">{block.reason}</p>
                                                 <p className="text-[8px] text-muted-foreground mt-0.5">blocked: {block.blockedAt}</p>
                                             </div>
-                                            <Button 
-                                                size="sm" 
+                                            <Button
+                                                size="sm"
                                                 variant="outline"
                                                 onClick={() => handleUnblockIp(block.ip)}
                                                 className="h-6 border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/10 text-emerald-400 text-[9px] font-bold px-2"
@@ -481,8 +469,8 @@ const SOARPage = () => {
                         <div className="flex items-center space-x-3">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-                                <Input 
-                                    placeholder="Search automation playbooks by name, vector, TTPs..." 
+                                <Input
+                                    placeholder="Search automation playbooks by name, vector, TTPs..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="bg-background/50 border-white/5 text-xs text-white pl-9 h-9"
@@ -496,7 +484,7 @@ const SOARPage = () => {
 
                     {/* Grid List */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {(searchTerm ? filteredPlaybooks : playbooks.length ? playbooks : fallbackPlaybooks).map((p) => (
+                        {(searchTerm ? filteredPlaybooks : playbooks.length ? playbooks : FALLBACK_PLAYBOOKS).map((p) => (
                             <Card key={p.id} className="glass-panel border-primary/15 hover:border-primary/45 transition-all flex flex-col">
                                 <CardHeader className="pb-3 border-b border-white/5 bg-muted/10 flex flex-row justify-between items-start">
                                     <div>

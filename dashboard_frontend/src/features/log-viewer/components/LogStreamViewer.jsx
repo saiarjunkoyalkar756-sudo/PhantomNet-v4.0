@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { AnimatePresence, motion } from 'framer-motion';import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+
+const MotionPre = motion.pre;
 
 const LogStreamViewer = ({ logs, format }) => {
   const scrollRef = useRef(null);
@@ -20,7 +21,7 @@ const LogStreamViewer = ({ logs, format }) => {
       try {
         const parsed = JSON.parse(logEntry);
         return JSON.stringify(parsed, null, 2);
-      } catch (e) {
+      } catch {
         // Not a JSON, return as is
         return logEntry;
       }
@@ -48,7 +49,7 @@ const LogStreamViewer = ({ logs, format }) => {
         <div ref={scrollRef}>
           <AnimatePresence initial={false}>
             {logs.map((log, index) => (
-              <motion.pre
+              <MotionPre
                 key={index} // Using index as key, consider unique ID for real logs
                 variants={itemVariants}
                 initial="hidden"
@@ -59,7 +60,7 @@ const LogStreamViewer = ({ logs, format }) => {
                 className={cn('whitespace-pre-wrap py-0.5', getLogLineClass(log))}
               >
                 {formatLog(log)}
-              </motion.pre>
+              </MotionPre>
             ))}
           </AnimatePresence>
         </div>

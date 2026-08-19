@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PageHeader from '@/components/shared/PageHeader';
+import { AnimatePresence, motion } from 'framer-motion';import PageHeader from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Search, 
-    Download, 
-    Filter, 
-    Calendar, 
-    ShieldAlert, 
-    Cpu, 
-    FileText, 
-    Terminal, 
+import {
+    Search,
+    Download,
+    Filter,
+    Calendar,
+    ShieldAlert,
+    Cpu,
+    FileText,
+    Terminal,
     RefreshCw,
     AlertOctagon,
     GitCommit,
@@ -23,6 +22,8 @@ import {
     Binary,
     ShieldCheck
 } from 'lucide-react';
+
+const MotionDiv = motion.div;
 
 const ForensicsPage = () => {
     const [selectedAsset, setSelectedAsset] = useState('all');
@@ -34,42 +35,42 @@ const ForensicsPage = () => {
     ]);
 
     const forensicsTimeline = [
-        { 
-            time: '2026-05-29T07:12:00Z', 
-            asset: 'Ubuntu-Web-01', 
-            severity: 'critical', 
-            ttpid: 'T1190', 
-            title: 'Initial Web Exploit', 
+        {
+            time: '2026-05-29T07:12:00Z',
+            asset: 'Ubuntu-Web-01',
+            severity: 'critical',
+            ttpid: 'T1190',
+            title: 'Initial Web Exploit',
             description: 'Remote Code Execution detected on DMZ Nginx server. Suspicious shell spawned under www-data user context.',
             evidence: 'pcap_capture_stream_009.pcap',
             category: 'Initial Access'
         },
-        { 
-            time: '2026-05-29T07:15:30Z', 
-            asset: 'Ubuntu-Web-01', 
-            severity: 'high', 
-            ttpid: 'T1059', 
-            title: 'Privilege Escalation Exploit', 
+        {
+            time: '2026-05-29T07:15:30Z',
+            asset: 'Ubuntu-Web-01',
+            severity: 'high',
+            ttpid: 'T1059',
+            title: 'Privilege Escalation Exploit',
             description: 'Local buffer overflow exploit run on sudo permissions. www-data context escalated to root access.',
             evidence: 'bash_history_audit_log.txt',
             category: 'Execution'
         },
-        { 
-            time: '2026-05-29T07:22:15Z', 
-            asset: 'Active-Directory-DC', 
-            severity: 'critical', 
-            ttpid: 'T1078', 
-            title: 'Lateral Movement Trigger', 
+        {
+            time: '2026-05-29T07:22:15Z',
+            asset: 'Active-Directory-DC',
+            severity: 'critical',
+            ttpid: 'T1078',
+            title: 'Lateral Movement Trigger',
             description: 'Compromised admin credentials used to execute remote PowerShell calls to the corporate Domain Controller.',
             evidence: 'event_log_security_4624.evtx',
             category: 'Lateral Movement'
         },
-        { 
-            time: '2026-05-29T07:38:00Z', 
-            asset: 'SQL-DB-02', 
-            severity: 'critical', 
-            ttpid: 'T1041', 
-            title: 'Data Exfiltration Over DNS', 
+        {
+            time: '2026-05-29T07:38:00Z',
+            asset: 'SQL-DB-02',
+            severity: 'critical',
+            ttpid: 'T1041',
+            title: 'Data Exfiltration Over DNS',
             description: 'Large-scale compressed DB tables staged and exfiltrated using recursive DNS queries to suspicious external domain.',
             evidence: 'dns_query_vault_901.log',
             category: 'Exfiltration'
@@ -107,20 +108,20 @@ const ForensicsPage = () => {
     const filteredTimeline = forensicsTimeline.filter(item => {
         const matchesAsset = selectedAsset === 'all' || item.asset === selectedAsset;
         const matchesSeverity = selectedSeverity === 'all' || item.severity === selectedSeverity;
-        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              item.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                               item.ttpid.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesAsset && matchesSeverity && matchesSearch;
     });
 
     return (
         <div className="h-full flex flex-col space-y-6">
-            <PageHeader 
+            <PageHeader
                 title="FORENSIC COMPOSER & EVIDENCE VAULT"
                 subtitle="Live volatile memory dumps, system journal parsing, and timeline reconstruction tools."
                 actions={
                     <div className="flex space-x-2">
-                        <Button 
+                        <Button
                             onClick={() => launchForensicJob('Gather event log traces', 'SQL-DB-02')}
                             className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs h-9 flex items-center justify-center space-x-2 shadow-[0_0_15px_rgba(139,92,246,0.4)]"
                         >
@@ -195,7 +196,7 @@ const ForensicsPage = () => {
                                         </Badge>
                                     </div>
                                     <div className="w-full bg-[#182030] h-1 rounded-full overflow-hidden">
-                                        <motion.div 
+                                        <MotionDiv
                                             className="h-full bg-primary"
                                             initial={{ width: 0 }}
                                             animate={{ width: `${job.progress || 100}%` }}
@@ -258,8 +259,8 @@ const ForensicsPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
                             <div className="relative">
                                 <Search className="absolute left-2 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
-                                <Input 
-                                    placeholder="Filter timeline by TTP, text..." 
+                                <Input
+                                    placeholder="Filter timeline by TTP, text..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="bg-background/50 border-white/5 text-[9px] text-white pl-8 h-8 font-mono"
@@ -302,7 +303,7 @@ const ForensicsPage = () => {
                                         <span className="absolute -left-[30px] top-1 bg-background border border-primary w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-lg">
                                             <GitCommit size={10} className="text-primary animate-pulse" />
                                         </span>
-                                        
+
                                         <div className="flex flex-wrap items-center justify-between gap-2">
                                             <div className="flex items-center space-x-2">
                                                 <Badge className="bg-primary/20 text-primary border-primary/30 font-mono text-[8px] uppercase">

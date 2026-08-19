@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 from typing import Union, Dict, Any
 
 from ..iam_service.auth_methods import get_current_user, User, UserRole, has_role
-from ..telemetry_ingest import TelemetryIngestService
-from ..services import get_telemetry_ingest_service
+from ..shared.services import get_telemetry_ingest_service
+from ..shared.telemetry_ingest import TelemetryIngestService
 
 router = APIRouter(prefix="/api/telemetry", tags=["Telemetry"])
 

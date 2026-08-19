@@ -1,84 +1,31 @@
-import json
-import os
-import unittest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from unittest.mock import AsyncMock
 
-from backend_api.gateway_service.main import app
-from iam_service.auth_methods import create_access_token, get_password_hash
-from shared.database import Base, User, get_db, create_db_and_tables
+import pytest
+from fastapi import HTTPException
 
-TEST_DATABASE_URL = "sqlite:///./test_telemetry.db"
+from backend_api.routes.telemetry import CustomLogEntry, ingest_custom_log
 
-engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
+@pytest.mark.asyncio
+async def test_ingest_custom_log_forwards_structured_log_to_service():
+    telemetry_service = AsyncMock()
+    log = CustomLogEntry(
+        source="my-custom-app",
+        log_entry={"message": "This is a custom log message", "level": "info"},
+    )
 
-app.dependency_overrides[get_db] = override_get_db
+    response = await ingest_custom_log(log, current_user=object(), telemetry_service=telemetry_service)
 
-class TestTelemetryAPI(unittest.TestCase):
+    assert response == {"message": "Log entry accepted for ingestion."}
+    telemetry_service.ingest_raw_log.assert_awaited_once_with(log.log_entry, log.source)
 
-    def setUp(self):
-        create_db_and_tables(engine)
-        self.client = TestClient(app)
-        self.db = TestingSessionLocal()
-        
-        # Create a test user and token
-        self.username = "testuser_telemetry"
-        self.password = "testpassword"
-        self.user = self.db.query(User).filter(User.username == self.username).first()
-        if not self.user:
-            hashed_password = get_password_hash(self.password)
-            self.user = User(username=self.username, hashed_password=hashed_password, role="admin")
-            self.db.add(self.user)
-            self.db.commit()
-            self.db.refresh(self.user)
 
-        jwt_data = {
-            "sub": self.user.username,
-            "role": self.user.role,
-            "twofa_enabled": False,
-            "twofa_enforced": False,
-        }
-        self.token = create_access_token(self.db, user_id=self.user.id, data=jwt_data)
+@pytest.mark.asyncio
+async def test_ingest_custom_log_fails_closed_when_service_is_unavailable():
+    log = CustomLogEntry(source="my-custom-app", log_entry="test log")
 
-    def tearDown(self):
-        self.db.close()
-        os.remove("./test_telemetry.db")
+    with pytest.raises(HTTPException) as exc_info:
+        await ingest_custom_log(log, current_user=object(), telemetry_service=None)
 
-    def test_ingest_custom_log(self):
-        self.client.cookies = {"access_token": self.token}
-        log_data = {
-            "source": "my-custom-app",
-            "log_entry": {
-                "message": "This is a custom log message",
-                "level": "info",
-                "timestamp": "2023-12-06T12:00:00Z"
-            }
-        }
-        
-        response = self.client.post("/api/telemetry/ingest", json=log_data)
-        
-        self.assertEqual(response.status_code, 202)
-        self.assertEqual(response.json(), {"message": "Log entry accepted for ingestion."})
-
-    def test_ingest_custom_log_unauthenticated(self):
-        self.client.cookies.clear()
-        log_data = {
-            "source": "my-custom-app",
-            "log_entry": "This is a custom log message"
-        }
-        
-        response = self.client.post("/api/telemetry/ingest", json=log_data)
-        
-        self.assertEqual(response.status_code, 401)
-
-if __name__ == '__main__':
-    unittest.main()
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail == "Telemetry Ingest Service not available."

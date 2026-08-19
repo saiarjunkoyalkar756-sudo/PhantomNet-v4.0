@@ -1,94 +1,80 @@
-import pytest
-from datetime import datetime, timedelta
-import jwt
+from datetime import datetime, timedelta, timezone
 import uuid
+
+import jwt
+import pytest
 from fastapi import HTTPException
 
-from .security_utils import (
+from backend_api.shared.jti_store import InMemoryJtiStore
+from backend_api.shared.security_utils import (
     create_inter_node_jwt,
-    verify_inter_node_jwt,
     generate_key_pair,
-    used_jtis,
+    verify_inter_node_jwt,
 )
 
 
-@pytest.fixture(autouse=True)
-def clear_used_jtis():
-    used_jtis.clear()
+@pytest.fixture
+def jti_store() -> InMemoryJtiStore:
+    """Give each security test an isolated replay-protection store."""
+    return InMemoryJtiStore()
 
 
-def test_create_and_verify_jwt():
+def test_create_and_verify_jwt(jti_store: InMemoryJtiStore):
     private_key, public_key = generate_key_pair()
-    agent_id = 1
-    cluster_id = "test_cluster"
-    scope = "agent:heartbeat"
+    token = create_inter_node_jwt(1, "test_cluster", "agent:heartbeat", private_key)
 
-    token = create_inter_node_jwt(agent_id, cluster_id, scope, private_key)
-    decoded_payload = verify_inter_node_jwt(token, public_key, cluster_id)
+    decoded_payload = verify_inter_node_jwt(token, public_key, "test_cluster", jti_store=jti_store)
 
-    assert decoded_payload["iss"] == str(agent_id)
-    assert decoded_payload["sub"] == str(agent_id)
-    assert decoded_payload["aud"] == cluster_id
-    assert decoded_payload["scope"] == scope
-    assert "jti" in decoded_payload
+    assert decoded_payload["iss"] == "1"
+    assert decoded_payload["sub"] == "1"
+    assert decoded_payload["aud"] == "test_cluster"
+    assert decoded_payload["scope"] == "agent:heartbeat"
+    assert decoded_payload["jti"]
 
 
-def test_verify_jwt_bad_signature():
-    private_key, public_key = generate_key_pair()
+def test_verify_jwt_rejects_bad_signature(jti_store: InMemoryJtiStore):
+    private_key, _ = generate_key_pair()
     _, wrong_public_key = generate_key_pair()
-    agent_id = 1
-    cluster_id = "test_cluster"
-    scope = "agent:heartbeat"
+    token = create_inter_node_jwt(1, "test_cluster", "agent:heartbeat", private_key)
 
-    token = create_inter_node_jwt(agent_id, cluster_id, scope, private_key)
-
-    with pytest.raises(HTTPException):
-        verify_inter_node_jwt(token, wrong_public_key, cluster_id)
+    with pytest.raises(HTTPException, match="Invalid JWT"):
+        verify_inter_node_jwt(token, wrong_public_key, "test_cluster", jti_store=jti_store)
 
 
-def test_verify_jwt_wrong_audience():
+def test_verify_jwt_rejects_wrong_audience(jti_store: InMemoryJtiStore):
     private_key, public_key = generate_key_pair()
-    agent_id = 1
-    cluster_id = "test_cluster"
-    scope = "agent:heartbeat"
+    token = create_inter_node_jwt(1, "test_cluster", "agent:heartbeat", private_key)
 
-    token = create_inter_node_jwt(agent_id, cluster_id, scope, private_key)
-
-    with pytest.raises(HTTPException):
-        verify_inter_node_jwt(token, public_key, "wrong_cluster")
+    with pytest.raises(HTTPException, match="Invalid audience"):
+        verify_inter_node_jwt(token, public_key, "wrong_cluster", jti_store=jti_store)
 
 
-def test_verify_jwt_expired_token():
+def test_verify_jwt_rejects_expired_token(jti_store: InMemoryJtiStore):
     private_key, public_key = generate_key_pair()
-    agent_id = 1
-    cluster_id = "test_cluster"
-    scope = "agent:heartbeat"
+    now = datetime.now(timezone.utc)
+    expired_token = jwt.encode(
+        {
+            "iss": "1",
+            "sub": "1",
+            "aud": "test_cluster",
+            "iat": now - timedelta(minutes=5),
+            "exp": now - timedelta(minutes=1),
+            "jti": str(uuid.uuid4()),
+            "scope": "agent:heartbeat",
+        },
+        private_key,
+        algorithm="RS256",
+    )
 
-    # Create an expired token
-    now = datetime.utcnow()
-    payload = {
-        "iss": str(agent_id),
-        "sub": str(agent_id),
-        "aud": cluster_id,
-        "iat": now - timedelta(minutes=5),
-        "exp": now - timedelta(minutes=1),  # Expired
-        "jti": str(uuid.uuid4()),
-        "scope": scope,
-    }
-    expired_token = jwt.encode(payload, private_key, algorithm="RS256")
-
-    with pytest.raises(HTTPException):
-        verify_inter_node_jwt(expired_token, public_key, cluster_id)
+    with pytest.raises(HTTPException, match="JWT has expired"):
+        verify_inter_node_jwt(expired_token, public_key, "test_cluster", jti_store=jti_store)
 
 
-def test_verify_jwt_reused_jti():
+def test_verify_jwt_rejects_reused_jti(jti_store: InMemoryJtiStore):
     private_key, public_key = generate_key_pair()
-    agent_id = 1
-    cluster_id = "test_cluster"
-    scope = "agent:heartbeat"
+    token = create_inter_node_jwt(1, "test_cluster", "agent:heartbeat", private_key)
 
-    token = create_inter_node_jwt(agent_id, cluster_id, scope, private_key)
-    verify_inter_node_jwt(token, public_key, cluster_id)  # First use
+    verify_inter_node_jwt(token, public_key, "test_cluster", jti_store=jti_store)
 
-    with pytest.raises(HTTPException):
-        verify_inter_node_jwt(token, public_key, cluster_id)  # Attempt to reuse
+    with pytest.raises(HTTPException, match="has been used already"):
+        verify_inter_node_jwt(token, public_key, "test_cluster", jti_store=jti_store)

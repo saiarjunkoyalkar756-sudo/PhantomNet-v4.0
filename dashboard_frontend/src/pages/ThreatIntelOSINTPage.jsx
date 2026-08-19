@@ -1,10 +1,12 @@
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Globe, Search, AlertTriangle, ListFilter } from 'lucide-react';
 import SearchBar from '@/features/threat-intel/components/SearchBar';
 import IntelCard from '@/features/threat-intel/components/IntelCards';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const MotionDiv = motion.div;
 
 const ThreatIntelOSINTPage = () => {
   const [ipQueryResult, setIpQueryResult] = useState(null);
@@ -25,17 +27,17 @@ const ThreatIntelOSINTPage = () => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="font-sans h-full flex flex-col"
     >
-      <PageHeader 
+      <PageHeader
         title="THREAT INTEL OSINT HUB"
         subtitle="Open-Source Intelligence and Threat Data Aggregation."
       />
-      
+
       <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
         {/* Left Column - IP Lookup & GeoIP */}
         <div className="flex-1 flex flex-col gap-6">
@@ -49,7 +51,7 @@ const ThreatIntelOSINTPage = () => {
             <CardContent className="flex flex-col items-center">
               <SearchBar onSearch={handleIpSearch} />
               {ipQueryResult && (
-                <motion.div
+                <MotionDiv
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
@@ -59,11 +61,11 @@ const ThreatIntelOSINTPage = () => {
                   <IntelCard title="Malicious Reports" value={ipQueryResult.maliciousReports} color={ipQueryResult.maliciousReports > 0 ? 'destructive' : 'primary'} />
                   <IntelCard title="Country" value={ipQueryResult.country} icon={Globe} />
                   <IntelCard title="ISP" value={ipQueryResult.isp} />
-                </motion.div>
+                </MotionDiv>
               )}
             </CardContent>
           </Card>
-          
+
           <Card className="flex-1">
             <CardHeader>
               <CardTitle className="flex items-center text-primary">
@@ -104,7 +106,7 @@ const ThreatIntelOSINTPage = () => {
           </Card>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

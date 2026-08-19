@@ -1,11 +1,13 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { ShieldCheck, Cpu, AlertCircle, Settings, XCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
+
+const MotionDiv = motion.div;
 
 const SelfHealingConsolePage = () => {
   const [agentHealth, setAgentHealth] = useState(null);
@@ -27,9 +29,9 @@ const SelfHealingConsolePage = () => {
       // For now, it will fetch from a mock endpoint or a single agent's data.
       // In a real scenario, you'd select an agent from a list.
       const agentId = 1; // Example agent ID
-      const response = await fetch(`/api/agents/${agentId}`); 
+      const response = await fetch(`/api/agents/${agentId}`);
       if (!response.ok) throw new Error((await response.json()).detail || 'Failed to fetch agent status');
-      
+
       const data = await response.json();
       setAgentHealth({
         status: data.status,
@@ -66,7 +68,7 @@ const SelfHealingConsolePage = () => {
   }
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -164,7 +166,7 @@ const SelfHealingConsolePage = () => {
           No agent data available. Please ensure an agent is running and reporting.
         </div>
       )}
-    </motion.div>
+    </MotionDiv>
   );
 };
 

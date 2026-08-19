@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';import { Link } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import api from '@/services/api';
+
+const MotionDiv = motion.div;
 
 const forgotPasswordSchema = z.object({
   username: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -41,7 +42,7 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground p-4">
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -54,7 +55,7 @@ const ForgotPasswordPage = () => {
 
         <AnimatePresence>
             {apiError && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -62,10 +63,10 @@ const ForgotPasswordPage = () => {
                     role="alert"
                 >
                     {apiError}
-                </motion.div>
+                </MotionDiv>
             )}
             {successMessage && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -73,7 +74,7 @@ const ForgotPasswordPage = () => {
                     role="alert"
                 >
                     {successMessage}
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
 
@@ -83,7 +84,7 @@ const ForgotPasswordPage = () => {
             <Input id="username" type="email" {...register('username')} placeholder="user@phantom.net" />
             {errors.username && <p className="text-destructive text-sm mt-1">{errors.username.message}</p>}
           </div>
-          
+
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Request Reset Link'}
           </Button>
@@ -94,7 +95,7 @@ const ForgotPasswordPage = () => {
             Login
           </Link>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

@@ -1,4 +1,7 @@
+/* global module, require, __dirname */
+
 const { override, addPostcssPlugins } = require('customize-cra');
+
 const path = require('path');
 
 module.exports = override(

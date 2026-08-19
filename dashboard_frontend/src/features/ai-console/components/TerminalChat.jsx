@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';import { Send, Bot, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import copilotService from '@/services/copilot.service';
+
+const MotionDiv = motion.div;
 
 const TerminalChat = () => {
   const [messages, setMessages] = useState([
@@ -32,6 +33,7 @@ const TerminalChat = () => {
       const aiResponse = { id: Date.now() + 1, sender: 'ai', text: response.data.explanation };
       setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {
+      console.error("SOC copilot request failed:", error);
       const errorMessage = { id: Date.now() + 1, sender: 'ai', text: "Error getting response from AI. Please try again." };
       setMessages((prev) => [...prev, errorMessage]);
     }
@@ -49,7 +51,7 @@ const TerminalChat = () => {
         <ScrollArea className="h-full p-4">
           <AnimatePresence>
             {messages.map((msg) => (
-              <motion.div
+              <MotionDiv
                 key={msg.id}
                 layout
                 initial="hidden"
@@ -69,7 +71,7 @@ const TerminalChat = () => {
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                 </div>
                 {msg.sender === 'user' && <User className="w-6 h-6 ml-3 text-text-secondary flex-shrink-0" />}
-              </motion.div>
+              </MotionDiv>
             ))}
           </AnimatePresence>
           <div ref={messagesEndRef} />

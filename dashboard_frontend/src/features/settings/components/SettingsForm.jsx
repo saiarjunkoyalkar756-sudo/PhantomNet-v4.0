@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ToggleSwitch from './ToggleSwitch';
 import SliderControl from './SliderControl';
 import { Button } from '@/components/ui/button';
 import { Save, AlertTriangle } from 'lucide-react';
+
+const MotionDiv = motion.div;
 
 const SettingsForm = () => {
   const [autoDefense, setAutoDefense] = useState(true);
@@ -33,7 +35,7 @@ const SettingsForm = () => {
           checked={autoDefense}
           onCheckedChange={setAutoDefense}
         />
-        
+
         <SliderControl
           id="threat-scoring"
           label="Threat Scoring Sensitivity"
@@ -62,11 +64,11 @@ const SettingsForm = () => {
             </select>
         </div>
 
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="mt-4">
+        <MotionDiv whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="mt-4">
           <Button onClick={handleSave} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
             <Save className="w-4 h-4 mr-2" /> SAVE SETTINGS
           </Button>
-        </motion.div>
+        </MotionDiv>
       </CardContent>
     </Card>
   );

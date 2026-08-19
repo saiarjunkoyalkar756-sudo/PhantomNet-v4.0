@@ -1,6 +1,6 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Briefcase, PlusCircle, FileText, User, Play, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'react-toastify';
+
+const MotionDiv = motion.div;
 
 const CaseManagementPage = () => {
   const [cases, setCases] = useState([]);
@@ -133,7 +135,7 @@ const CaseManagementPage = () => {
 
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -231,7 +233,7 @@ const CaseManagementPage = () => {
                             <p><strong>Assigned To:</strong> {selectedCase.assigned_to || 'Unassigned'}</p>
                             <p><strong>Created At:</strong> {new Date(selectedCase.created_at).toLocaleString()}</p>
                             <p><strong>Updated At:</strong> {new Date(selectedCase.updated_at).toLocaleString()}</p>
-                            
+
                             <h4 className="font-semibold mt-2">Update Case</h4>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
@@ -313,7 +315,7 @@ const CaseManagementPage = () => {
           </Table>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

@@ -1,19 +1,21 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Puzzle, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MarketplaceGrid from '@/features/marketplace/components/MarketplaceGrid';
 
+const MotionDiv = motion.div;
+
 const Marketplace = () => {
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="font-sans h-full flex flex-col"
     >
-      <PageHeader 
+      <PageHeader
         title="PLUGIN & AI MARKETPLACE"
         subtitle="Discover and manage powerful extensions and AI personalities for PhantomNet."
         actions={
@@ -26,7 +28,7 @@ const Marketplace = () => {
       <div className="flex-1 min-h-0">
         <MarketplaceGrid />
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

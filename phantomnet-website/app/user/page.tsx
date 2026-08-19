@@ -3,24 +3,28 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Shield, 
-  Terminal, 
-  Cpu, 
-  Key, 
-  Wifi, 
-  RefreshCw, 
-  CheckCircle, 
-  AlertTriangle, 
-  User, 
-  Activity, 
-  Copy, 
-  Lock, 
+import {
+  Shield,
+  Terminal,
+  Cpu,
+  Key,
+  Wifi,
+  RefreshCw,
+  CheckCircle,
+  AlertTriangle,
+  User,
+  Activity,
+  Copy,
+  Lock,
   Unlock,
-  AlertCircle
 } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8000'; // Unified main.py stack port
+
+type Asset = { criticality?: number };
+type Honeypot = { status?: string };
+type CryptoPosture = { status: string; protocol: string; bits_of_security: number };
+type CryptoAudit = Record<string, CryptoPosture>;
 
 // Simulated telemetry events
 const INITIAL_LOGS = [
@@ -36,17 +40,15 @@ export default function UserPortal() {
   const [honeypotsActive, setHoneypotsActive] = useState(true);
   const [securityToken, setSecurityToken] = useState('pn_tok_8f9a2e3b5d1c470a92f8b5...');
   const [isCopied, setIsCopied] = useState(false);
-  const [cryptoAgility, setCryptoAgility] = useState<any>(null);
-  
+  const [cryptoAgility, setCryptoAgility] = useState<CryptoAudit | null>(null);
+
   // Load states
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(false);
-  const [isPostureLoading, setIsPostureLoading] = useState(false);
   const [isHoneypotLoading, setIsHoneypotLoading] = useState(false);
   const [userToken, setUserToken] = useState('');
 
   // Fetch real posture score from vulnerability service
   const fetchDevicePosture = async () => {
-    setIsPostureLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/vulnerability/vulnerability-management/assets`);
       if (res.ok) {
@@ -55,7 +57,7 @@ export default function UserPortal() {
         const list = data.data || data;
         if (Array.isArray(list) && list.length > 0) {
           // Compute average posture criticality score
-          const avgCriticality = list.reduce((acc: number, item: any) => acc + (item.criticality || 50), 0) / list.length;
+          const avgCriticality = (list as Asset[]).reduce((acc, item) => acc + (item.criticality || 50), 0) / list.length;
           setPostureScore(Math.floor(100 - (avgCriticality / 4))); // map risk to posture
         } else {
           setPostureScore(94);
@@ -64,9 +66,8 @@ export default function UserPortal() {
         throw new Error();
       }
     } catch (err) {
-      setPostureScore(94); // Premium mock fallback
-    } finally {
-      setIsPostureLoading(false);
+      console.warn("Device posture service is unavailable; using fallback posture score.", err);
+      setPostureScore(94);
     }
   };
 
@@ -78,11 +79,11 @@ export default function UserPortal() {
         const data = await res.json();
         const list = data.data || data;
         if (Array.isArray(list)) {
-          setHoneypotsActive(list.some((h: any) => h.status === 'running'));
+          setHoneypotsActive((list as Honeypot[]).some((honeypot) => honeypot.status === 'running'));
         }
       }
     } catch (err) {
-      // Mock active status intact on local grid
+      console.warn("Honeypot status service is unavailable; retaining the current local status.", err);
     }
   };
 
@@ -103,11 +104,11 @@ export default function UserPortal() {
         },
         body
       });
-      
+
       setHoneypotsActive(targetState);
       logEvent('SECURITY', 'HONEYPOT-SERVICE', `${targetState ? 'Activated' : 'Suspended'} dynamic SMB decoy honeypot interfaces`);
     } catch (err) {
-      // Simulated fallback toggle
+      console.warn("Honeypot toggle request failed; applying the local fallback state.", err);
       setHoneypotsActive(targetState);
       logEvent('SECURITY', 'HONEYPOT-SERVICE', `${targetState ? 'Activated (simulated)' : 'Suspended (simulated)'} dynamic SMB decoy honeypot interfaces`);
     } finally {
@@ -127,7 +128,7 @@ export default function UserPortal() {
         throw new Error();
       }
     } catch (err) {
-      // Simulated post-quantum cryptographic status fallback
+      console.warn("Crypto agility service is unavailable; using fallback audit data.", err);
       setCryptoAgility({
         gateway: { status: "SECURE", protocol: "Kyber-1024-Post-Quantum", bits_of_security: 256 },
         iam_service: { status: "VULNERABLE", protocol: "RSA-4096 (Shor-Vulnerable)", bits_of_security: 128 },
@@ -217,13 +218,13 @@ export default function UserPortal() {
 
         {/* Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Column 1 & 2: Main Telemetry */}
           <div className="lg:col-span-2 space-y-8">
-            
+
             {/* Row 1: Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
+
               {/* Posture Card */}
               <div className="bg-pn-dark-light/55 border border-pn-border p-6 rounded-xl relative overflow-hidden flex flex-col justify-between h-48">
                 <div>
@@ -251,12 +252,12 @@ export default function UserPortal() {
                     <div className="p-2 bg-pn-electric-purple/10 rounded-lg text-pn-electric-purple">
                       <Wifi size={20} />
                     </div>
-                    <button 
+                    <button
                       onClick={handleToggleHoneypot}
                       disabled={isHoneypotLoading}
                       className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded border transition-all duration-300 ${
-                        honeypotsActive 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' 
+                        honeypotsActive
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
                           : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
                       }`}
                     >
@@ -282,7 +283,7 @@ export default function UserPortal() {
                     <div className="p-2 bg-pn-neon-blue/10 rounded-lg text-pn-neon-blue">
                       <Key size={20} />
                     </div>
-                    <button 
+                    <button
                       onClick={generateNewToken}
                       className="p-1 hover:bg-pn-border rounded text-pn-text-muted hover:text-pn-neon-blue transition-all"
                       title="Regenerate Token"
@@ -327,16 +328,16 @@ export default function UserPortal() {
                       transition={{ duration: 0.3 }}
                       className="p-3 bg-pn-dark-blue/85 border-l-2 rounded-r border-pn-border hover:border-pn-neon-blue hover:bg-pn-dark-blue transition-all duration-300 flex items-start justify-between gap-4"
                       style={{
-                        borderLeftColor: 
-                          log.type === 'SECURITY' ? '#ef4444' : 
+                        borderLeftColor:
+                          log.type === 'SECURITY' ? '#ef4444' :
                           log.type === 'WARNING' ? '#f59e0b' : '#00F0FF'
                       }}
                     >
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
                           <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                            log.type === 'SECURITY' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
-                            log.type === 'WARNING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 
+                            log.type === 'SECURITY' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                            log.type === 'WARNING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
                             'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
                           }`}>
                             {log.type}
@@ -358,14 +359,14 @@ export default function UserPortal() {
           <div className="space-y-8">
             <div className="bg-pn-dark-light/55 border border-pn-border rounded-xl p-6 relative overflow-hidden flex flex-col h-[520px]">
               <div className="absolute top-0 right-0 w-24 h-24 bg-[radial-gradient(circle_at_center,rgba(138,43,226,0.1),transparent_70%)] pointer-events-none" />
-              
+
               <div className="flex justify-between items-center mb-6 pb-3 border-b border-pn-border">
                 <div className="flex items-center gap-2">
                   <Cpu className="text-pn-electric-purple animate-pulse" size={20} />
                   <h3 className="text-base font-bold font-heading text-pn-heading">Crypto-Agility Audit</h3>
                 </div>
-                <button 
-                  onClick={fetchCryptoAgility} 
+                <button
+                  onClick={fetchCryptoAgility}
                   className={`text-pn-text-muted hover:text-pn-neon-blue transition-colors ${isLoadingCrypto ? 'animate-spin' : ''}`}
                   disabled={isLoadingCrypto}
                 >
@@ -383,8 +384,8 @@ export default function UserPortal() {
                         <div className="flex justify-between items-center text-[10px]">
                           <span className="font-semibold capitalize text-pn-text-muted">{layer.replace('_', ' ')}</span>
                           <span className={`flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded border ${
-                            isSecure 
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                            isSecure
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                           }`}>
                             {isSecure ? <Lock size={8} /> : <Unlock size={8} />}

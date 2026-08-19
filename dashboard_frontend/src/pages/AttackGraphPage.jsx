@@ -1,25 +1,29 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PageHeader from '@/components/shared/PageHeader';
+import { AnimatePresence, motion } from 'framer-motion';import PageHeader from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-    GitGraph, 
-    ZoomIn, 
-    ZoomOut, 
-    ShieldAlert, 
-    Share2, 
-    Zap, 
-    Target, 
-    Terminal, 
-    CheckCircle2, 
-    ShieldCheck, 
+import {
+    GitGraph,
+    ZoomIn,
+    ZoomOut,
+    ShieldAlert,
+    Share2,
+    Zap,
+    Target,
+    Terminal,
+    CheckCircle2,
+    ShieldCheck,
     HelpCircle,
     Activity,
     Lock,
     Link as LinkIcon
 } from 'lucide-react';
+
+const MotionCircle = motion.circle;
+const MotionDiv = motion.div;
+const MotionG = motion.g;
+const MotionLine = motion.line;
 
 const AttackGraphPage = () => {
     const [selectedNode, setSelectedNode] = useState(null);
@@ -58,7 +62,7 @@ const AttackGraphPage = () => {
     const triggerNodeIsolation = (nodeId) => {
         const n = nodes.find(x => x.id === nodeId);
         setIsolationResult(`[+] Deploying agent countermeasure to host: ${n?.label} [${n?.ip}]...\n[+] Closing TCP sockets...\n[+] Applying localized IPTABLES block...\n[+] Containment complete. Node ISOLATED.`);
-        
+
         // Remove isolation violation alerts related to this host
         setSegmentationViolations(prev => prev.filter(x => x.source !== n?.label));
     };
@@ -74,7 +78,7 @@ const AttackGraphPage = () => {
 
     return (
         <div className="h-full flex flex-col space-y-6">
-            <PageHeader 
+            <PageHeader
                 title="NEO4J LATERAL MOVEMENT MAPPING"
                 subtitle="Visual correlation of multi-stage attack paths, lateral jumps, and asset blast radius."
                 actions={
@@ -90,7 +94,7 @@ const AttackGraphPage = () => {
                 {/* SVG Graph Canvas */}
                 <Card className="lg:col-span-8 glass-panel border-primary/20 overflow-hidden relative flex flex-col min-h-[480px]">
                     <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
-                    
+
                     <CardHeader className="pb-3 border-b border-white/5 bg-muted/10 flex flex-row justify-between items-center z-10">
                         <div>
                             <CardTitle className="text-xs uppercase tracking-widest text-white flex items-center">
@@ -107,7 +111,7 @@ const AttackGraphPage = () => {
                             </Button>
                         </div>
                     </CardHeader>
-                    
+
                     <CardContent className="flex-1 p-0 relative flex items-center justify-center bg-black/40">
                         <svg viewBox="0 0 800 400" className="w-full h-auto max-h-[380px] p-6">
                             <defs>
@@ -129,16 +133,16 @@ const AttackGraphPage = () => {
                                 return (
                                     <g key={`link-${idx}`}>
                                         {/* Background glow path */}
-                                        <line 
+                                        <line
                                             x1={fromNode.x} y1={fromNode.y}
                                             x2={toNode.x} y2={toNode.y}
                                             stroke={isCritical ? '#ef4444' : '#8b5cf6'}
                                             strokeWidth={isCritical ? '4' : '2'}
                                             className="opacity-15 blur-sm"
                                         />
-                                        
+
                                         {/* Core path line */}
-                                        <motion.line
+                                        <MotionLine
                                             x1={fromNode.x} y1={fromNode.y}
                                             x2={toNode.x} y2={toNode.y}
                                             stroke={isCritical ? '#ef4444' : '#8b5cf6'}
@@ -151,7 +155,7 @@ const AttackGraphPage = () => {
                                         />
 
                                         {/* Animated Alert Pulse */}
-                                        <motion.circle 
+                                        <MotionCircle
                                             r="4.5"
                                             fill={isCritical ? '#ef4444' : '#8b5cf6'}
                                             className="shadow-lg"
@@ -172,7 +176,7 @@ const AttackGraphPage = () => {
                                 const isTarget = node.status === 'crown_jewel';
 
                                 return (
-                                    <motion.g 
+                                    <MotionG
                                         key={node.id}
                                         onClick={() => handleNodeClick(node)}
                                         className="cursor-pointer group"
@@ -182,7 +186,7 @@ const AttackGraphPage = () => {
                                     >
                                         {/* Pulse Halo for Active/Threatened Nodes */}
                                         {(isActive || isCompromised || node.status === 'threatened') && (
-                                            <motion.circle 
+                                            <MotionCircle
                                                 cx={node.x} cy={node.y} r="28"
                                                 fill="none"
                                                 stroke={isCompromised ? '#ef4444' : isTarget ? '#eab308' : '#8b5cf6'}
@@ -193,7 +197,7 @@ const AttackGraphPage = () => {
                                         )}
 
                                         {/* Core Circle */}
-                                        <circle 
+                                        <circle
                                             cx={node.x} cy={node.y} r="20"
                                             className={`stroke-[2.5] fill-[#0d121f] transition-all group-hover:stroke-[3.5] ${getStatusColor(node.status)}`}
                                         />
@@ -210,7 +214,7 @@ const AttackGraphPage = () => {
                                         </g>
 
                                         {/* Node Label Text */}
-                                        <text 
+                                        <text
                                             x={node.x} y={node.y + 36}
                                             textAnchor="middle"
                                             className={`text-[9px] font-black tracking-tighter uppercase font-mono ${
@@ -220,14 +224,14 @@ const AttackGraphPage = () => {
                                             {node.label}
                                         </text>
 
-                                        <text 
+                                        <text
                                             x={node.x} y={node.y + 45}
                                             textAnchor="middle"
                                             className="fill-muted-foreground text-[8px] font-mono"
                                         >
                                             {node.ip}
                                         </text>
-                                    </motion.g>
+                                    </MotionG>
                                 );
                             })}
                         </svg>
@@ -250,7 +254,7 @@ const AttackGraphPage = () => {
                                 <span className="text-2xl font-black font-mono text-red-500">82% RISK</span>
                             </div>
                             <div className="w-full bg-[#182030] h-1.5 rounded-full overflow-hidden">
-                                <motion.div 
+                                <MotionDiv
                                     className="h-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]"
                                     initial={{ width: 0 }}
                                     animate={{ width: '82%' }}
@@ -297,7 +301,7 @@ const AttackGraphPage = () => {
 
                             {/* Containment action triggers */}
                             <div className="space-y-2">
-                                <Button 
+                                <Button
                                     onClick={() => triggerNodeIsolation(activeNode.id)}
                                     className="w-full bg-red-950 hover:bg-red-900 border border-red-500/20 text-red-300 text-[10px] font-bold h-9 flex items-center justify-center space-x-1.5 transition-colors"
                                 >

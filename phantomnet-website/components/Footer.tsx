@@ -1,6 +1,5 @@
 // phantomnet-website/components/Footer.tsx
 import Link from 'next/link';
-import { cn } from '@/lib/utils'; // Assuming ShadCN utils path
 
 export function Footer() {
     const currentYear = new Date().getFullYear();

@@ -14,6 +14,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from statistics import median
 
+from _bootstrap import configure_script_imports
+
+configure_script_imports()
+
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from backend_api.correlation_engine.alert_workflow import AlertWorkflow

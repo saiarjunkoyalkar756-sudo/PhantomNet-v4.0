@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Activity, BookmarkPlus, Bot, Database, Network, Search, ShieldCheck, Sparkles } from 'lucide-react';
 
@@ -18,6 +18,8 @@ import {
   saveHunt,
 } from '@/services/threatHunting.service';
 import { analyzeAttackPath, refreshAttackGraph } from '@/services/attackPath.service';
+
+const MotionDiv = motion.div;
 
 const severityColors = {
   critical: '#ef4444',
@@ -165,7 +167,7 @@ const ThreatHuntingPage = () => {
   const mitreData = summary?.top_mitre_techniques || [];
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
@@ -201,7 +203,9 @@ const ThreatHuntingPage = () => {
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight">{value}</p>
               </div>
-              <div className="rounded-lg bg-primary/10 p-3 text-primary"><Icon className="h-5 w-5" /></div>
+              <div className="rounded-lg bg-primary/10 p-3 text-primary">
+                {React.createElement(Icon, { className: "h-5 w-5" })}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -267,7 +271,7 @@ const ThreatHuntingPage = () => {
         <Card className="xl:col-span-2 border-border/60 bg-card/70"><CardHeader><CardTitle className="text-base">Hunt results <span className="ml-2 text-sm font-normal text-muted-foreground">{results.result_count} findings</span></CardTitle></CardHeader><CardContent><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b border-border/50 text-xs uppercase text-muted-foreground"><tr><th className="p-3">Record</th><th className="p-3">Title</th><th className="p-3">Severity</th><th className="p-3">Status</th><th className="p-3">MITRE</th><th className="p-3">Time</th></tr></thead><tbody>{results.results.map((result) => <tr key={result.detection_id || result.alert_id || result.case_id} className="border-b border-border/30"><td className="p-3 font-mono text-xs text-muted-foreground">{result.record_type}</td><td className="p-3 font-medium">{result.title}</td><td className="p-3"><span className="rounded-full px-2 py-1 text-xs font-semibold" style={{ backgroundColor: `${severityColors[result.severity] || '#64748b'}22`, color: severityColors[result.severity] || '#94a3b8' }}>{result.severity || '—'}</span></td><td className="p-3 text-muted-foreground">{result.status}</td><td className="p-3 font-mono text-xs">{result.mitre_evidence?.map((item) => item.technique_id).join(', ') || '—'}</td><td className="p-3 text-xs text-muted-foreground">{result.timestamp ? new Date(result.timestamp).toLocaleString() : '—'}</td></tr>)}{!results.results.length && <tr><td colSpan="6" className="p-8 text-center text-muted-foreground">Run a governed hunt or select an automated template to inspect canonical SOC records.</td></tr>}</tbody></table></div></CardContent></Card>
         <Card className="border-border/60 bg-card/70"><CardHeader><CardTitle className="text-base">Saved hunts</CardTitle></CardHeader><CardContent className="space-y-2">{savedHunts.map((hunt) => <button key={hunt.hunt_id} onClick={() => runSaved(hunt.hunt_id)} className="w-full rounded-md border border-border/60 p-3 text-left transition hover:border-primary/50 hover:bg-primary/5"><p className="text-sm font-medium">{hunt.name}</p><p className="mt-1 text-xs text-muted-foreground">{hunt.dataset} · {hunt.filters.length} filters</p></button>)}{!savedHunts.length && <p className="text-sm text-muted-foreground">Save a structured hunt to reuse it across your investigation workflow.</p>}</CardContent></Card>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

@@ -7,10 +7,13 @@ class CommandInjectionAnalyzer(Analyzer):
         # Common command injection patterns
         self.patterns = [
             r";\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)",
-            r"\|\|\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)",
+                        r"\|\|?\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)",
+
             r"&&\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)",
-            r"`\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)\s*`",
-            r"\$\(\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)\s*\)",
+                        r"`\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)(?:\s+[^`]*)?\s*`",
+
+                        r"\$\(\s*(ls|dir|cat|whoami|uname|ifconfig|ipconfig)(?:\s+[^)]*)?\s*\)",
+
         ]
 
     def analyze(self, payload):

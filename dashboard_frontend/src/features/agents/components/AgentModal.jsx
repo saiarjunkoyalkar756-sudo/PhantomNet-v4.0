@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/dialog';
 import { Shield, Cpu, Wifi, Calendar, CheckCircle, XCircle, Info } from 'lucide-react';
 import StatusChip from '@/components/shared/StatusChip';
-import { cn } from '@/lib/utils';
 
 const AgentModal = ({ agent, isOpen, onClose }) => {
   if (!agent) return null;

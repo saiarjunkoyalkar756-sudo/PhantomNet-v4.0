@@ -40,7 +40,7 @@ const useAuthStore = create((set, get) => ({
     // Redirect to login page
     window.location.href = '/login';
   },
-  
+
   hydrate: async () => {
     const accessToken = Cookies.get('accessToken');
     if (!accessToken) {
@@ -57,11 +57,11 @@ const useAuthStore = create((set, get) => ({
             loading: false,
         });
     } catch (error) {
-        // If token is invalid, logout
+        console.warn("Authentication refresh failed; clearing the local session.", error);
         get().logout();
     }
   },
-  
+
   setTokens: (tokens) => {
     const { access_token, refresh_token } = tokens;
     Cookies.set('accessToken', access_token, { secure: true, sameSite: 'strict', expires: 7 });

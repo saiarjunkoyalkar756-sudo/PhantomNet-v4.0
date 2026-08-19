@@ -25,22 +25,15 @@ const pathVariants = {
     },
 };
 
-const textVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 1.2 } },
-};
-
 export function AnimatedAttackFlow() {
     // Determine SVG width based on steps and spacing
     const boxWidth = 120;
     const arrowWidth = 60;
     const totalWidth = attackFlowSteps.length * boxWidth + (attackFlowSteps.length - 1) * arrowWidth;
     const boxHeight = 40;
-    const arrowHeight = boxHeight / 2; // Approximate height for arrow lines
-
     let currentX = 0;
-    const elements: any[] = [];
-    const arrows: any[] = [];
+    const elements: React.ReactNode[] = [];
+    const arrows: React.ReactNode[] = [];
 
     attackFlowSteps.forEach((step, index) => {
         // Box for the step

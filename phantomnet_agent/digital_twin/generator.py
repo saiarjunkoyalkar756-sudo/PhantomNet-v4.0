@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 
 from .models import TwinTemplate, TwinInstance, ForensicEvidenceMetadata
 from backend_api.evidence_vault.evidence_vault import EvidenceVault # Import the EvidenceVault
-from utils.logger import get_logger # Use the structured logger
+from phantomnet_agent.utils.logger import get_logger
 
 class TwinGenerator:
     """
@@ -21,7 +21,7 @@ class TwinGenerator:
 
     async def render_template(self, template: TwinTemplate, params: dict) -> TwinInstance:
         inst_id = f"twin-{uuid.uuid4().hex[:8]}"
-        ts = datetime.datetime.utcnow().isoformat() + "Z"
+        ts = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
         # render service files using Jinja2 for placeholders
         compose = {"version": "3.8", "services": {}}
         for svc in template.services:

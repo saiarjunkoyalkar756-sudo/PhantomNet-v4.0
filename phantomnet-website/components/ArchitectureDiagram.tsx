@@ -6,15 +6,14 @@ import { motion } from 'framer-motion';
 import {
     Server,
     Database,
-    Cloud,
     Cpu,
-    ArrowRight,
     Lock,
     GitFork,
     MessageCircle,
     Book,
     ShieldCheck,
     Zap,
+    type LucideIcon,
 } from 'lucide-react';
 
 const nodeVariants = {
@@ -28,7 +27,20 @@ const arrowVariants = {
     visible: { pathLength: 1, opacity: 1, transition: { duration: 1, ease: 'easeInOut' as const } },
 };
 
-const Node = ({ icon: Icon, label, color, delay, x, y, width = 120, height = 80 }: any) => (
+type NodeProps = {
+    icon: LucideIcon;
+    label: string;
+    color: string;
+    delay: number;
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+};
+
+type ArrowProps = { d: string; delay: number };
+
+const Node = ({ icon: Icon, label, color, delay, x, y, width = 120, height = 80 }: NodeProps) => (
     <motion.g
         initial="hidden"
         animate="visible"
@@ -66,7 +78,7 @@ const Node = ({ icon: Icon, label, color, delay, x, y, width = 120, height = 80 
     </motion.g>
 );
 
-const Arrow = ({ d, delay }: any) => (
+const Arrow = ({ d, delay }: ArrowProps) => (
     <motion.path
         d={d}
         className="stroke-pn-electric-purple fill-none stroke-[2px]"

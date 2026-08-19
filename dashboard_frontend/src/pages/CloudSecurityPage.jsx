@@ -1,12 +1,14 @@
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Cloud, Lock, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
+
+const MotionDiv = motion.div;
 
 const CloudSecurityPage = () => {
   const [awsAccessKeyId, setAwsAccessKeyId] = useState('');
@@ -88,7 +90,7 @@ const CloudSecurityPage = () => {
   const isAwsConfigValid = awsAccessKeyId && awsSecretAccessKey && awsRegion;
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -224,7 +226,7 @@ const CloudSecurityPage = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

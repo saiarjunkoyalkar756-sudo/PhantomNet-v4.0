@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import PageHeader from '@/components/shared/PageHeader';
 import { motion } from 'framer-motion';
+import React from 'react';
+import PageHeader from '@/components/shared/PageHeader';
 import { Target, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PlaybookList from '@/features/red-team/components/PlaybookList';
+
+const MotionDiv = motion.div;
 
 const RedTeamPlaybookUI = () => {
   const handleRunPlaybook = (id) => {
@@ -17,13 +19,13 @@ const RedTeamPlaybookUI = () => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="font-sans h-full flex flex-col"
     >
-      <PageHeader 
+      <PageHeader
         title="RED TEAM PLAYBOOK"
         subtitle="Manage and execute attack simulations and security assessments."
         actions={
@@ -36,7 +38,7 @@ const RedTeamPlaybookUI = () => {
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
         <PlaybookList onRunPlaybook={handleRunPlaybook} onViewReport={handleViewReport} />
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

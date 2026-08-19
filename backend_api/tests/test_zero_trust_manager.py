@@ -1,68 +1,65 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
-from fastapi import Request, HTTPException
-from backend_api.security.zero_trust_manager import ZeroTrustManager
+from fastapi import HTTPException
 
-@pytest.fixture
-def zero_trust_manager():
-    return ZeroTrustManager()
+from backend_api.security.zero_trust_manager import IntegratedZeroTrustManager
 
-@pytest.mark.asyncio
-async def test_verify_request_success(zero_trust_manager):
-    request = Request({
-        "type": "http",
-        "headers": {
-            "client-cert-fingerprint": "test-fingerprint",
-            "Authorization": "Bearer valid-token",
-            "X-Device-Health": "ok"
-        },
-        "client": ("127.0.0.1", 12345)
-    })
-    payload = await zero_trust_manager.verify_request(request)
-    assert payload == {"user_id": "user-123", "roles": ["user"]}
+
+def _request(headers: dict[str, str]) -> SimpleNamespace:
+    return SimpleNamespace(
+        headers=headers,
+        url=SimpleNamespace(path="/api/governed-resource"),
+        method="POST",
+        client=SimpleNamespace(host="127.0.0.1"),
+    )
+
 
 @pytest.mark.asyncio
-async def test_verify_request_no_mtls(zero_trust_manager):
-    request = Request({
-        "type": "http",
-        "headers": {
-            "Authorization": "Bearer valid-token",
-            "X-Device-Health": "ok"
-        },
-        "client": ("127.0.0.1", 12345)
-    })
-    with pytest.raises(HTTPException) as excinfo:
-        await zero_trust_manager.verify_request(request)
-    assert excinfo.value.status_code == 401
-    assert excinfo.value.detail == "mTLS verification failed"
+async def test_zero_trust_requires_bearer_authentication():
+    manager = IntegratedZeroTrustManager()
+
+    with pytest.raises(HTTPException, match="Authentication required") as exc_info:
+        await manager.verify_request(_request({"X-Client-Cert-Fingerprint": "test-fingerprint"}))
+
+    assert exc_info.value.status_code == 401
+
 
 @pytest.mark.asyncio
-async def test_verify_request_invalid_jwt(zero_trust_manager):
-    request = Request({
-        "type": "http",
-        "headers": {
-            "client-cert-fingerprint": "test-fingerprint",
-            "Authorization": "Bearer invalid-token",
-            "X-Device-Health": "ok"
-        },
-        "client": ("127.0.0.1", 12345)
-    })
-    with pytest.raises(HTTPException) as excinfo:
-        await zero_trust_manager.verify_request(request)
-    assert excinfo.value.status_code == 401
-    assert excinfo.value.detail == "Invalid JWT"
+async def test_zero_trust_denies_non_allowed_engine_outcome():
+    manager = IntegratedZeroTrustManager()
+    manager.engine.evaluate_access_request = AsyncMock(
+        return_value=SimpleNamespace(
+            enforced_action="step_up_authentication",
+            details={"trust_score_at_request": 0.3},
+        )
+    )
+
+    with pytest.raises(HTTPException, match="Zero-Trust Policy Violation") as exc_info:
+        await manager.verify_request(_request({"Authorization": "Bearer test-token"}))
+
+    assert exc_info.value.status_code == 403
+
 
 @pytest.mark.asyncio
-async def test_verify_request_bad_posture(zero_trust_manager):
-    request = Request({
-        "type": "http",
-        "headers": {
-            "client-cert-fingerprint": "test-fingerprint",
-            "Authorization": "Bearer valid-token",
-            "X-Device-Health": "bad"
-        },
-        "client": ("127.0.0.1", 12345)
-    })
-    with pytest.raises(HTTPException) as excinfo:
-        await zero_trust_manager.verify_request(request)
-    assert excinfo.value.status_code == 403
-    assert excinfo.value.detail == "Device posture too risky"
+async def test_zero_trust_returns_identity_and_trust_score_after_allowed_evaluation():
+    manager = IntegratedZeroTrustManager()
+    manager.engine.evaluate_access_request = AsyncMock(
+        return_value=SimpleNamespace(
+            enforced_action="allowed",
+            details={"trust_score_at_request": 0.9},
+        )
+    )
+
+    result = await manager.verify_request(
+        _request(
+            {
+                "Authorization": "Bearer test-token",
+                "X-Client-Cert-Fingerprint": "test-fingerprint",
+                "X-Device-Health": "healthy",
+            }
+        )
+    )
+
+    assert result == {"user_id": "user_placeholder", "trust_score": 0.9}

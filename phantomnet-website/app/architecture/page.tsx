@@ -38,7 +38,7 @@ export default function ArchitecturePage() {
                 >
                     <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">A Resilient & Scalable Foundation</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto mb-10">
-                        PhantomNet's architecture is engineered for maximum resilience, scalability, and security.
+                        PhantomNet&apos;s architecture is engineered for maximum resilience, scalability, and security.
                         Built on a foundation of loosely coupled microservices, it processes billions of events
                         daily, providing real-time autonomous cyber defense.
                     </p>

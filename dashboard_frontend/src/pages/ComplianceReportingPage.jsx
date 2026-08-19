@@ -1,6 +1,6 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { FileText, Download, BarChart2, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+
+const MotionDiv = motion.div;
 
 const ComplianceReportingPage = () => {
   const [selectedStandard, setSelectedStandard] = useState('');
@@ -66,7 +68,7 @@ const ComplianceReportingPage = () => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       className="p-6 space-y-6"
@@ -104,8 +106,8 @@ const ComplianceReportingPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button 
-            onClick={handleGenerateReport} 
+          <Button
+            onClick={handleGenerateReport}
             disabled={isGenerating || !selectedStandard}
             className="w-full md:w-auto"
           >
@@ -154,8 +156,8 @@ const ComplianceReportingPage = () => {
                   <TableCell>
                     <div className="flex items-center">
                       <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
-                        <div 
-                          className={`h-1.5 rounded-full ${report.score > 90 ? 'bg-green-500' : 'bg-yellow-500'}`} 
+                        <div
+                          className={`h-1.5 rounded-full ${report.score > 90 ? 'bg-green-500' : 'bg-yellow-500'}`}
                           style={{ width: `${report.score}%` }}
                         />
                       </div>
@@ -184,7 +186,7 @@ const ComplianceReportingPage = () => {
                                 <div className="font-bold text-lg">{selectedReport.details.compliance_score}%</div>
                               </div>
                             </div>
-                            
+
                             <h4 className="font-bold text-sm">Security Controls Verified</h4>
                             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                               {selectedReport.details.findings.map((finding, idx) => (
@@ -201,7 +203,7 @@ const ComplianceReportingPage = () => {
                                 </div>
                               ))}
                             </div>
-                            
+
                             <Button className="w-full" onClick={() => handleDownloadPDF(report.report_id)}>
                               <Download className="mr-2 h-4 w-4" /> Download PDF Artifact
                             </Button>
@@ -216,7 +218,7 @@ const ComplianceReportingPage = () => {
           </TableBody>
         </Table>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

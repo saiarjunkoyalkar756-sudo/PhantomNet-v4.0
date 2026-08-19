@@ -1,29 +1,27 @@
 // phantomnet-website/app/admin/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShieldAlert, 
-  Activity, 
-  Server, 
-  Slash, 
-  Trash2, 
-  PlayCircle, 
-  RefreshCw, 
-  UserMinus, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle, 
-  Lock, 
+import {
+  ShieldAlert,
+  Activity,
+  Server,
+  Slash,
+  Trash2,
+  PlayCircle,
+  RefreshCw,
+  CheckCircle,
+  Lock,
   Send,
-  Terminal,
-  Clock,
-  Layers,
   FileText
 } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8000'; // Unified main.py stack port
+
+type BlacklistedIp = { ip_address: string; reason: string; date: string };
+type Administrator = { username: string; email: string; role: string };
+type AuditEntry = { id: string; action: string; operator: string; status: string; time: string };
 
 const INITIAL_SERVICES = [
   { name: 'Gateway Service', port: 8000, status: 'OFFLINE', load: '0%', endpoint: '/api/v1/gateway' },
@@ -38,24 +36,24 @@ const INITIAL_SERVICES = [
 
 export default function AdminPortal() {
   const [services, setServices] = useState(INITIAL_SERVICES);
-  const [blacklistedIPs, setBlacklistedIPs] = useState<any[]>([]);
+  const [blacklistedIPs, setBlacklistedIPs] = useState<BlacklistedIp[]>([]);
   const [newIP, setNewIP] = useState('');
   const [newReason, setNewReason] = useState('');
-  
+
   // States
   const [isBlacklistLoading, setIsBlacklistLoading] = useState(false);
   const [isHealthLoading, setIsHealthLoading] = useState(false);
   const [blacklistStatus, setBlacklistStatus] = useState<{ success: boolean; msg: string } | null>(null);
   const [authToken, setAuthToken] = useState('');
-  const [adminUser, setAdminUser] = useState<any>(null);
+  const [adminUser, setAdminUser] = useState<Administrator | null>(null);
 
   // BAS Simulation State
   const [attackTarget, setAttackTarget] = useState('compromised-server-01');
   const [simulationLogs, setSimulationLogs] = useState<string[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
-  
+
   // Administrative Audit Log Trail
-  const [adminAuditTrail, setAdminAuditTrail] = useState<any[]>([
+  const [adminAuditTrail, setAdminAuditTrail] = useState<AuditEntry[]>([
     { id: 'aud-01', action: 'Admin Portal Access Granted', operator: 'admin@phantomnet.local', status: 'success', time: '10:15 AM' },
     { id: 'aud-02', action: 'Synchronized microservices grid cluster status', operator: 'admin@phantomnet.local', status: 'success', time: '10:16 AM' }
   ]);
@@ -63,40 +61,15 @@ export default function AdminPortal() {
   // Node telemetry load simulator
   const [systemLoad, setSystemLoad] = useState({ cpu: 32, ram: 54, network: 120 });
 
-  useEffect(() => {
-    // Check JWT authorization
-    const token = typeof window !== 'undefined' ? localStorage.getItem('pn_token') || 'pn_admin_secret_token_signed_envelope' : '';
-    setAuthToken(token);
-    setAdminUser({
-      username: 'Administrator',
-      email: 'admin@phantomnet.local',
-      role: 'ROOT_ADMIN'
-    });
-
-    fetchBlacklist(token);
-    fetchInfrastructureHealth();
-
-    // Fluctuating system metrics simulator
-    const interval = setInterval(() => {
-      setSystemLoad(prev => ({
-        cpu: Math.max(15, Math.min(95, prev.cpu + Math.floor(Math.random() * 11) - 5)),
-        ram: Math.max(40, Math.min(85, prev.ram + Math.floor(Math.random() * 5) - 2)),
-        network: Math.max(50, prev.network + Math.floor(Math.random() * 21) - 10)
-      }));
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   // Fetch dynamic microservices health diagnostics
-  const fetchInfrastructureHealth = async () => {
+  const fetchInfrastructureHealth = useCallback(async () => {
     setIsHealthLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/health`);
       if (res.ok) {
         const data = await res.json();
         const activePrefixes = data.active_services || [];
-        
+
         setServices(INITIAL_SERVICES.map(srv => {
           const isMounted = activePrefixes.some((p: string) => srv.endpoint.includes(p) || p.includes(srv.endpoint));
           return {
@@ -109,7 +82,7 @@ export default function AdminPortal() {
         throw new Error();
       }
     } catch (err) {
-      // Graceful premium mock fallback if backend main.py is down
+      console.warn("Infrastructure health endpoint is unavailable; rendering degraded local health data.", err);
       setServices(INITIAL_SERVICES.map(srv => ({
         ...srv,
         status: 'ONLINE',
@@ -118,10 +91,10 @@ export default function AdminPortal() {
     } finally {
       setIsHealthLoading(false);
     }
-  };
+  }, []);
 
   // Fetch blacklisted IPs from API Gateway
-  const fetchBlacklist = async (tokenOverride?: string) => {
+  const fetchBlacklist = useCallback(async (tokenOverride?: string) => {
     setIsBlacklistLoading(true);
     const token = tokenOverride || authToken;
     try {
@@ -138,7 +111,7 @@ export default function AdminPortal() {
         throw new Error();
       }
     } catch (err) {
-      // Mock active blacklist values for demonstration
+      console.warn("Blacklist service is unavailable; rendering only the local fallback entries.", err);
       setBlacklistedIPs([
         { ip_address: '185.220.101.5', reason: 'Tor Exit Node brute-force attempt', date: '2026-05-28' },
         { ip_address: '45.142.120.48', reason: 'Scanning active SMB ports on honeypots', date: '2026-05-27' },
@@ -147,7 +120,30 @@ export default function AdminPortal() {
     } finally {
       setIsBlacklistLoading(false);
     }
-  };
+  }, [authToken]);
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('pn_token') || 'pn_admin_secret_token_signed_envelope' : '';
+    setAuthToken(token);
+    setAdminUser({
+      username: 'Administrator',
+      email: 'admin@phantomnet.local',
+      role: 'ROOT_ADMIN'
+    });
+
+    void fetchBlacklist(token);
+    void fetchInfrastructureHealth();
+
+    const interval = setInterval(() => {
+      setSystemLoad(prev => ({
+        cpu: Math.max(15, Math.min(95, prev.cpu + Math.floor(Math.random() * 11) - 5)),
+        ram: Math.max(40, Math.min(85, prev.ram + Math.floor(Math.random() * 5) - 2)),
+        network: Math.max(50, prev.network + Math.floor(Math.random() * 21) - 10)
+      }));
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [fetchBlacklist, fetchInfrastructureHealth]);
 
   const logAdminAction = (action: string, status: string = 'success') => {
     const newAudit = {
@@ -166,7 +162,7 @@ export default function AdminPortal() {
 
     setBlacklistStatus(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/gateway/admin/blacklist/add`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/gateway/admin/blacklist/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +170,11 @@ export default function AdminPortal() {
         },
         body: JSON.stringify({ ip_address: newIP, reason: newReason })
       });
-      
+
+      if (!response.ok) {
+        throw new Error(`Blacklist request failed with status ${response.status}`);
+      }
+
       setBlacklistedIPs(prev => [
         { ip_address: newIP, reason: newReason || 'Manual Administrator Ban', date: new Date().toISOString().split('T')[0] },
         ...prev
@@ -184,6 +184,7 @@ export default function AdminPortal() {
       setNewIP('');
       setNewReason('');
     } catch (err) {
+      console.warn("Blacklist add request failed; applying a clearly labeled local fallback entry.", err);
       setBlacklistedIPs(prev => [
         { ip_address: newIP, reason: newReason || 'Manual Administrator Ban', date: new Date().toISOString().split('T')[0] },
         ...prev
@@ -208,6 +209,7 @@ export default function AdminPortal() {
       setBlacklistedIPs(prev => prev.filter(item => item.ip_address !== ipToRemove));
       logAdminAction(`Removed firewall block rule for IP: ${ipToRemove}`);
     } catch (err) {
+      console.warn("Blacklist removal request failed; applying the local fallback state.", err);
       setBlacklistedIPs(prev => prev.filter(item => item.ip_address !== ipToRemove));
       logAdminAction(`Removed simulated firewall block for IP: ${ipToRemove}`);
     }
@@ -265,7 +267,7 @@ export default function AdminPortal() {
 
         {/* Top telemetry cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
+
           {/* CPU Card */}
           <div className="bg-pn-dark-light/50 border border-pn-border rounded-xl p-5 relative overflow-hidden">
             <h3 className="text-xs font-semibold text-pn-text-muted uppercase tracking-wider">Aggregated CPU Load</h3>
@@ -276,11 +278,11 @@ export default function AdminPortal() {
               </span>
             </div>
             <div className="w-full bg-pn-border h-1.5 rounded-full mt-4 overflow-hidden">
-              <div 
+              <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   systemLoad.cpu > 80 ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-pn-neon-blue'
                 }`}
-                style={{ width: `${systemLoad.cpu}%` }} 
+                style={{ width: `${systemLoad.cpu}%` }}
               />
             </div>
           </div>
@@ -293,9 +295,9 @@ export default function AdminPortal() {
               <span className="text-xs text-emerald-400 font-semibold">Stable</span>
             </div>
             <div className="w-full bg-pn-border h-1.5 rounded-full mt-4 overflow-hidden">
-              <div 
-                className="bg-pn-neon-blue h-full rounded-full transition-all duration-500" 
-                style={{ width: `${systemLoad.ram}%` }} 
+              <div
+                className="bg-pn-neon-blue h-full rounded-full transition-all duration-500"
+                style={{ width: `${systemLoad.ram}%` }}
               />
             </div>
           </div>
@@ -316,7 +318,7 @@ export default function AdminPortal() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Col 1: Microservice Status Grid */}
           <div className="bg-pn-dark-light/50 border border-pn-border rounded-xl p-6 flex flex-col relative h-[560px]">
             <div className="flex justify-between items-center mb-6 pb-3 border-b border-pn-border">
@@ -324,7 +326,7 @@ export default function AdminPortal() {
                 <Server className="text-pn-neon-blue" size={20} />
                 <h3 className="text-base font-bold font-heading text-pn-heading">Grid Infrastructure</h3>
               </div>
-              <button 
+              <button
                 onClick={fetchInfrastructureHealth}
                 className={`text-pn-text-muted hover:text-pn-neon-blue transition-colors ${isHealthLoading ? 'animate-spin' : ''}`}
                 disabled={isHealthLoading}
@@ -341,8 +343,8 @@ export default function AdminPortal() {
                     <span className="text-xs text-pn-text-muted">Port {srv.port} · Load: {srv.load}</span>
                   </div>
                   <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                    srv.status === 'ONLINE' 
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                    srv.status === 'ONLINE'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                       : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                   }`}>
                     <CheckCircle size={10} />
@@ -360,7 +362,7 @@ export default function AdminPortal() {
                 <Slash className="text-rose-500" size={20} />
                 <h3 className="text-base font-bold font-heading text-pn-heading">Blacklist Firewall Pool</h3>
               </div>
-              <button 
+              <button
                 onClick={() => fetchBlacklist()}
                 className={`text-pn-text-muted hover:text-pn-neon-blue transition-colors ${isBlacklistLoading ? 'animate-spin' : ''}`}
                 disabled={isBlacklistLoading}
@@ -372,23 +374,23 @@ export default function AdminPortal() {
             {/* Input Form */}
             <form onSubmit={handleAddBlacklist} className="space-y-4 mb-5">
               <div className="grid grid-cols-2 gap-4">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newIP}
                   onChange={(e) => setNewIP(e.target.value)}
                   placeholder="IP (e.g. 192.168.1.5)"
                   className="bg-pn-dark-blue border border-pn-border rounded p-2 text-xs focus:border-pn-neon-blue focus:outline-none text-pn-text-light font-mono"
                   required
                 />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newReason}
                   onChange={(e) => setNewReason(e.target.value)}
                   placeholder="Reason for Ban"
                   className="bg-pn-dark-blue border border-pn-border rounded p-2 text-xs focus:border-pn-neon-blue focus:outline-none text-pn-text-light"
                 />
               </div>
-              <button 
+              <button
                 type="submit"
                 className="w-full py-2 bg-pn-neon-blue text-pn-dark-blue font-bold rounded text-xs hover:bg-pn-electric-purple hover:text-pn-heading transition-all duration-300 flex justify-center items-center gap-2"
               >
@@ -420,7 +422,7 @@ export default function AdminPortal() {
                       <span className="text-sm font-semibold font-mono text-rose-400">{ip.ip_address}</span>
                       <span className="text-[10px] text-pn-text-muted truncate max-w-[160px] block">{ip.reason} · {ip.date}</span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => handleRemoveBlacklist(ip.ip_address)}
                       className="p-1.5 bg-rose-500/5 border border-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded transition-all"
                       title="De-authorize Firewall Block"
@@ -446,8 +448,8 @@ export default function AdminPortal() {
             <div className="space-y-4 flex-1 flex flex-col min-h-0">
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-semibold text-pn-text-muted">Target Asset ID</label>
-                <select 
-                  value={attackTarget} 
+                <select
+                  value={attackTarget}
                   onChange={(e) => setAttackTarget(e.target.value)}
                   className="bg-pn-dark-blue border border-pn-border rounded p-2 text-xs focus:border-pn-neon-blue focus:outline-none text-white font-mono"
                   disabled={isSimulating}
@@ -458,11 +460,11 @@ export default function AdminPortal() {
                 </select>
               </div>
 
-              <button 
+              <button
                 onClick={triggerAttackSimulation}
                 className={`w-full py-3 bg-rose-500/20 border border-rose-500/35 font-bold rounded text-xs transition-all flex justify-center items-center gap-2 ${
-                  isSimulating 
-                    ? 'text-pn-text-muted border-pn-border cursor-not-allowed' 
+                  isSimulating
+                    ? 'text-pn-text-muted border-pn-border cursor-not-allowed'
                     : 'text-rose-400 hover:bg-rose-500 hover:text-pn-heading'
                 }`}
                 disabled={isSimulating}

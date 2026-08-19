@@ -3,7 +3,7 @@ import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group"
 import { cva } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
-import { toggleVariants } from "@/components/ui/toggle" // Assuming toggle is already created or will be manually created
+import { toggleVariants } from "@/components/ui/toggle-variants"
 
 const ToggleGroupContext = React.createContext(null)
 
@@ -57,4 +57,4 @@ const ToggleGroupItem = React.forwardRef(({ className, children, ...props }, ref
 })
 ToggleGroupItem.displayName = ToggleGroupPrimitive.Item.displayName
 
-export { ToggleGroup, ToggleGroupItem, toggleGroupVariants }
+export { ToggleGroup, ToggleGroupItem }

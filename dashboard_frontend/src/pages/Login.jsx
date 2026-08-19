@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Eye, 
-  EyeOff, 
-  LoaderCircle, 
-  Shield, 
-  KeyRound, 
-  Cpu, 
-  Terminal, 
+import { AnimatePresence, motion } from 'framer-motion';import { useNavigate, Link } from 'react-router-dom';
+import {
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  Shield,
+  KeyRound,
+  Cpu,
+  Terminal,
   Sparkles,
   Activity,
   Lock,
@@ -25,6 +24,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import useAuthStore from '@/store/authStore';
 import api from '@/services/api';
+
+const MotionDiv = motion.div;
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -46,7 +47,9 @@ const playCyberBeep = (freq, dur) => {
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
     osc.start();
     osc.stop(audioCtx.currentTime + dur);
-  } catch (e) {}
+  } catch {
+    return;
+  }
 };
 
 const LoginPage = () => {
@@ -83,7 +86,7 @@ const LoginPage = () => {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -93,7 +96,7 @@ const LoginPage = () => {
     }
   });
 
-  const selectedRole = watch('role');
+  const selectedRole = useWatch({ control, name: 'role' });
 
   const onSubmit = async (data) => {
     setApiError(null);
@@ -108,7 +111,7 @@ const LoginPage = () => {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
-      
+
       login(response);
       playCyberBeep(880, 0.2);
       if (response.user?.role === 'admin') {
@@ -131,16 +134,16 @@ const LoginPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#05050A] text-[#E0E0E0] p-4 relative overflow-hidden font-sans">
-      
+
       {/* Background Graphic elements */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(0,240,255,0.03),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(138,43,226,0.03),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 z-0 h-full w-full bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 pointer-events-none"></div>
 
       <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        
+
         {/* Left Side: Advanced Cybersecurity HUD (lg:col-span-6) */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -176,10 +179,10 @@ const LoginPage = () => {
               ))}
             </div>
           </div>
-        </motion.div>
+        </MotionDiv>
 
         {/* Right Side: Immersive Login Form (lg:col-span-6) */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -193,7 +196,7 @@ const LoginPage = () => {
 
             <AnimatePresence>
               {apiError && (
-                <motion.div
+                <MotionDiv
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -201,18 +204,18 @@ const LoginPage = () => {
                   role="alert"
                 >
                   {apiError}
-                </motion.div>
+                </MotionDiv>
               )}
             </AnimatePresence>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left font-mono">
               <div className="space-y-1">
                 <Label htmlFor="email" className="text-[10px] text-pn-text-muted uppercase font-bold">Grid Email ID</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  {...register('email')} 
-                  placeholder="admin@phantomnet.local" 
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="admin@phantomnet.local"
                   className="bg-[#05050A] border-pn-border text-xs focus:border-pn-neon-blue focus:ring-1 focus:ring-pn-neon-blue text-white rounded-lg h-10 placeholder:text-[#555]"
                 />
                 {errors.email && <p className="text-rose-400 text-[10px] mt-1">{errors.email.message}</p>}
@@ -220,11 +223,11 @@ const LoginPage = () => {
 
               <div className="space-y-1 relative">
                 <Label htmlFor="password" className="text-[10px] text-pn-text-muted uppercase font-bold">Cryptographic Password</Label>
-                <Input 
-                  id="password" 
-                  type={showPassword ? 'text' : 'password'} 
-                  {...register('password')} 
-                  placeholder="••••••••" 
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
+                  placeholder="••••••••"
                   className="bg-[#05050A] border-pn-border text-xs focus:border-pn-neon-blue focus:ring-1 focus:ring-pn-neon-blue text-white rounded-lg h-10 placeholder:text-[#555]"
                 />
                 <button
@@ -283,9 +286,9 @@ const LoginPage = () => {
                 </Link>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11 bg-pn-neon-blue text-pn-dark-blue hover:bg-pn-electric-purple hover:text-white transition-all text-xs font-bold rounded-lg mt-3 flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(0,240,255,0.15)]" 
+              <Button
+                type="submit"
+                className="w-full h-11 bg-pn-neon-blue text-pn-dark-blue hover:bg-pn-electric-purple hover:text-white transition-all text-xs font-bold rounded-lg mt-3 flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? <LoaderCircle className="animate-spin" size={16} /> : 'Authenticate Credentials'}
@@ -304,7 +307,7 @@ const LoginPage = () => {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </MotionDiv>
 
       </div>
     </div>

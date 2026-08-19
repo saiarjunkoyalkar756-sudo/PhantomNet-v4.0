@@ -1,5 +1,9 @@
-import LoginPage from '../pages/Login';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+
 import Dashboard from '../pages/Dashboard';
+import LoginPage from '../pages/Login';
+import CaseManagementPage from '../pages/CaseManagementPage';
+import ComplianceReportingPage from '../pages/ComplianceReportingPage';
 import AdminDashboard from '../pages/AdminDashboard';
 import EventStreamViewer from '../pages/EventStreamViewer';
 import AgentsManagementPage from '../pages/AgentsManagementPage';

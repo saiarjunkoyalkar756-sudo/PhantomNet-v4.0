@@ -1,11 +1,12 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Copy, Download, RotateCcw } from 'lucide-react';
-import { motion } from 'framer-motion';
+const MotionDiv = motion.div;
 
 const ActionBar = ({ onCopy, onExport, onClear }) => {
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -20,7 +21,7 @@ const ActionBar = ({ onCopy, onExport, onClear }) => {
       <Button onClick={onClear} variant="destructive" className="hover:bg-destructive/90">
         <RotateCcw className="w-4 h-4 mr-2" /> CLEAR
       </Button>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

@@ -72,7 +72,7 @@ export default function RoadmapPage() {
                     </div>
                 </motion.section>
 
-                {/* What's In Progress */}
+                {/* What&apos;s In Progress */}
                 <motion.section
                     initial="hidden"
                     whileInView="visible"
@@ -80,7 +80,7 @@ export default function RoadmapPage() {
                     variants={sectionVariants}
                     className="mb-16 md:mb-24 p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border"
                 >
-                    <h2 className="text-3xl font-semibold font-heading mb-8 text-center text-pn-heading">What's In Progress</h2>
+                    <h2 className="text-3xl font-semibold font-heading mb-8 text-center text-pn-heading">What&apos;s In Progress</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[
                             'Advanced Predictive Threat Forecasting',
@@ -148,7 +148,7 @@ export default function RoadmapPage() {
                                 AI-Driven Attack Surface Management
                             </h3>
                             <p className="text-lg text-pn-text-muted leading-relaxed">
-                                Continuously discover and assess an organization's external attack surface
+                                Continuously discover and assess an organization&apos;s external attack surface
                                 using AI to identify potential exposure points.
                             </p>
                         </motion.div>

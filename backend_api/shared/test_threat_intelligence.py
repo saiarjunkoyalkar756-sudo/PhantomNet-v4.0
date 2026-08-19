@@ -2,7 +2,7 @@
 import pytest
 import httpx
 import json
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from .threat_intelligence import (
     fetch_urlhaus_iocs,
     enrich_event_with_iocs,
@@ -42,7 +42,7 @@ SAMPLE_URLHAUS_JSON = """
 @pytest.mark.asyncio
 async def test_fetch_urlhaus_iocs_success():
     # Mock httpx.AsyncClient.get to return a successful response with zipped content
-    mock_response = AsyncMock()
+    mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.headers = {"content-type": "application/zip"}
 
@@ -71,7 +71,7 @@ async def test_fetch_urlhaus_iocs_success():
 @pytest.mark.asyncio
 async def test_fetch_urlhaus_iocs_http_error():
     # Mock httpx.AsyncClient.get to raise an HTTPStatusError
-    mock_response = AsyncMock()
+    mock_response = MagicMock()
     mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
         "Bad Request",
         request=httpx.Request("GET", "http://test.com"),
@@ -92,7 +92,7 @@ async def test_fetch_urlhaus_iocs_http_error():
 @pytest.mark.asyncio
 async def test_fetch_urlhaus_iocs_json_decode_error():
     # Mock httpx.AsyncClient.get to return invalid JSON
-    mock_response = AsyncMock()
+    mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.headers = {"content-type": "application/json"}
     mock_response.json.side_effect = json.JSONDecodeError(
@@ -132,7 +132,7 @@ def test_enrich_event_with_iocs():
 
     assert "threat_intelligence" in enriched_event
     assert len(enriched_event["threat_intelligence"]) == 3
-    
+
     matches = {ti["type"] for ti in enriched_event["threat_intelligence"]}
     assert "URL_IOC" in matches
     assert "IP_IOC" in matches
@@ -158,7 +158,7 @@ def test_enrich_agent_with_iocs():
 
     assert "threat_intelligence" in enriched_agent
     assert len(enriched_agent["threat_intelligence"]) == 2
-    
+
     matches = {ti["type"] for ti in enriched_agent["threat_intelligence"]}
     assert "URL_IOC" in matches
     assert "IP_IOC" in matches

@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PageHeader from '@/components/shared/PageHeader';
+import { AnimatePresence, motion } from 'framer-motion';import PageHeader from '@/components/shared/PageHeader';
 import MetricsWidget from '@/features/dashboard/MetricsWidget';
 import WorldAttackMap from '@/features/dashboard/WorldAttackMap';
 import { Button } from '@/components/ui/button';
 import { fetchHuntDashboardSummary } from '@/services/threatHunting.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-    Plus, 
-    Shield, 
-    AlertTriangle, 
-    Cpu, 
-    Activity, 
-    Brain, 
+import {
+    Plus,
+    Shield,
+    AlertTriangle,
+    Cpu,
+    Activity,
+    Brain,
     MessageSquare,
     Zap,
     Wind
 } from 'lucide-react';
+
+const MotionButton = motion.button;
+const MotionDiv = motion.div;
 
 const Dashboard = () => {
     const [summary, setSummary] = useState(null);
@@ -39,21 +41,21 @@ const Dashboard = () => {
     }, []);
 
     const metrics = [
-        { 
+        {
             title: "Canonical Detections",
             value: summary?.metrics?.detections ?? "—",
             change: "Governed evidence pipeline",
             icon: Zap,
             color: "primary"
         },
-        { 
+        {
             title: "Active Analyst Alerts",
             value: summary?.metrics?.active_alerts ?? "—",
             change: "New, triaged, and in-progress",
             icon: Brain,
             color: "secondary"
         },
-        { 
+        {
             title: "Open Investigations",
             value: summary?.metrics?.open_cases ?? "—",
             change: "Tenant-scoped case lifecycle",
@@ -72,7 +74,7 @@ const Dashboard = () => {
             {/* Zen Mode Toggle Overlay */}
             <AnimatePresence>
                 {isZenMode && (
-                    <motion.div 
+                    <MotionDiv
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -81,13 +83,13 @@ const Dashboard = () => {
                 )}
             </AnimatePresence>
 
-            <PageHeader 
+            <PageHeader
                 title={isZenMode ? "ZEN DEFENSE ACTIVE" : "GLOBAL THREAT COMMAND"}
                 subtitle={isZenMode ? "UI simplified for cognitive load optimization." : "Real-time autonomous security orchestration overview."}
                 actions={
                     <div className="flex items-center space-x-3">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={() => setIsZenMode(!isZenMode)}
                             className={`transition-all ${isZenMode ? 'bg-primary text-primary-foreground border-primary' : 'border-primary/20 hover:border-primary/50'}`}
                         >
@@ -102,24 +104,24 @@ const Dashboard = () => {
                 }
             />
 
-            <motion.div 
+            <MotionDiv
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
             >
                 {metrics.map((metric, index) => (
-                    <motion.div key={index} variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
+                    <MotionDiv key={index} variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
                         <MetricsWidget {...metric} />
-                    </motion.div>
+                    </MotionDiv>
                 ))}
-            </motion.div>
+            </MotionDiv>
 
             <div className={`grid grid-cols-1 lg:grid-cols-5 gap-6 transition-all duration-500 ${isZenMode ? 'scale-[0.98]' : ''}`}>
                 <div className="lg:col-span-3 h-[450px]">
                     <WorldAttackMap />
                 </div>
-                
+
                 <div className="lg:col-span-2 space-y-6">
                     <Card className="glass-panel border-primary/20 flex-1 overflow-hidden">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/50 bg-muted/20">
@@ -159,19 +161,19 @@ const Dashboard = () => {
             </div>
 
             {/* AI Assistant Floating Toggle */}
-            <motion.button 
+            <MotionButton
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsAIAssistantOpen(!isAIAssistantOpen)}
                 className="fixed bottom-8 right-8 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.6)] z-50 text-white"
             >
                 <MessageSquare />
-            </motion.button>
+            </MotionButton>
 
             {/* AI Assistant Chat UI */}
             <AnimatePresence>
                 {isAIAssistantOpen && (
-                    <motion.div 
+                    <MotionDiv
                         initial={{ opacity: 0, y: 50, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -183,18 +185,18 @@ const Dashboard = () => {
                         </div>
                         <div className="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4">
                             <div className="bg-muted/50 p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl text-[11px] leading-relaxed">
-                                Hello Admin. I'm monitoring the colony. Current stress levels are low. 
+                                Hello Admin. I'm monitoring the colony. Current stress levels are low.
                                 <span className="block mt-2 font-bold text-primary">Status: No manual intervention required.</span>
                             </div>
                         </div>
                         <div className="p-4 border-t border-border/50 flex">
-                            <input 
+                            <input
                                 disabled
-                                placeholder="Chat with Sentinel (AI)..." 
+                                placeholder="Chat with Sentinel (AI)..."
                                 className="flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground"
                             />
                         </div>
-                    </motion.div>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
         </div>

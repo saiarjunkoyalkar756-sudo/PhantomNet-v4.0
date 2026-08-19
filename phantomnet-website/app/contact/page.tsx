@@ -40,7 +40,7 @@ export default function ContactPage() {
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto">
                         Ready to revolutionize your security operations? Fill out the form below to
                         request a personalized demo, discuss your specific needs, or connect with our
-                        cybersecurity experts. We're here to help you build a resilient, future-proof defense.
+                        cybersecurity experts. We&apos;re here to help you build a resilient, future-proof defense.
                     </p>
                 </motion.section>
 

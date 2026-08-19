@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PluginCard from './PluginCard';
+import { AnimatePresence, motion } from 'framer-motion';import PluginCard from './PluginCard';
 import ModalInspector from './ModalInspector';
 
 // Dummy data for plugins
+const MotionDiv = motion.div;
+
 const initialPlugins = [
   {
     id: 'plugin-xdr',
@@ -80,7 +81,7 @@ const MarketplaceGrid = () => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -103,7 +104,7 @@ const MarketplaceGrid = () => {
         onClose={() => setModalOpen(false)}
         onToggleEnable={handleToggleEnable}
       />
-    </motion.div>
+    </MotionDiv>
   );
 };
 

@@ -1,10 +1,12 @@
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const MotionDiv = motion.div;
 
 const GraphInvestigationPage = () => {
   const [cypherQuery, setCypherQuery] = useState('');
@@ -44,7 +46,7 @@ const GraphInvestigationPage = () => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -105,7 +107,7 @@ const GraphInvestigationPage = () => {
           </Table>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

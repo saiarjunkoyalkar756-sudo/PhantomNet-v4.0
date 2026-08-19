@@ -4,7 +4,7 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from features.phantom_os.edge_brain import EdgeBrain
+from features.phantom_os.edge_brain import PhantomOS_EdgeBrain
 
 
 def run_edge_brain_test():
@@ -16,7 +16,7 @@ def run_edge_brain_test():
     # The core network endpoint would be a real address in a production system
     core_endpoint = "tcp://127.0.0.1:5555"
 
-    edge_agent = EdgeBrain(core_network_endpoint=core_endpoint)
+    edge_agent = PhantomOS_EdgeBrain(node_alias=core_endpoint)
     edge_agent.start()
 
     print("\n--- Edge Brain is running. Will stop in 25 seconds. ---")

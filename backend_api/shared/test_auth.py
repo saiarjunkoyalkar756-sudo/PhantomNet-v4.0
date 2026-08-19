@@ -1,21 +1,16 @@
 import pytest
-from shared.database import get_db
-from shared.database import create_db_and_tables, User, Base, test_engine, TestingSessionLocal
-from iam_service.auth_methods import get_password_hash, create_access_token
+from backend_api.shared.database import Base, TestingSessionLocal, User, create_db_and_tables, get_db, test_engine
+from backend_api.iam_service.auth_methods import (
+    UserRole,
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    has_role,
+)
 import datetime
 from unittest.mock import MagicMock
-from iam_service.auth_methods import get_current_user as get_current_user_1
-from iam_service.auth_methods import UserRole
-try:
-    from backend_api.iam_service.auth_methods import get_current_user as get_current_user_2
-except ImportError:
-    get_current_user_2 = None
 
 from fastapi import Depends
-try:
-    from iam_service.auth_methods import has_role
-except ImportError:
-    from backend_api.iam_service.auth_methods import has_role
 
 async def dummy_blockchain_add_transaction():
     return {"message": "success"}
@@ -39,11 +34,7 @@ def create_mock_user(user_data, user_id=1):
 def mock_password_hash_fixture(monkeypatch):
     def mock_get_password_hash(password):
         return "mocked_hashed_password_string"
-    for path in ["iam_service.auth_methods.get_password_hash", "backend_api.iam_service.auth_methods.get_password_hash"]:
-        try:
-            monkeypatch.setattr(path, mock_get_password_hash)
-        except Exception:
-            pass
+    monkeypatch.setattr("backend_api.iam_service.auth_methods.get_password_hash", mock_get_password_hash)
 
 @pytest.fixture(autouse=True)
 def mock_verify_password(monkeypatch):
@@ -56,11 +47,7 @@ def mock_verify_password(monkeypatch):
         if plain_password == "adminpass" and hashed_password == "mocked_hashed_password_string":
             return True
         return False
-    for path in ["iam_service.auth_methods.verify_password", "backend_api.iam_service.auth_methods.verify_password"]:
-        try:
-            monkeypatch.setattr(path, mock_verify_password_func)
-        except Exception:
-            pass
+    monkeypatch.setattr("backend_api.iam_service.auth_methods.verify_password", mock_verify_password_func)
 
 @pytest.fixture
 def test_user_data():
@@ -155,9 +142,9 @@ def test_login_for_access_token_invalid_credentials(client):
 
 def test_read_users_me(client, register_test_user, test_user_data):
     mock_user_obj = create_mock_user(test_user_data)
-    client.app.dependency_overrides[get_current_user_1] = lambda: mock_user_obj
-    if get_current_user_2:
-        client.app.dependency_overrides[get_current_user_2] = lambda: mock_user_obj
+    client.app.dependency_overrides[get_current_user] = lambda: mock_user_obj
+    if get_current_user:
+        client.app.dependency_overrides[get_current_user] = lambda: mock_user_obj
 
     response = client.get(
         "/api/auth/users/me", headers={"Authorization": f"Bearer dummy_token"}
@@ -167,9 +154,9 @@ def test_read_users_me(client, register_test_user, test_user_data):
     assert data["username"] == test_user_data["username"]
     assert data["role"] == test_user_data["role"]
 
-    client.app.dependency_overrides.pop(get_current_user_1, None)
-    if get_current_user_2:
-        client.app.dependency_overrides.pop(get_current_user_2, None)
+    client.app.dependency_overrides.pop(get_current_user, None)
+    if get_current_user:
+        client.app.dependency_overrides.pop(get_current_user, None)
 
 
 def test_read_users_me_unauthorized(client):
@@ -183,9 +170,9 @@ def test_role_based_access_admin(client, register_test_admin, test_admin_data):
         client.app.post("/blockchain/add_transaction", dependencies=[Depends(has_role([UserRole.ADMIN]))])(dummy_blockchain_add_transaction)
 
     mock_admin_obj = create_mock_user(test_admin_data)
-    client.app.dependency_overrides[get_current_user_1] = lambda: mock_admin_obj
-    if get_current_user_2:
-        client.app.dependency_overrides[get_current_user_2] = lambda: mock_admin_obj
+    client.app.dependency_overrides[get_current_user] = lambda: mock_admin_obj
+    if get_current_user:
+        client.app.dependency_overrides[get_current_user] = lambda: mock_admin_obj
 
     response = client.post(
         "/blockchain/add_transaction", # Corrected URL
@@ -194,9 +181,9 @@ def test_role_based_access_admin(client, register_test_admin, test_admin_data):
     )
     assert response.status_code != 403
 
-    client.app.dependency_overrides.pop(get_current_user_1, None)
-    if get_current_user_2:
-        client.app.dependency_overrides.pop(get_current_user_2, None)
+    client.app.dependency_overrides.pop(get_current_user, None)
+    if get_current_user:
+        client.app.dependency_overrides.pop(get_current_user, None)
 
 
 def test_role_based_access_non_admin(client, register_test_user, test_user_data):
@@ -204,9 +191,9 @@ def test_role_based_access_non_admin(client, register_test_user, test_user_data)
         client.app.post("/blockchain/add_transaction", dependencies=[Depends(has_role([UserRole.ADMIN]))])(dummy_blockchain_add_transaction)
 
     mock_user_obj = create_mock_user(test_user_data)
-    client.app.dependency_overrides[get_current_user_1] = lambda: mock_user_obj
-    if get_current_user_2:
-        client.app.dependency_overrides[get_current_user_2] = lambda: mock_user_obj
+    client.app.dependency_overrides[get_current_user] = lambda: mock_user_obj
+    if get_current_user:
+        client.app.dependency_overrides[get_current_user] = lambda: mock_user_obj
 
     response = client.post(
         "/blockchain/add_transaction", # Corrected URL
@@ -216,6 +203,6 @@ def test_role_based_access_non_admin(client, register_test_user, test_user_data)
     assert response.status_code == 403
     assert response.json()["error"]["message"] == "Not enough permissions"
 
-    client.app.dependency_overrides.pop(get_current_user_1, None)
-    if get_current_user_2:
-        client.app.dependency_overrides.pop(get_current_user_2, None)
+    client.app.dependency_overrides.pop(get_current_user, None)
+    if get_current_user:
+        client.app.dependency_overrides.pop(get_current_user, None)

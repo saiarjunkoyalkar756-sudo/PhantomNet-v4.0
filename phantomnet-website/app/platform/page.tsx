@@ -100,7 +100,7 @@ export default function PlatformOverviewPage() {
                             <h2 className="text-3xl font-semibold font-heading mb-4 text-pn-heading">Why PhantomNet is Different</h2>
                             <p className="text-lg text-pn-text-muted leading-relaxed mb-4">
                                 PhantomNet stands apart with its truly autonomous capabilities and a proactive, AI-first philosophy.
-                                We don't just alert; we act. Our platform is built from the ground up for self-governing security.
+                                We don&apos;t just alert; we act. Our platform is built from the ground up for self-governing security.
                             </p>
                             <ul className="list-disc list-inside text-lg text-pn-text-muted leading-relaxed space-y-2">
                                 <li>

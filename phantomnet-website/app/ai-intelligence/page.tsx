@@ -36,7 +36,7 @@ export default function AIIntelligencePage() {
                 >
                     <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Beyond Signatures: True AI-Driven Cyber Defense</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto mb-10">
-                        PhantomNet's core strength lies in its sophisticated AI engine, designed not just to detect,
+                        PhantomNet&apos;s core strength lies in its sophisticated AI engine, designed not just to detect,
                         but to understand, predict, and autonomously respond to the most advanced cyber threats.
                         We harness the power of machine learning, behavioral analytics, and real-time data
                         processing to deliver intelligence that truly matters.
@@ -91,7 +91,7 @@ export default function AIIntelligencePage() {
                         <GitFork size={48} className="text-pn-neon-blue mb-4" />
                         <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Correlation Engine</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            PhantomNet's advanced correlation engine processes millions of events per second,
+                            PhantomNet&apos;s advanced correlation engine processes millions of events per second,
                             identifying complex attack chains and linking seemingly disparate activities into
                             cohesive incident narratives. This contextual awareness eliminates false positives
                             and provides a clear, actionable picture of actual threats.
@@ -109,9 +109,9 @@ export default function AIIntelligencePage() {
                         <MessageSquare size={48} className="text-pn-electric-purple mb-4" />
                         <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Explainable AI (XAI)</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            We believe in transparency. PhantomNet's AI provides clear, concise explanations for
+                            We believe in transparency. PhantomNet&apos;s AI provides clear, concise explanations for
                             why an alert was generated or an autonomous action was taken. This explainability empowers
-                            security analysts to understand the AI's reasoning, validate its decisions, and build trust
+                            security analysts to understand the AI&apos;s reasoning, validate its decisions, and build trust
                             in the autonomous defense system. No black boxes, just verifiable intelligence.
                         </p>
                     </motion.div>

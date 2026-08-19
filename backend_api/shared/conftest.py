@@ -22,17 +22,9 @@ def client():
     async def create_tables():
         async with async_test_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If a loop is already running, run the coroutine in it
-            loop.create_task(create_tables())
-        else:
-            loop.run_until_complete(create_tables())
-    except Exception:
-        asyncio.run(create_tables())
-    
+
+    asyncio.run(create_tables())
+
     # Configure dependency overrides
     async def override_get_db():
         async with AsyncTestingSessionLocal() as session:
@@ -44,24 +36,17 @@ def client():
                 raise
             finally:
                 await session.close()
-                
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as c:
         yield c
-        
+
     # Teardown: Clean up overrides and drop tables
     app.dependency_overrides.clear()
-    
+
     async def drop_tables():
         async with async_test_engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
-            
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            loop.create_task(drop_tables())
-        else:
-            loop.run_until_complete(drop_tables())
-    except Exception:
-        asyncio.run(drop_tables())
+
+    asyncio.run(drop_tables())

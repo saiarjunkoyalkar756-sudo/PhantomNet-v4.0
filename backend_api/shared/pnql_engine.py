@@ -44,7 +44,7 @@ class PnqlEngine:
 
             # Regex to find aggregation functions
             aggregation_pattern = re.compile(r"(COUNT|SUM|AVG|MIN|MAX)\((.*?)\)", re.IGNORECASE)
-            
+
             remaining_fields = fields_str
             for agg_match in aggregation_pattern.finditer(fields_str):
                 agg_func = agg_match.group(1).upper()
@@ -109,6 +109,7 @@ class PnqlEngine:
         # Operators and their regex patterns
         operators = {
             "==": r"==",
+            "=": r"=",
             "!=": r"!=",
             ">=": r">=",
             "<=": r"<=",
@@ -116,7 +117,7 @@ class PnqlEngine:
             "<": r"<",
             "LIKE": r"LIKE",
         }
-        
+
         # Build a regex to match any of the operators
         op_pattern = "|".join(re.escape(op) for op in operators.values())
         match = re.match(fr"(\w+)\s*({op_pattern})\s*(.*)", condition_str, re.IGNORECASE)
@@ -149,9 +150,9 @@ class PnqlEngine:
                 expected_value = value_str
         except ValueError:
             expected_value = value_str
-        
+
         # Perform comparison
-        if operator_str == "==":
+        if operator_str in {"=", "=="}:
             return item_value == expected_value
         elif operator_str == "!=":
             return item_value != expected_value
@@ -223,7 +224,7 @@ class PnqlEngine:
         for item in source_data:
             if self._evaluate_condition(item, parsed_query["condition"]):
                 filtered_items.append(item)
-        
+
         aggregations_to_perform = parsed_query.get("aggregations", [])
         if aggregations_to_perform:
             aggregation_results = {}

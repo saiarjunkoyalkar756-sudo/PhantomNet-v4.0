@@ -9,8 +9,6 @@ import {
     Zap,
     ScrollText,
     ShieldCheck,
-    Lock, // For mTLS
-    Fingerprint, // For integrity checks
 } from 'lucide-react';
 
 const sectionVariants = {

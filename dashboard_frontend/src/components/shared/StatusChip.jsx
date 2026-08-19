@@ -1,6 +1,7 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+const MotionSpan = motion.span;
 
 const StatusChip = ({ status, className }) => {
   let bgColor = "bg-gray-700";
@@ -47,7 +48,7 @@ const StatusChip = ({ status, className }) => {
   }
 
   return (
-    <motion.span
+    <MotionSpan
       className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-medium",
         bgColor,
@@ -55,12 +56,12 @@ const StatusChip = ({ status, className }) => {
         className
       )}
     >
-      <motion.span
+      <MotionSpan
         className={cn("w-2 h-2 rounded-full mr-1.5", dotColor)}
         animate={animation}
-      ></motion.span>
+      ></MotionSpan>
       {status.toUpperCase()}
-    </motion.span>
+    </MotionSpan>
   );
 };
 

@@ -1,14 +1,16 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleLeft, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StatusChip from '@/components/shared/StatusChip'; // Assuming StatusChip is in shared
 
+const MotionDiv = motion.div;
+
 const PluginCard = ({ plugin, onInspect, onToggleEnable }) => {
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(0, 255, 138, 0.3)" }}
@@ -55,7 +57,7 @@ const PluginCard = ({ plugin, onInspect, onToggleEnable }) => {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

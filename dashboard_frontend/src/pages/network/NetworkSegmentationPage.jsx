@@ -4,14 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import NetworkGraph from '@/components/network/NetworkGraph';
 
 const NetworkSegmentationPage = () => {
-  const [segments, setSegments] = useState([]);
   const [violations, setViolations] = useState([]);
 
   useEffect(() => {
-    fetch('/api/v1/network/segmentation')
-      .then(response => response.json())
-      .then(data => setSegments(data));
-
     fetch('/api/v1/network/violations')
       .then(response => response.json())
       .then(data => setViolations(data));

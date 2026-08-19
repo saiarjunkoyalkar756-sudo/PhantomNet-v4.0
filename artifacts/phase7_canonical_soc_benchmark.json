@@ -7,7 +7,7 @@
     "audit_chain_valid": true,
     "audit_record_count": 4,
     "execution_status": "verified",
-    "latency_ms": 28.743,
+    "latency_ms": 20.17,
     "rollback_status": "rolled_back"
   },
   "endpoint_actions": 0,
@@ -20,19 +20,19 @@
   ],
   "pipeline": {
     "latency_ms": {
-      "max": 12.294,
-      "p50": 5.964,
-      "p95": 8.1,
-      "p99": 9.65
+      "max": 6.841,
+      "p50": 5.031,
+      "p95": 6.248,
+      "p99": 6.519
     },
     "samples": 120,
-    "throughput_events_per_second": 160.84
+    "throughput_events_per_second": 192.7
   },
   "wazuh_stream": {
     "automatic_enforcement": false,
     "batch_size": 25,
     "canonical_event_count": 50,
     "integrity_created": 25,
-    "latency_ms": 279.423
+    "latency_ms": 202.609
   }
 }

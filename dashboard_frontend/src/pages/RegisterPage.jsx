@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import api from '@/services/api';
+
+const MotionDiv = motion.div;
 
 const registerSchema = z.object({
   username: z.string().email({ message: 'Invalid email address.' }), // Using email as username
@@ -49,7 +50,7 @@ const RegisterPage = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground p-4">
       <div className="absolute inset-0 z-0 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -62,7 +63,7 @@ const RegisterPage = () => {
 
         <AnimatePresence>
             {apiError && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -70,10 +71,10 @@ const RegisterPage = () => {
                     role="alert"
                 >
                     {apiError}
-                </motion.div>
+                </MotionDiv>
             )}
             {registrationSuccess && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -81,7 +82,7 @@ const RegisterPage = () => {
                     role="alert"
                 >
                     Registration successful! Redirecting to login...
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
 
@@ -125,7 +126,7 @@ const RegisterPage = () => {
             Login
           </Link>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

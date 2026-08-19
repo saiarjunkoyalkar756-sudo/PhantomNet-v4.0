@@ -1,8 +1,9 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle, Info, Shield, Wifi } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';import { X, AlertTriangle, Info, Shield, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+const MotionDiv = motion.div;
 
 const EventDetailDrawer = ({ event, onClose }) => {
   if (!event) return null;
@@ -20,7 +21,7 @@ const EventDetailDrawer = ({ event, onClose }) => {
   return (
     <AnimatePresence>
       {event && (
-        <motion.div
+        <MotionDiv
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
@@ -75,7 +76,7 @@ const EventDetailDrawer = ({ event, onClose }) => {
           <div className="p-4 border-t border-border flex justify-end">
             <Button onClick={onClose} variant="secondary">CLOSE</Button>
           </div>
-        </motion.div>
+        </MotionDiv>
       )}
     </AnimatePresence>
   );

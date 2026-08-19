@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';import { useNavigate } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import useAuthStore from '@/store/authStore';
 import api from '@/services/api';
+
+const MotionDiv = motion.div;
 
 const mfaSchema = z.object({
   code: z.string().min(6, { message: 'Code must be 6 digits.' }).max(6, { message: 'Code must be 6 digits.' }).regex(/^\d+$/, { message: 'Code must be numeric.' }),
@@ -26,7 +27,7 @@ const MFAChallengePage = () => {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(mfaSchema),
@@ -36,7 +37,7 @@ const MFAChallengePage = () => {
     }
   });
 
-  const challengeType = watch('type');
+  const challengeType = useWatch({ control, name: 'type' });
 
   const onSubmit = async (data) => {
     setApiError(null);
@@ -79,7 +80,7 @@ const MFAChallengePage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground p-4">
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -92,7 +93,7 @@ const MFAChallengePage = () => {
 
         <AnimatePresence>
             {apiError && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -100,7 +101,7 @@ const MFAChallengePage = () => {
                     role="alert"
                 >
                     {apiError}
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
 
@@ -127,12 +128,12 @@ const MFAChallengePage = () => {
               Use Recovery Code
             </Button>
           </div>
-          
+
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Verify Code'}
           </Button>
         </form>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

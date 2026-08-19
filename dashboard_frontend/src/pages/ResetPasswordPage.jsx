@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import api from '@/services/api';
+
+const MotionDiv = motion.div;
 
 const resetPasswordSchema = z.object({
   password: z.string().min(8, { message: 'New password must be at least 8 characters.' }),
@@ -37,12 +38,6 @@ const ResetPasswordPage = () => {
     mode: 'onChange',
   });
 
-  useEffect(() => {
-    if (!token) {
-      setApiError("Password reset token is missing.");
-    }
-  }, [token]);
-
   const onSubmit = async (data) => {
     setApiError(null);
     setSuccessMessage(null);
@@ -62,7 +57,7 @@ const ResetPasswordPage = () => {
   if (!token) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground p-4">
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -73,14 +68,14 @@ const ResetPasswordPage = () => {
             <p className="text-muted-foreground mt-2">Password reset token is missing or invalid.</p>
             <Link to="/forgot-password" className="text-primary hover:underline mt-4 block">Request a new reset link</Link>
           </div>
-        </motion.div>
+        </MotionDiv>
       </div>
     );
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground p-4">
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -93,7 +88,7 @@ const ResetPasswordPage = () => {
 
         <AnimatePresence>
             {apiError && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -101,10 +96,10 @@ const ResetPasswordPage = () => {
                     role="alert"
                 >
                     {apiError}
-                </motion.div>
+                </MotionDiv>
             )}
             {successMessage && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -112,7 +107,7 @@ const ResetPasswordPage = () => {
                     role="alert"
                 >
                     {successMessage}
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
 
@@ -141,12 +136,12 @@ const ResetPasswordPage = () => {
             </button>
             {errors.confirmPassword && <p className="text-destructive text-sm mt-1">{errors.confirmPassword.message}</p>}
           </div>
-          
+
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Reset Password'}
           </Button>
         </form>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

@@ -32,7 +32,7 @@ class TestReportService(unittest.TestCase):
         self.assertIn(self.expected_content_part, content)
         self.assertIn("Analysis Summary:", content)
 
-    @patch("backend_api.report_service.FPDF")
+    @patch("backend_api.shared.report_service.FPDF")
     def test_export_to_pdf(self, mock_fpdf):
         print("\n--- Testing export_to_pdf ---")
         mock_pdf_instance = MagicMock()

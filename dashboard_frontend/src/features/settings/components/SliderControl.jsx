@@ -1,11 +1,12 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { motion } from 'framer-motion';
+const MotionDiv = motion.div;
 
 const SliderControl = ({ id, label, description, value, onValueChange, min, max, step }) => {
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
@@ -31,7 +32,7 @@ const SliderControl = ({ id, label, description, value, onValueChange, min, max,
         onValueChange={(val) => onValueChange(val[0])}
         className="w-full"
       />
-    </motion.div>
+    </MotionDiv>
   );
 };
 

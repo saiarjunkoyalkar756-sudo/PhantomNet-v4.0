@@ -10,8 +10,8 @@ logger = logging.getLogger("cognitive_core")
 class CognitiveCore:
     """
     Cognitive Core Intelligence (Vectorized Episodic Memory)
-    Replaces static dictionary signature matching with an advanced 
-    TF-IDF Vectorized memory store. It extracts the semantic essence of incoming 
+    Replaces static dictionary signature matching with an advanced
+    TF-IDF Vectorized memory store. It extracts the semantic essence of incoming
     telemetry and correlates it against past attacks.
     """
 
@@ -30,7 +30,7 @@ class CognitiveCore:
         """Loads previous attacks from memory and computes the NLP corpus."""
         all_episodes = self.memory.get_all_episodes()
         corpus_size = len(all_episodes)
-        
+
         doc_freq = Counter()
         for ep in all_episodes:
             threat_str = str(ep.get("threat_data", ""))
@@ -38,7 +38,7 @@ class CognitiveCore:
             for t in tokens:
                 doc_freq[t] += 1
                 self.vocabulary.add(t)
-                
+
         # Calculate IDF (Inverse Document Frequency)
         for token, freq in doc_freq.items():
             self.idf_cache[token] = math.log((corpus_size + 1) / (freq + 1)) + 1
@@ -47,7 +47,7 @@ class CognitiveCore:
         tokens = self._tokenize(text)
         tf = Counter(tokens)
         total_tokens = len(tokens)
-        
+
         vector = {}
         for token, count in tf.items():
             tf_score = count / total_tokens
@@ -58,11 +58,11 @@ class CognitiveCore:
     def _cosine_similarity(self, vec1: Dict[str, float], vec2: Dict[str, float]) -> float:
         intersection = set(vec1.keys()) & set(vec2.keys())
         numerator = sum([vec1[x] * vec2[x] for x in intersection])
-        
+
         sum1 = sum([val ** 2 for val in vec1.values()])
         sum2 = sum([val ** 2 for val in vec2.values()])
         denominator = math.sqrt(sum1) * math.sqrt(sum2)
-        
+
         if not denominator:
             return 0.0
         return float(numerator) / denominator
@@ -73,18 +73,18 @@ class CognitiveCore:
         """
         threat_str = str(threat_data)
         logger.info(f"Cognitive Vectorization begun for: {threat_str[:50]}...")
-        
+
         target_vector = self._compute_tf_idf(threat_str)
-        
+
         all_episodes = self.memory.get_all_episodes()
         highest_similarity = 0.0
         best_match = None
-        
+
         for ep in all_episodes:
             ep_str = str(ep.get("threat_data", ""))
             ep_vector = self._compute_tf_idf(ep_str)
             sim = self._cosine_similarity(target_vector, ep_vector)
-            
+
             if sim > highest_similarity:
                 highest_similarity = sim
                 best_match = ep
@@ -95,7 +95,10 @@ class CognitiveCore:
             analysis_result = {
                 "status": "analyzed_from_memory",
                 "threat_level": best_match['analysis'].get('threat_level', 'high'),
-                "description": f"Vector match! Semantically identical to historical attack: {best_match.get('resolution')}",
+                "description": best_match["analysis"].get(
+                    "description",
+                    f"Vector match! Semantically identical to historical attack: {best_match.get('resolution')}",
+                ),
                 "similarity_score": highest_similarity,
             }
         else:
@@ -108,7 +111,7 @@ class CognitiveCore:
             }
             # Auto-learn
             self.memory.store_episode(threat_str, analysis_result, "Novel Attack Vector Auto-Logged.")
-            
+
         return analysis_result
 
     def execute_action(self, action: dict) -> dict:

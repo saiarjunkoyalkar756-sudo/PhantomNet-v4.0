@@ -1,5 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 import { Search, Bell, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from './ThemeToggler';
@@ -12,11 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import useAuthStore from '@/store/authStore';
 
+const MotionDiv = motion.div;
+const MotionHeader = motion.header;
+
 const TopBar = () => {
   const { user, logout } = useAuthStore();
 
   return (
-    <motion.header
+    <MotionHeader
       initial={{ opacity: 0, y: -50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -39,10 +42,10 @@ const TopBar = () => {
             <Bell size={20} />
             <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-destructive animate-pulse" />
         </Button>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <motion.div
+            <MotionDiv
               className="flex items-center space-x-3 cursor-pointer group"
               whileHover={{ scale: 1.02 }}
             >
@@ -53,7 +56,7 @@ const TopBar = () => {
                     <p className="text-sm font-semibold text-foreground">{user?.email}</p>
                     <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
                 </div>
-            </motion.div>
+            </MotionDiv>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem>
@@ -68,7 +71,7 @@ const TopBar = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </motion.header>
+    </MotionHeader>
   );
 };
 

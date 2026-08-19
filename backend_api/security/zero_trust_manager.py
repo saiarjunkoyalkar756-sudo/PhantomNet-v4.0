@@ -2,8 +2,8 @@
 
 from fastapi import Request, HTTPException
 from typing import Optional, Dict, Any
-from shared.logger_config import logger
-from shared.zero_trust_engine import ZeroTrustEngine, Identity, AccessRequest
+from backend_api.shared.logger_config import logger
+from backend_api.shared.zero_trust_engine import AccessRequest, Identity, ZeroTrustEngine
 
 class IntegratedZeroTrustManager:
     """
@@ -24,18 +24,18 @@ class IntegratedZeroTrustManager:
         if not client_cert:
             logger.warning("ZeroTrust: Missing mTLS fingerprint.")
             # In production, this might be a hard fail. For audit, we'll mark as low-trust.
-        
+
         # 2. Evaluate Identity (Signal 2)
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             logger.error("ZeroTrust: Missing or invalid Authorization header.")
             raise HTTPException(status_code=401, detail="Authentication required")
-        
+
         token = auth_header.split(" ")[1]
         # Real JWT validation happens in IAM service, but we'll simulate the identity extraction here
         # In a real grid, this service would call the IAM verifier or check a local JTI cache.
         identity_id = "user_placeholder" # Extracted from token
-        
+
         # 3. Build Access Request
         access_req = AccessRequest(
             identity=Identity(id=identity_id, type="user"),
@@ -51,11 +51,11 @@ class IntegratedZeroTrustManager:
 
         # 4. Evaluate through Engine
         enforcement = await self.engine.evaluate_access_request(access_req)
-        
+
         if enforcement.enforced_action != "allowed":
             logger.critical(f"ZeroTrust: Access DENIED for {identity_id}. Reason: {enforcement.enforced_action}")
             raise HTTPException(
-                status_code=403, 
+                status_code=403,
                 detail=f"Zero-Trust Policy Violation: {enforcement.enforced_action}"
             )
 

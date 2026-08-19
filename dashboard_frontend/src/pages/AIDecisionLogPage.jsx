@@ -1,10 +1,12 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Brain, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'react-toastify';
+
+const MotionDiv = motion.div;
 
 const AIDecisionLogPage = () => {
   const [decisionLogs, setDecisionLogs] = useState([]);
@@ -24,9 +26,9 @@ const AIDecisionLogPage = () => {
       // This is a placeholder for fetching AI decision logs from the backend.
       // The backend needs an endpoint like /ai/decision_logs or similar.
       // For now, we'll simulate some data.
-      const response = await fetch('/api/ai/decision_logs'); 
+      const response = await fetch('/api/ai/decision_logs');
       if (!response.ok) throw new Error((await response.json()).detail || 'Failed to fetch AI decision logs');
-      
+
       const data = await response.json();
       setDecisionLogs(data.decision_logs || []);
 
@@ -48,7 +50,7 @@ const AIDecisionLogPage = () => {
   }
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -113,7 +115,7 @@ const AIDecisionLogPage = () => {
           </TableBody>
         </Table>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

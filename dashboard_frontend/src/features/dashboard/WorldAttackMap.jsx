@@ -1,7 +1,10 @@
-import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe, Crosshair } from 'lucide-react';
+
+const MotionCircle = motion.circle;
+const MotionPath = motion.path;
 
 const WorldAttackMap = () => {
   // SVG Coordinates for a simplified world layout
@@ -17,6 +20,15 @@ const WorldAttackMap = () => {
     { id: 5, cx: 200, cy: 280, label: "South America", risk: "Medium" }
   ], []);
 
+  const backgroundDots = useMemo(
+    () => Array.from({ length: 150 }, (_, index) => ({
+      id: index,
+      cx: (index * 67 + 31) % mapWidth,
+      cy: (index * 97 + 17) % mapHeight,
+    })),
+    [mapHeight, mapWidth],
+  );
+
   // Mock "Attack Vectors" (curved lines)
   const attacks = useMemo(() => [
     { id: 'a1', from: hotspots[2], to: hotspots[0], delay: 0 },
@@ -27,7 +39,7 @@ const WorldAttackMap = () => {
   return (
     <Card className="h-[450px] flex flex-col glass-panel overflow-hidden relative border-primary/20 bg-[#0a0c14]">
       <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
-      
+
       <CardHeader className="z-10 bg-background/50 backdrop-blur-sm border-b border-border/50">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -42,8 +54,8 @@ const WorldAttackMap = () => {
       </CardHeader>
 
       <CardContent className="flex-1 p-0 relative overflow-hidden flex items-center justify-center">
-        <svg 
-            viewBox={`0 0 ${mapWidth} ${mapHeight}`} 
+        <svg
+            viewBox={`0 0 ${mapWidth} ${mapHeight}`}
             className="w-full h-auto opacity-80"
             style={{ filter: 'drop-shadow(0 0 20px rgba(139, 92, 246, 0.15))' }}
         >
@@ -56,11 +68,11 @@ const WorldAttackMap = () => {
           </defs>
 
           {/* Random background dots for mapping feel */}
-          {Array.from({ length: 150 }).map((_, i) => (
-            <circle 
-              key={i}
-              cx={Math.random() * mapWidth}
-              cy={Math.random() * mapHeight}
+          {backgroundDots.map((dot) => (
+            <circle
+              key={dot.id}
+              cx={dot.cx}
+              cy={dot.cy}
               r={1}
               fill="#1e293b"
               opacity={0.3}
@@ -72,35 +84,35 @@ const WorldAttackMap = () => {
             const midX = (attack.from.cx + attack.to.cx) / 2;
             const midY = Math.min(attack.from.cy, attack.to.cy) - 50; // Curve up
             const path = `M ${attack.from.cx} ${attack.from.cy} Q ${midX} ${midY} ${attack.to.cx} ${attack.to.cy}`;
-            
+
             return (
               <g key={attack.id}>
-                <motion.path
+                <MotionPath
                   d={path}
                   fill="none"
                   stroke="rgba(139, 92, 246, 0.3)"
                   strokeWidth="1"
                   initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ 
-                    pathLength: 1, 
+                  animate={{
+                    pathLength: 1,
                     opacity: [0, 1, 0],
-                    transition: { 
-                        duration: 3, 
-                        delay: attack.delay, 
+                    transition: {
+                        duration: 3,
+                        delay: attack.delay,
                         repeat: Infinity,
                         repeatDelay: 2
-                    } 
+                    }
                   }}
                 />
                 {/* Attack Head Indicator */}
-                <motion.circle
+                <MotionCircle
                   r="2"
                   fill="#8b5cf6"
                   initial={{ offset: 0 }}
-                  animate={{ 
+                  animate={{
                     cx: [attack.from.cx, attack.to.cx],
                     cy: [attack.from.cy, attack.to.cy],
-                    transition: { duration: 3, delay: attack.delay, repeat: Infinity, repeatDelay: 2 } 
+                    transition: { duration: 3, delay: attack.delay, repeat: Infinity, repeatDelay: 2 }
                   }}
                   style={{ filter: 'drop-shadow(0 0 5px #8b5cf6)' }}
                 />
@@ -112,7 +124,7 @@ const WorldAttackMap = () => {
           {hotspots.map((spot) => (
             <g key={spot.id}>
               {/* Pulsing ring */}
-              <motion.circle
+              <MotionCircle
                 cx={spot.cx}
                 cy={spot.cy}
                 r="15"
@@ -129,15 +141,15 @@ const WorldAttackMap = () => {
                 cy={spot.cy}
                 r="4"
                 className={
-                    spot.risk === 'Critical' ? 'text-destructive fill-current' : 
+                    spot.risk === 'Critical' ? 'text-destructive fill-current' :
                     spot.risk === 'High' ? 'text-secondary fill-current' : 'text-primary fill-current'
                 }
                 style={{ filter: 'drop-shadow(0 0 10px currentColor)' }}
               />
-              <text 
-                x={spot.cx} 
-                y={spot.cy + 20} 
-                textAnchor="middle" 
+              <text
+                x={spot.cx}
+                y={spot.cy + 20}
+                textAnchor="middle"
                 className="text-[8px] font-mono fill-muted-foreground uppercase"
               >
                 {spot.label}

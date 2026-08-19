@@ -1,6 +1,6 @@
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Plug, PlusCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'react-toastify';
+
+const MotionDiv = motion.div;
 
 const SiemIntegrationPage = () => {
   const [siemType, setSiemType] = useState('');
@@ -93,7 +95,7 @@ const SiemIntegrationPage = () => {
   const isSendEventValid = selectedSiemForEvent && testEventData;
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -205,7 +207,7 @@ const SiemIntegrationPage = () => {
           </Table>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

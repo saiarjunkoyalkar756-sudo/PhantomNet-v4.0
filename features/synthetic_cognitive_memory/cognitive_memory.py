@@ -1,6 +1,8 @@
 import datetime
+
 import json
-from shared.database import CognitiveMemoryDB
+
+from backend_api.shared.database import CognitiveMemoryDB
 
 
 class CognitiveMemory:

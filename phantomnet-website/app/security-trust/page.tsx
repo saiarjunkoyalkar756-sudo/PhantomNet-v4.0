@@ -43,7 +43,7 @@ export default function SecurityTrustPage() {
                 >
                     <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Foundational Security for Enterprise Assurance</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto mb-10">
-                        At PhantomNet, security is not an afterthought; it's architected into every layer of our platform.
+                        At PhantomNet, security is not an afterthought; it&apos;s architected into every layer of our platform.
                         We provide an immutable, verifiable, and resilient defense posture that meets the stringent demands
                         of enterprise security and compliance.
                     </p>
@@ -62,7 +62,7 @@ export default function SecurityTrustPage() {
                         <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Zero Trust Design</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
                             PhantomNet embraces a Zero Trust architecture, verifying every user and device,
-                            limiting access to only what's necessary, and authenticating every request,
+                            limiting access to only what&apos;s necessary, and authenticating every request,
                             regardless of network location. Trust is never assumed, always verified.
                         </p>
                     </motion.div>
@@ -146,9 +146,9 @@ export default function SecurityTrustPage() {
                         <PowerOff size={48} className="text-pn-electric-purple mb-4" />
                         <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">SAFE_MODE Philosophy</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            Embracing a "fail-fast, recover-strong" philosophy, PhantomNet is engineered to
+                            Embracing a &quot;fail-fast, recover-strong&quot; philosophy, PhantomNet is engineered to
                             detect and isolate failures instantly. This prevents cascading impacts and ensures
-                            system integrity, avoiding "zombie systems" and maintaining continuous security
+                            system integrity, avoiding &quot;zombie systems&quot; and maintaining continuous security
                             operations even under duress.
                         </p>
                     </motion.div>

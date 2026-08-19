@@ -1,11 +1,13 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 
+const MotionDiv = motion.div;
+
 const IntelCard = ({ title, value, icon: Icon, color = 'primary', children }) => {
   return (
-    <motion.div
+    <MotionDiv
       whileHover={{ scale: 1.02, boxShadow: `0 0 15px rgba(var(--color-${color}-rgb), 0.5)` }}
       className="h-full"
     >
@@ -19,7 +21,7 @@ const IntelCard = ({ title, value, icon: Icon, color = 'primary', children }) =>
           {children}
         </CardContent>
       </Card>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

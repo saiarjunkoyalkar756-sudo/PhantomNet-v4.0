@@ -1,19 +1,21 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import PageHeader from '@/components/shared/PageHeader';
-import { motion } from 'framer-motion';
 import { Users, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AgentsTable from '@/features/agents/components/AgentsTable';
 
+const MotionDiv = motion.div;
+
 const AgentsManagementPage = () => {
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="font-sans h-full flex flex-col"
     >
-      <PageHeader 
+      <PageHeader
         title="AGENTS MANAGEMENT"
         subtitle="Manage and monitor your PhantomNet agent fleet."
         actions={
@@ -22,11 +24,11 @@ const AgentsManagementPage = () => {
             </Button>
         }
       />
-      
+
       <div className="flex-1 min-h-0">
         <AgentsTable />
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

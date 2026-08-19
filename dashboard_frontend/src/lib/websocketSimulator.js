@@ -1,4 +1,3 @@
-import { io } from 'socket.io-client';
 import { useStore } from '@/store/useStore';
 
 // In a real application, replace this with your actual WebSocket server URL

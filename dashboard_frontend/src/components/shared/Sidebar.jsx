@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Shield,
@@ -22,9 +22,15 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const MotionAside = motion.aside;
+const MotionButton = motion.button;
+const MotionDiv = motion.div;
+const MotionLi = motion.li;
+const MotionSpan = motion.span;
+
 const NavItem = ({ icon: Icon, text, to, expanded }) => {
     return (
-        <motion.li whileHover={{ scale: expanded ? 1.02 : 1, x: expanded ? 5 : 0 }}>
+        <MotionLi whileHover={{ scale: expanded ? 1.02 : 1, x: expanded ? 5 : 0 }}>
             <NavLink
                 to={to}
                 className={({ isActive }) =>
@@ -41,15 +47,15 @@ const NavItem = ({ icon: Icon, text, to, expanded }) => {
                     `)
                 }
             >
-                <Icon size={20} className="shrink-0" />
-                <motion.span
+                {React.createElement(Icon, { size: 20, className: "shrink-0" })}
+                <MotionSpan
                     initial={false}
                     animate={{ width: expanded ? "auto" : 0, opacity: expanded ? 1 : 0, marginLeft: expanded ? '0.75rem' : 0 }}
                     transition={{ duration: 0.3 }}
                     className="overflow-hidden"
                 >
                     {text}
-                </motion.span>
+                </MotionSpan>
             </NavLink>
              {!expanded && (
                 <div
@@ -64,7 +70,7 @@ const NavItem = ({ icon: Icon, text, to, expanded }) => {
                     {text}
                 </div>
             )}
-        </motion.li>
+        </MotionLi>
     );
 };
 
@@ -85,28 +91,28 @@ const Sidebar = () => {
     ];
 
     return (
-        <motion.aside
+        <MotionAside
             initial={false}
             animate={{ width: expanded ? "280px" : "80px" }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="h-screen p-4 flex flex-col bg-card border-r shadow-lg relative z-20"
         >
             <div className="flex items-center justify-between pb-4 border-b mb-4">
-                <motion.div
+                <MotionDiv
                     animate={{ opacity: expanded ? 1 : 0, width: expanded ? "auto" : 0 }}
                     className="flex items-center gap-2 overflow-hidden"
                 >
                     <Fingerprint size={28} className="text-primary shrink-0" />
                     <span className="font-bold text-xl text-primary whitespace-nowrap">PhantomNet</span>
-                </motion.div>
-                <motion.button
+                </MotionDiv>
+                <MotionButton
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setExpanded(curr => !curr)}
                     className="p-2 rounded-full text-muted-foreground hover:bg-accent"
                 >
                     {expanded ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
-                </motion.button>
+                </MotionButton>
             </div>
 
             <ul className="flex-1">
@@ -118,7 +124,7 @@ const Sidebar = () => {
             <div className="border-t pt-4 mt-4">
                 <NavItem icon={Settings} text="Settings" to="/settings" expanded={expanded} />
             </div>
-        </motion.aside>
+        </MotionAside>
     );
 };
 

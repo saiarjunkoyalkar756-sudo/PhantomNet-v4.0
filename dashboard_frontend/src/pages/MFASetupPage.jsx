@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';import { useNavigate } from 'react-router-dom';
 import { LoaderCircle, CheckCircle, XCircle } from 'lucide-react';
 import QRCode from 'qrcode.react'; // You might need to install 'qrcode.react' (npm install qrcode.react)
 
@@ -13,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import api from '@/services/api';
 import useAuthStore from '@/store/authStore';
+
+const MotionDiv = motion.div;
 
 const mfaVerifySchema = z.object({
   code: z.string().min(6, { message: 'Code must be 6 digits.' }).max(6, { message: 'Code must be 6 digits.' }).regex(/^\d+$/, { message: 'Code must be numeric.' }),
@@ -64,20 +65,6 @@ const MFASetupPage = () => {
     }
   };
 
-  const handleDisable2FA = async (data) => {
-    setApiError(null);
-    try {
-      await api.post('/api/auth/disable-2fa', { code: data.code });
-      setSecret(null);
-      setRecoveryCodes([]);
-      setSetupStep(1); // Back to enable step
-      alert("2FA disabled successfully.");
-      // Optionally refresh user state
-    } catch (err) {
-      setApiError(err.response?.data?.detail || 'Failed to disable 2FA. Invalid code?');
-    }
-  };
-
   // Redirect if user not logged in, or adjust based on current user 2FA status
   useEffect(() => {
     if (!user) {
@@ -105,7 +92,7 @@ const MFASetupPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground p-4">
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -118,7 +105,7 @@ const MFASetupPage = () => {
 
         <AnimatePresence>
             {apiError && (
-                 <motion.div
+                 <MotionDiv
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -126,7 +113,7 @@ const MFASetupPage = () => {
                     role="alert"
                 >
                     {apiError}
-                </motion.div>
+                </MotionDiv>
             )}
         </AnimatePresence>
 
@@ -192,7 +179,7 @@ const MFASetupPage = () => {
             </Button>
           </div>
         )}
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };
