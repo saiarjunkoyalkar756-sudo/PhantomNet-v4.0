@@ -34,13 +34,13 @@ The current codebase already includes versioned canonical events; durable detect
 | 9 | **AI-native analyst assistance** | Explainable, advisory-only correlation suggestions, rule-draft workflows, and analyst review gates with no direct response authority. |
 | 10 | **External lab readiness** | Non-production deployment guide, operator runbooks, security review, onboarding checklist, and first external lab or university validation. |
 
-## Completed development increment: Phase 4
+## Completed development increment: Phase 5
 
-Phase 4 now provides a **tenant-scoped evidence integration layer**. Assets, endpoint integrity, Wazuh telemetry, identity, intelligence, and graph context share one bounded evidence contract with explicit source identity, observed and collected timestamps, provenance, and read-only semantics. Records are persisted idempotently by tenant, source identity, and SHA-256 evidence fingerprint; they are retrievable only by their owner tenant.
+Phase 5 now provides an **analyst operations layer**. Structured hunts can inspect tenant-owned integrated-evidence metadata, dashboard health reports evidence availability by source, and analysts can request an alert or case decision trace that joins durable alerts, detections, read-only evidence, and graph context using only same-tenant record identifiers.
 
-The implementation projects each durable record to an informational canonical `EVIDENCE.<SOURCE>.OBSERVED` event, so existing governed correlation can use the context without treating any integration as a response authority. Existing asset, integrity, and Wazuh ingestion paths now emit integrated-evidence receipts, and successful read-only World Intel context can be admitted without initiating unreviewed external retrieval.
+The implementation includes deterministic, factor-by-factor review priority based on existing severity, alert occurrences, linked detections, endpoint/Wazuh evidence, and graph context. Every trace includes exact IDs for auditability and returns `human_review_required`; it does not modify alert or case state, suppress evidence, propose containment, execute a playbook, or bypass approval.
 
-> **Phase 4 closure rule:** integrated evidence must attest `read_only=true`, cannot enable automatic enforcement, and cannot expose containment, response, cloud-control, identity-mutation, or endpoint-command operations.
+> **Phase 5 closure rule:** analyst context is read-only and advisory. Evidence before action, explanation before recommendation, and human approval before any high-impact response remain mandatory.
 
 ## Sequencing principles
 

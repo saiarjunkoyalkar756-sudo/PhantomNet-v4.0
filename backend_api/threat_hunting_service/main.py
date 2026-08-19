@@ -82,6 +82,32 @@ async def run_automated_hunts(current_user: User = Depends(require_capability("a
     return success_response(data=results)
 
 
+@app.get("/analyst-context/alerts/{alert_id}")
+async def analyst_alert_context(
+    alert_id: str,
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return tenant-owned, explainable evidence-to-decision context for one alert; no response is proposed or dispatched."""
+    try:
+        context = await hunt_service.analyst_context_for_alert(str(current_user.tenant_id), alert_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Alert not found.") from exc
+    return success_response(data=context)
+
+
+@app.get("/analyst-context/cases/{case_id}")
+async def analyst_case_context(
+    case_id: str,
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return tenant-owned, explainable evidence-to-decision context for one case; no lifecycle state is changed."""
+    try:
+        context = await hunt_service.analyst_context_for_case(str(current_user.tenant_id), case_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Case not found.") from exc
+    return success_response(data=context)
+
+
 @app.get("/dashboard/summary")
 async def dashboard_summary(current_user: User = Depends(require_capability("alerts:read"))):
     summary = await hunt_service.dashboard_summary(str(current_user.tenant_id))

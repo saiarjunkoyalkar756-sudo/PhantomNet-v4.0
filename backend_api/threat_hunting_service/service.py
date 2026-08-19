@@ -9,7 +9,7 @@ from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend_api.shared.database import (
@@ -18,6 +18,7 @@ from backend_api.shared.database import (
     DetectionRecordRow,
     EndpointAssetRow,
     HostIntegrityObservationRow,
+    IntegratedEvidenceRow,
     InvestigationCaseRow,
     SavedHuntRow,
     engine,
@@ -26,7 +27,7 @@ from backend_api.shared.database import (
 
 SessionFactory = Callable[[], AsyncSession]
 MAX_HUNT_RESULTS = 200
-HUNT_DATASETS = {"detections", "alerts", "cases", "assets", "integrity"}
+HUNT_DATASETS = {"detections", "alerts", "cases", "assets", "integrity", "evidence"}
 
 
 class HuntFilter(BaseModel):
@@ -44,7 +45,7 @@ class HuntFilter(BaseModel):
 
 
 class HuntRequest(BaseModel):
-    dataset: Literal["detections", "alerts", "cases", "assets", "integrity"]
+    dataset: Literal["detections", "alerts", "cases", "assets", "integrity", "evidence"]
     filters: list[HuntFilter] = Field(default_factory=list, max_length=10)
     limit: int = Field(default=100, ge=1, le=MAX_HUNT_RESULTS)
 
@@ -118,6 +119,11 @@ FIELD_MAP = {
         "severity": HostIntegrityObservationRow.severity,
         "path": HostIntegrityObservationRow.path,
     },
+    "evidence": {
+        "source_kind": IntegratedEvidenceRow.source_kind,
+        "source_name": IntegratedEvidenceRow.source_name,
+        "source_record_id": IntegratedEvidenceRow.source_record_id,
+    },
 }
 
 
@@ -190,6 +196,21 @@ def _integrity_result(row: HostIntegrityObservationRow) -> dict[str, Any]:
         "path": row.path,
         "timestamp": _utc(row.observed_at),
         "evidence": dict(row.evidence),
+    }
+
+
+def _integrated_evidence_result(row: IntegratedEvidenceRow) -> dict[str, Any]:
+    return {
+        "record_type": "integrated_evidence",
+        "evidence_id": row.evidence_id,
+        "source_kind": row.source_kind,
+        "source_name": row.source_name,
+        "source_record_id": row.source_record_id,
+        "timestamp": _utc(row.observed_at),
+        "tags": list(row.tags),
+        "provenance": dict(row.provenance),
+        "read_only": bool(row.read_only),
+        "automatic_enforcement": bool(row.automatic_enforcement),
     }
 
 
@@ -271,6 +292,7 @@ class ThreatHuntingService:
             "cases": InvestigationCaseRow,
             "assets": EndpointAssetRow,
             "integrity": HostIntegrityObservationRow,
+            "evidence": IntegratedEvidenceRow,
         }[request.dataset]
         serializer = {
             "detections": _detection_result,
@@ -278,6 +300,7 @@ class ThreatHuntingService:
             "cases": _case_result,
             "assets": _asset_result,
             "integrity": _integrity_result,
+            "evidence": _integrated_evidence_result,
         }[request.dataset]
         order_column = {
             "detections": DetectionRecordRow.detected_at,
@@ -285,6 +308,7 @@ class ThreatHuntingService:
             "cases": InvestigationCaseRow.updated_at,
             "assets": EndpointAssetRow.last_seen,
             "integrity": HostIntegrityObservationRow.observed_at,
+            "evidence": IntegratedEvidenceRow.observed_at,
         }[request.dataset]
 
         statement = select(model).where(model.tenant_id == UUID(tenant_id)).order_by(order_column.desc())
@@ -366,17 +390,141 @@ class ThreatHuntingService:
     async def automated_hunts(self, tenant_id: str) -> dict[str, dict[str, Any]]:
         return {name: await self.hunt(tenant_id, request) for name, request in AUTOMATED_HUNT_TEMPLATES.items()}
 
+    @staticmethod
+    def _priority(alert: Mapping[str, Any], detection_count: int, evidence: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        severity_weight = {"informational": 1, "low": 2, "medium": 4, "high": 7, "critical": 10}[str(alert["severity"])]
+        occurrence_count = min(int(alert.get("occurrence_count", 1)), 10)
+        integrity_count = sum(1 for item in evidence if item.get("source_kind") in {"endpoint", "wazuh"})
+        graph_count = sum(1 for item in evidence if item.get("source_kind") == "graph")
+        score = severity_weight * 10 + occurrence_count + detection_count * 2 + integrity_count * 3 + graph_count * 2
+        level = "urgent" if score >= 90 else "high" if score >= 60 else "medium" if score >= 30 else "low"
+        return {
+            "level": level,
+            "score": score,
+            "factors": [
+                {"factor": "alert_severity", "value": alert["severity"], "weight": severity_weight * 10},
+                {"factor": "occurrence_count", "value": occurrence_count, "weight": occurrence_count},
+                {"factor": "linked_detections", "value": detection_count, "weight": detection_count * 2},
+                {"factor": "endpoint_or_wazuh_evidence", "value": integrity_count, "weight": integrity_count * 3},
+                {"factor": "graph_context", "value": graph_count, "weight": graph_count * 2},
+            ],
+            "automatic_enforcement": False,
+        }
+
+    async def analyst_context_for_alert(self, tenant_id: str, alert_id: str) -> dict[str, Any]:
+        """Return an explainable tenant-bound evidence-to-decision view; never proposes or dispatches response."""
+        async with self._session_factory() as session:
+            alert = await session.scalar(
+                select(AnalystAlertRow).where(
+                    AnalystAlertRow.tenant_id == UUID(tenant_id), AnalystAlertRow.alert_id == alert_id
+                )
+            )
+            if alert is None:
+                raise LookupError("Alert was not found for the authenticated tenant.")
+            detections = list(
+                await session.scalars(
+                    select(DetectionRecordRow)
+                    .where(
+                        DetectionRecordRow.tenant_id == UUID(tenant_id),
+                        DetectionRecordRow.detection_id.in_(list(alert.detection_ids)),
+                    )
+                    .order_by(DetectionRecordRow.detected_at.desc())
+                )
+            )
+            event_ids = [detection.event_id for detection in detections]
+            correlation_ids = [detection.correlation_id for detection in detections if detection.correlation_id]
+            if alert.correlation_id:
+                correlation_ids.append(alert.correlation_id)
+            evidence_clauses = []
+            if event_ids:
+                evidence_clauses.extend(
+                    [
+                        IntegratedEvidenceRow.evidence_id.in_(event_ids),
+                        IntegratedEvidenceRow.source_record_id.in_(event_ids),
+                    ]
+                )
+            if correlation_ids:
+                evidence_clauses.append(IntegratedEvidenceRow.source_record_id.in_(correlation_ids))
+            evidence_rows = []
+            if evidence_clauses:
+                evidence_rows = list(
+                    await session.scalars(
+                        select(IntegratedEvidenceRow)
+                        .where(IntegratedEvidenceRow.tenant_id == UUID(tenant_id), or_(*evidence_clauses))
+                        .order_by(IntegratedEvidenceRow.observed_at.desc(), IntegratedEvidenceRow.evidence_id)
+                        .limit(MAX_HUNT_RESULTS)
+                    )
+                )
+        alert_result = _alert_result(alert)
+        detection_results = [_detection_result(row) for row in detections]
+        evidence_results = [_integrated_evidence_result(row) for row in evidence_rows]
+        graph_context = [record for record in evidence_results if record["source_kind"] == "graph"]
+        return {
+            "tenant_id": tenant_id,
+            "alert": alert_result,
+            "linked_detections": detection_results,
+            "integrated_evidence": evidence_results,
+            "graph_context": graph_context,
+            "priority": self._priority(alert_result, len(detection_results), evidence_results),
+            "traceability": {
+                "alert_id": alert.alert_id,
+                "case_id": alert.case_id,
+                "detection_ids": [record["detection_id"] for record in detection_results],
+                "event_ids": event_ids,
+                "integrated_evidence_ids": [record["evidence_id"] for record in evidence_results],
+            },
+            "recommended_next_step": "human_review_required",
+            "response_authority": False,
+            "automatic_enforcement": False,
+        }
+
+    async def analyst_context_for_case(self, tenant_id: str, case_id: str) -> dict[str, Any]:
+        """Aggregate bounded alert decision traces for one tenant-owned case without changing its lifecycle."""
+        async with self._session_factory() as session:
+            case = await session.scalar(
+                select(InvestigationCaseRow).where(
+                    InvestigationCaseRow.tenant_id == UUID(tenant_id), InvestigationCaseRow.case_id == case_id
+                )
+            )
+            if case is None:
+                raise LookupError("Case was not found for the authenticated tenant.")
+        alert_contexts = [
+            await self.analyst_context_for_alert(tenant_id, alert_id)
+            for alert_id in sorted(case.alert_ids)[:100]
+        ]
+        evidence_by_id = {
+            record["evidence_id"]: record
+            for context in alert_contexts
+            for record in context["integrated_evidence"]
+        }
+        return {
+            "tenant_id": tenant_id,
+            "case": _case_result(case),
+            "alert_contexts": alert_contexts,
+            "integrated_evidence": [evidence_by_id[evidence_id] for evidence_id in sorted(evidence_by_id)],
+            "traceability": {
+                "case_id": case.case_id,
+                "alert_ids": sorted(case.alert_ids),
+                "integrated_evidence_ids": sorted(evidence_by_id),
+            },
+            "recommended_next_step": "human_review_required",
+            "response_authority": False,
+            "automatic_enforcement": False,
+        }
+
     async def dashboard_summary(self, tenant_id: str) -> dict[str, Any]:
         detection_data = await self.hunt(tenant_id, HuntRequest(dataset="detections", limit=MAX_HUNT_RESULTS))
         alert_data = await self.hunt(tenant_id, HuntRequest(dataset="alerts", limit=MAX_HUNT_RESULTS))
         case_data = await self.hunt(tenant_id, HuntRequest(dataset="cases", limit=MAX_HUNT_RESULTS))
         asset_data = await self.hunt(tenant_id, HuntRequest(dataset="assets", limit=MAX_HUNT_RESULTS))
         integrity_data = await self.hunt(tenant_id, HuntRequest(dataset="integrity", limit=MAX_HUNT_RESULTS))
+        evidence_data = await self.hunt(tenant_id, HuntRequest(dataset="evidence", limit=MAX_HUNT_RESULTS))
         detections = detection_data["results"]
         alerts = alert_data["results"]
         cases = case_data["results"]
         assets = asset_data["results"]
         integrity = integrity_data["results"]
+        integrated_evidence = evidence_data["results"]
         severity_counts = Counter(item["severity"] for item in alerts)
         status_counts = Counter(item["status"] for item in alerts)
         mitre_counts = Counter(
@@ -394,6 +542,7 @@ class ThreatHuntingService:
                 "open_cases": sum(1 for case in cases if case["status"] in open_case_statuses),
                 "endpoint_assets": len(assets),
                 "integrity_findings": sum(1 for item in integrity if item["status"] in {"modified", "missing", "error"}),
+                "integrated_evidence": len(integrated_evidence),
             },
             "alerts_by_severity": [
                 {"severity": severity, "count": severity_counts[severity]}
@@ -405,5 +554,10 @@ class ThreatHuntingService:
                 for technique_id, count in mitre_counts.most_common(10)
             ],
             "recent_alerts": alerts[:10],
+            "evidence_by_source": [
+                {"source_kind": source_kind, "count": count}
+                for source_kind, count in sorted(Counter(item["source_kind"] for item in integrated_evidence).items())
+            ],
             "generated_at": datetime.now(timezone.utc).isoformat(),
+            "automatic_enforcement": False,
         }
