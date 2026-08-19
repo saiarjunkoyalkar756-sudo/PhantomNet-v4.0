@@ -108,7 +108,7 @@ pip install -r requirements.txt
 python3 -m pytest -q -p no:cacheprovider
 ```
 
-The current isolated regression gate contains **306 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
+The current isolated regression gate contains **308 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
 
 ### Build the Operator Interfaces
 
@@ -159,6 +159,8 @@ PhantomNet separates quick, safe regression evidence from Docker-host integratio
 | Dashboard quality gate | `cd dashboard_frontend && npm run lint && npm run build` | Static analysis and production bundle validation. |
 | Portal quality gate | `cd phantomnet-website && npm run lint && npm run build` | Static analysis, TypeScript validation, and static-route generation. |
 | Docker recovery validation | `./scripts/run_docker_recovery_validation.sh` | Docker-capable host only; runs against an internal-only, ephemeral test topology. |
+| Wazuh governed-response dry-run | `python3 scripts/run_wazuh_governed_response_dry_run.py` | SQLite-only, local Wazuh/endpoint simulation; validates approval, signed receipt, rollback, and HMAC audit evidence without network or endpoint changes. |
+| Containerized Wazuh dry-run | `./scripts/run_docker_wazuh_governed_response_dry_run.sh` | Docker-capable host only; repeats the local simulation in an internal-only, disposable hardened container. |
 
 The benchmark scripts run directly from the repository root and do **not** require callers to set `PYTHONPATH`.
 
@@ -188,6 +190,7 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [Wazuh Telemetry Pilot Deployment](docs/WAZUH_TELEMETRY_PILOT_DEPLOYMENT.md) | Phase 1 sidecar and manager-integrated manifests, secret handling, verification, and rollback. |
 | [Wazuh Governed Response Bridge Design](docs/WAZUH_GOVERNED_RESPONSE_BRIDGE.md) | Phase 2 approval, command-binding, verification-receipt, audit, and rollback model. |
 | [Wazuh Governed Response Deployment](docs/WAZUH_GOVERNED_RESPONSE_DEPLOYMENT.md) | Disabled-by-default bridge activation, agent staging, lab acceptance gates, failure injection, and emergency stop procedure. |
+| [Wazuh Governed-Response Operational Dry-Run](docs/WAZUH_GOVERNED_RESPONSE_DRY_RUN.md) | Safe isolated and Docker-host proof of approval, signed execution receipts, governed release, and HMAC audit-chain verification. |
 | [Core-First Platform Roadmap](docs/core-first-platform-roadmap.md) | Current engineering sequence and remaining platform work. |
 
 ## Current Engineering Focus

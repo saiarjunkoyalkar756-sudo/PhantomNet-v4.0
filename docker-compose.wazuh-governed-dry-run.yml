@@ -1,0 +1,28 @@
+services:
+  governed-response-dry-run:
+    build:
+      context: .
+      dockerfile: infra/docker/integration-test.Dockerfile
+    command: ["python", "scripts/run_wazuh_governed_response_dry_run.py"]
+    environment:
+      PHANTOMNET_WAZUH_DRY_RUN_ARTIFACT_DIR: /app/artifacts
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    networks:
+      - dry-run-internal
+    volumes:
+      - type: bind
+        source: ${DRY_RUN_ARTIFACT_HOST_DIR:?Set DRY_RUN_ARTIFACT_HOST_DIR to an absolute evidence directory.}
+        target: /app/artifacts
+        bind:
+          create_host_path: true
+
+networks:
+  dry-run-internal:
+    internal: true
