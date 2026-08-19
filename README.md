@@ -1,129 +1,210 @@
-# 🌌 PhantomNet v4.0 — Autonomous SOC & XDR Platform
+# PhantomNet v4.0
 
-[![Release v4.0](https://img.shields.io/badge/release-v4.0-blue.svg)]()
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](/LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11-%233776AB.svg)]()
-[![Node](https://img.shields.io/badge/node-18-%234CC61E.svg)]()
-[![Build Status](https://img.shields.io/github/actions/workflow/status/saiarjunkoyalkar756-sudo/PhantomNet-v4.0/ci.yml?branch=main)]()
+> **Capable, composable, yours.** A self-hosted, AI-native security operations platform for teams that need defensible detection, governed response, and control over their security data.
 
-![PhantomNet Image](docs/images/file_000000004544720988d35dea5d77e630.png)
+PhantomNet v4.0 is a composable SOC platform built for security teams that want a practical alternative to vendor lock-in. It brings together canonical security-event ingestion, correlation and MITRE-aligned evidence, endpoint inventory, case workflows, controlled breach-and-attack simulation (BAS), threat context, graph analysis, and operator-facing dashboards.
 
----
+The project is designed around a simple operational principle: **automate context and evidence; govern high-impact response.** Detection and correlation can be fast, but containment actions such as blocking, isolating, or terminating require approval and HMAC-signed audit evidence. If required approval or audit evidence is unavailable, containment fails closed.
 
-PhantomNet v4.0 is a production-grade, distributed autonomous cyber defense, Breach and Attack Simulation (BAS), and XDR operations grid. It automates high-speed threat ingestion, correlates security events with a custom query AST compiler, logs integrity audits onto an immutable blockchain ledger, and deploys cross-platform telemetry endpoint agents.
+## Platform at a Glance
 
----
+| Area | Capability |
+|---|---|
+| Event pipeline | Versioned canonical event schema, normalization, durable detection records, and broker-ready ingestion boundaries. |
+| Detection and triage | BAS scenarios, MITRE-aligned detection evidence, correlation workflows, and analyst-ready alert states. |
+| Case operations | Case lifecycle and governed playbook transitions for investigation and response. |
+| Endpoint coverage | Asset inventory, endpoint telemetry ingestion, and Wazuh-compatible forwarder registration and streaming boundaries. |
+| Response governance | Human approval for high-impact actions, HMAC-signed containment audit records, verification, rollback, and fail-closed behavior. |
+| Cloud containment | Governed AWS Security Group containment adapter with LocalStack-oriented integration coverage. |
+| Threat context | Attack-path analysis, regional telemetry replication boundaries, tenant isolation, and integrity checks. |
+| Operator experience | A React/Vite SOC dashboard and a Next.js portal with dedicated user and administrator views. |
+| Resilience | Isolated SQLite regression harnesses plus a Docker-host recovery topology for broker and PostgreSQL restart validation. |
 
-## 🌌 What is PhantomNet v4.0?
+## Security Model
 
-PhantomNet is a state-of-the-art security control validation and autonomous response architecture designed to defend modern enterprise infrastructure. It allows organizations to simulate complex adversary campaigns in a safe sandbox while actively validating and calibrating their production-grade defense pipelines (WAFs, EDRs, firewalls, and SIEMs).
+PhantomNet is deliberately conservative where it matters. A simulation, alert, or enrichment result does not independently authorize an impactful response. High-impact containment requests are approved by a human workflow and must generate signed audit evidence before the adapter can execute.
 
-### 🛡️ Core Defensive Pillars
-* **Breach & Attack Emulation:** Automates continuous, gradated simulations from simple SQL injections and link-based phishing campaigns up to advanced Golden Ticket Active Directory takeovers, supplying the exact threat profile to the sensors.
-* **Autonomous SOAR Orchestration:** Parses threat vectors dynamically to calculate risk exposures. If the defense evaluation drops below strict thresholds, the SOAR engine executes dynamic containment countermeasures (including host network isolation, active malicious process terminations, and firewall IP blockades).
-* **Automated Volatile Forensics:** Immediately compiles forensic capture jobs (e.g. Volatility RAM memory dumps, syslog archives) the moment a high-risk alert triggers, preserving volatile artifact evidence in the Forensics Vault.
-* **Immutable Security Ledgers:** Cryptographically logs alert audits onto an immutable blockchain ledger to enforce absolute accountability and audit compliance, preventing internal tampering.
+| Control | Expected behavior |
+|---|---|
+| Human approval | `block`, `isolate`, and `terminate` actions require a recorded approval decision. |
+| Audit integrity | Response lifecycle records are HMAC signed and verified as a chain. |
+| Fail-closed containment | Missing or invalid approval/audit evidence prevents containment execution. |
+| Tenant boundaries | Correlation, response, and audit workflows use tenant-scoped contracts and isolation checks. |
+| Test isolation | Automated Python tests use isolated SQLite state; external dependencies are mocked or explicitly gated. |
+| Secret handling | Runtime credentials and signing keys are supplied through environment variables, not embedded in source. |
 
-### ⛓️ The Telemetry Pipeline (Under the Hood)
-When a threat is simulated or detected, the event traverses a real-time production data stack:
-1. **Dynamic Rate Limiting (Redis):** The API Gateway checks the source IP against blocked IP lists and limits socket rates via Redis pipeline counters to prevent ingestion flooding.
-2. **Telemetry Ingestion Bus (Redpanda):** Structured events are published to Redpanda/Kafka queues (`normalized_events`) to absorb high-frequency thread spikes.
-3. **AI Analysis & Correlation Core (PostgreSQL):** The Event Normalizer and AI Core parse the stream, mapping alerts to PostgreSQL relation schemas and storing transactional SOAR states.
-4. **Attack Path Mapping (Neo4j):** Mapped relations are evaluated inside a Bolt graph database to visualize adversary lateral movements and directory privilege escalations.
+> **Safe use notice:** BAS and response functionality must be run only against systems you own or are explicitly authorized to test. The benchmark harnesses are non-destructive and use simulated adapters; they are not authorization to conduct live attack activity.
 
----
+## Architecture
 
-## ⚡ What's New in v4.0
+PhantomNet uses independently deployable components with clear integration boundaries. The production topology can use PostgreSQL for durable records, Redis for supporting state, Redpanda/Kafka for event transport, and Neo4j for graph-driven context. Unit and regression tests intentionally substitute isolated SQLite state and simulated adapters to make correctness repeatable without contacting external infrastructure.
 
-### 🎨 1. Enterprise Next.js Marketing & User Portals
-We have integrated a comprehensive Next.js 16 (App Router + Turbopack + Tailwind v4) large-scale marketing and interactive portals portal:
-* **🛡️ User Shield Portal (`/user`):** Manage host endpoint posture scores, check active network decoy honeypot statuses, stream live security telemetry event logs, and rotate ephemeral Zero-Trust session handshake tokens.
-* **🎛️ Admin Commander Portal (`/admin`):** Supervise microservice infrastructure grids, query live node cluster load averages, manage firewall IP bans interactively with real database synchronization, and launch Breach & Attack Simulations (BAS) to test playbook automations.
-* **🔑 Quantum Cryptographic Audit:** Interacts directly with backend APIs to assess post-quantum readiness (Kyber-1024/Dilithium) and check Shor-vulnerable asymmetric algorithms.
-
-### ⚙️ 2. Core Backend Enhancements
-* **Gateway Ingestor Decoupling:** Re-engineered HTTP logging sinks using background-daemon thread buffers, resulting in a **100x test suite speedup (from 60s to 0.6s)** under network IO latency.
-* **Authenticated Database Blacklisting APIs:** Expanded administrative routers to support GET `/admin/blacklist/list` queries alongside existing POST blocks, connecting real Postgres data directly with our frontend dashboard interface.
-* **Python 3.11/3.12 Docker Upgrades:** Built and configured all microservice containers (including the custom `phantomql-engine`) using modern base layers to bypass legacy version locks.
-
----
-
-## 📂 Repository Structure
-
+```text
+Endpoint agents / BAS / forwarders
+                │
+                ▼
+      Event normalization + canonical schema
+                │
+                ▼
+       Broker ingestion + correlation engine
+                │
+       ┌────────┴────────┐
+       ▼                 ▼
+Detections, alerts,    Asset and graph
+cases, audit evidence  context and attack paths
+       │
+       ▼
+Governed response workflow
+(approval → signed audit → adapter → verification / rollback)
+       │
+       ▼
+SOC dashboard and operator portal
 ```
+
+The detailed architecture and event contracts are documented in [Architecture](docs/ARCHITECTURE.md), [Event Bus Schema](docs/EVENT_BUS_SCHEMA.md), and [Runtime Security Posture](docs/runtime-security-posture.md).
+
+## Repository Layout
+
+```text
 PhantomNet-v4.0/
-├── 📡 backend_api/                  # FastAPI python microservices grid (ports 8000–8025)
-├── 🌐 phantomnet-website/           # Next.js 16 marketing site, Admin Portal & User Shield
-├── 🖥️  dashboard_frontend/           # React 18 + Vite live SOC threat graph dashboard
-├── 🔗 blockchain_layer/             # Immutable blockchain ledger audit trail client
-├── 🕵️  phantomnet_agent/             # Cross-platform telemetry & response endpoint agent
-├── 📝 task.md                       # Core development track and task checklists
-└── 🧪 tests/                        # 100% verified unit and integration test suites
+├── backend_api/              FastAPI services, correlation, SOAR, IAM, and shared security controls
+├── dashboard_frontend/       React + Vite SOC dashboard
+├── phantomnet-website/       Next.js public site and operator portals
+├── phantomnet_agent/         Endpoint telemetry, local analysis, and response-agent boundary
+├── features/                 Optional intelligence, recovery, and trust-fabric modules
+├── scripts/                  Benchmarks and isolated recovery-validation runners
+├── tests/                    Cross-service regression and validation tests
+├── docs/                     Architecture, deployment, operations, and security runbooks
+├── docker-compose.yml        Primary Compose topology
+└── docker-compose.recovery-validation.yml
+                              Internal-only recovery-validation topology
 ```
 
----
+## Quick Start: Validate the Codebase
 
-## 🚪 Quick Start (Development)
+The following workflow is the fastest way to verify the repository locally. It exercises the isolated test suite and compiles both web interfaces without starting a production-like deployment.
 
-The complete deployment instructions including databases, API gateways, and user dashboard setups are structured in the [Deploy.md](Deploy.md) guide.
+### Prerequisites
 
-### Option A: Optimized Local-Hybrid Setup (Recommended)
+| Dependency | Validated development baseline | Used for |
+|---|---|---|
+| Python | Python 3.12 | Backend, agents, tests, and benchmark harnesses |
+| Node.js | Node 22 | Dashboard and portal builds |
+| npm | Current Node-compatible npm | Frontend dependency installation and quality checks |
+| Docker Engine + Compose v2 | Required only for Compose and recovery-host validation | Full service topology and restart validation |
+
 ```bash
-# 1. Start postgres, redis, redpanda, and neo4j in Docker
-DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" docker compose up -d postgres redis redpanda neo4j
+# Clone and enter the repository.
+git clone https://github.com/saiarjunkoyalkar756-sudo/PhantomNet-v4.0.git
+cd PhantomNet-v4.0
 
-# 2. Start the unified FastAPI Backend Core
-source .venv_phantomnet/bin/activate
-DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" REDIS_HOST="localhost" KAFKA_BOOTSTRAP_SERVERS="localhost:9092" python main.py
+# Create an isolated Python environment and install repository dependencies.
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 
-# 3. Start the User Dashboard Console (Vite)
-cd dashboard_frontend && npm run dev -- --port 3000 --host 0.0.0.0
+# Run the complete isolated regression suite.
+python3 -m pytest -q -p no:cacheprovider
 ```
 
-### Option B: Fully Containerized Dev Stack (Docker Only)
+The current isolated regression gate contains **281 passing tests** and **2 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
+
+### Build the Operator Interfaces
+
+The repository does not ship lockfiles, so use `npm install` for a fresh development checkout.
+
 ```bash
-# 1. Start all 28 microservices + databases in Docker
-DB_PASSWORD="changeme" NEO4J_PASSWORD="super_secret_neo4j_password_random_string_abcde" docker compose up -d
+# React/Vite SOC dashboard
+cd dashboard_frontend
+npm install
+npm run lint
+npm run build
 
-# 2. Start the User Dashboard Console (Vite)
-cd dashboard_frontend && npm run dev -- --port 3000 --host 0.0.0.0
+# Next.js public site and operator portal
+cd ../phantomnet-website
+npm install
+npm run lint
+npm run build
 ```
 
----
+The dashboard's production bundle uses an explicit 600 kB vendor-chunk budget. This keeps the intentionally separated React vendor bundle visible while preventing an expected bundle-size message from obscuring real build regressions.
 
-## 🛸 Agent Installation
+## Local Development and Deployment
 
-The cross-platform agent compiles cleanly and runs across multiple host architectures:
+Use Docker Compose only with non-production environment values. Secrets, passwords, HMAC keys, and provider credentials must be passed through the environment or an untracked local environment file.
 
-### 1. Windows Installation
-1. Open PowerShell as Administrator.
-2. Navigate to root and run: `./install_windows.ps1`
-3. The script will initialize a local Python virtual environment, install requirements from `requirements-windows.txt`, register the agent as a Windows Service, and configure firewall rules.
+```bash
+# Inspect the declared service topology before starting it.
+docker compose config
 
-### 2. Linux Installation
-1. Open a terminal.
-2. Execute with root privileges: `sudo bash ./install_linux.sh`
-3. This installs native system prerequisites, sets up the virtual environment, and enables a `systemd` service (`phantomnet-agent.service`).
-   * Start: `sudo systemctl start phantomnet-agent.service`
-   * Status: `sudo systemctl status phantomnet-agent.service`
+# Start the configured local development topology after supplying required environment values.
+docker compose up -d
 
-### 3. Termux Installation (Android aarch64)
-1. Open Termux on your Android device.
-2. Execute: `bash ./install_termux.sh`
-3. Installs requirements and compiles the startup helper (`~/bin/start-phantomnet-agent.sh`).
+# Follow service startup and health logs.
+docker compose logs -f
+```
 
----
+The exact configuration, environment requirements, operational rollout sequence, and topology-specific considerations are maintained in [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) and [Operations Guide](docs/OPERATIONS.md). Treat a clean `docker compose up` as a local integration step, not a production readiness certification.
 
-## 🛡️ Security Practices
+## Validation Workflows
 
-* JWT validation relies on secure keys managed in environment settings (`JWT_SECRET_KEY`).
-* All sensitive network metrics and agent operations require validated token authorization.
-* Inter-service transactions use credentials audited cryptographically by the local blockchain ledger.
+PhantomNet separates quick, safe regression evidence from Docker-host integration evidence.
 
----
+| Workflow | Command | Scope and safety boundary |
+|---|---|---|
+| Core regression suite | `python3 -m pytest -q -p no:cacheprovider` | Isolated tests using SQLite and mockable boundaries. |
+| Canonical SOC benchmark | `python3 scripts/benchmark_canonical_soc.py` | Temporary SQLite database and simulated response adapter; no external calls or endpoint actions. |
+| Resilience stress benchmark | `python3 scripts/run_resilience_stress.py --events 500` | Synthetic BAS-marked telemetry; verifies idempotency and detection/alert invariants without response execution. |
+| Dashboard quality gate | `cd dashboard_frontend && npm run lint && npm run build` | Static analysis and production bundle validation. |
+| Portal quality gate | `cd phantomnet-website && npm run lint && npm run build` | Static analysis, TypeScript validation, and static-route generation. |
+| Docker recovery validation | `./scripts/run_docker_recovery_validation.sh` | Docker-capable host only; runs against an internal-only, ephemeral test topology. |
 
-## 📖 Operational Documentation
+The benchmark scripts run directly from the repository root and do **not** require callers to set `PYTHONPATH`.
 
-* **[Production Runbook](docs/runbook.md):** System monitoring, database scaling, backup and recovery operations, and incident response procedures.
-* **[API Reference](docs/api-reference.md):** Complete developer REST API specifications for authentication, agents, SOAR execution, and forensics triggers.
-* **[Deploy.md Reference](Deploy.md):** Full setup guide, operational cheat sheets, and active testing targets.
+### Docker Recovery Validation
+
+The recovery harness validates broker and PostgreSQL stop/start behavior, checks that dependent probes fail closed during each outage, then records HMAC-verifiable audit evidence after recovery. It uses a timestamped Compose project, an internal-only network, non-production credentials, and disposable volumes.
+
+Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `RECOVERY_AUDIT_HMAC_KEY`, and `RECOVERY_AUDIT_HMAC_KEY_ID`. Follow the full procedure in [Docker Recovery Validation](docs/DOCKER_RECOVERY_VALIDATION.md). **Never** point this runner at production infrastructure or provide production secrets.
+
+## Documentation
+
+| Document | Purpose |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | Component boundaries and system design. |
+| [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) | Environment preparation and deployment considerations. |
+| [Operations Guide](docs/OPERATIONS.md) | Monitoring, logs, recovery, and operator practices. |
+| [API Documentation](docs/API_DOCUMENTATION.md) | Service and API reference material. |
+| [Event Bus Schema](docs/EVENT_BUS_SCHEMA.md) | Event-routing and schema conventions. |
+| [Governed Response and Replication](docs/governed-response-and-regional-replication.md) | Response governance and telemetry replication contracts. |
+| [Tenant Isolation and Audit Integrity](docs/tenant-isolation-and-audit-integrity.md) | Isolation checks and tamper-evident audit verification. |
+| [AWS Security Group Containment](docs/aws-security-group-containment.md) | Cloud firewall adapter safety and validation boundary. |
+| [Docker Recovery Validation](docs/DOCKER_RECOVERY_VALIDATION.md) | Isolated broker/database restart test runbook. |
+| [Core-First Platform Roadmap](docs/core-first-platform-roadmap.md) | Current engineering sequence and remaining platform work. |
+
+## Current Engineering Focus
+
+The core detection-to-governed-response path is implemented and continuously regression-tested. The next operational milestones focus on validating the Compose deployment on a Docker-capable host, expanding production-backed endpoint response through an EDR integration, maturing interaction-capture honeypots, and completing an operator security review before any production deployment.
+
+| Priority | Next milestone | Intended outcome |
+|---|---|---|
+| 1 | Docker-host deployment and recovery validation | Demonstrate restart behavior with real ephemeral Redpanda and PostgreSQL containers. |
+| 2 | EDR integration boundary | Replace stub-only host isolation paths with validated EDR or osquery/Wazuh capability. |
+| 3 | Honeypot interaction capture | Add production-oriented SSH and HTTP interaction evidence collection. |
+| 4 | Operator documentation and security review | Prepare a defensible deployment and incident-operations package. |
+
+## Contributing
+
+Contributions should preserve PhantomNet's security invariants. Do not add code that bypasses approval gates, omits audit records, hardcodes secrets, or silently converts an adapter failure into a successful containment result. Every change should include focused tests and must pass the Python, dashboard, and portal quality gates described above.
+
+For security-sensitive changes, prioritize the following order:
+
+1. Security correctness and auditability.
+2. Automated tests and isolation.
+3. Functional correctness and clear failure handling.
+4. Performance and cleanup.
+
+## Project Positioning
+
+PhantomNet does not claim to replace every function of a large commercial SIEM, EDR, or SOAR product. Its purpose is narrower and practical: provide a **self-hosted, composable SOC foundation** that teams can inspect, operate, extend, and retain control over.
