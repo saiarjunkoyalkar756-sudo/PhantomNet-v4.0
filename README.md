@@ -183,6 +183,7 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [Docker Topology Validation](docs/DOCKER_TOPOLOGY_VALIDATION.md) | Live internal PostgreSQL, Redis, Redpanda, and Neo4j round-trip proof. |
 | [Docker Recovery Validation](docs/DOCKER_RECOVERY_VALIDATION.md) | Isolated broker/database restart test runbook. |
 | [Production-Readiness Validation](docs/PRODUCTION_READINESS_VALIDATION.md) | Executed evidence, corrected findings, and remaining live-validation boundaries. |
+| [SOC and SIEM Comparison](docs/PHANTOMNET_SOC_SIEM_COMPARISON.md) | Evidence-based positioning against Splunk, Wazuh, Sentinel, Elastic, and Security Onion. |
 | [Core-First Platform Roadmap](docs/core-first-platform-roadmap.md) | Current engineering sequence and remaining platform work. |
 
 ## Current Engineering Focus
