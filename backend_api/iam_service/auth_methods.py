@@ -299,29 +299,37 @@ async def get_current_user(
             pn_logger.warning(f"REVOKED ACCESS ATTEMPT: Token with JTI {jti} is blacklisted in Redis.")
             raise credentials_exception
 
-        # Validate session token in DB
+        # Validate the persisted session before trusting the signed claim set.
         stmt = select(SessionToken).where(SessionToken.jti == jti)
         result = await db.execute(stmt)
         session_record = result.scalar_one_or_none()
+        session_expiry = getattr(session_record, "expires_at", None)
+        if session_expiry is not None and session_expiry.tzinfo is None:
+            session_expiry = session_expiry.replace(tzinfo=timezone.utc)
 
         if (
             not session_record
             or not session_record.is_valid
             or session_record.revoked_at
-            or session_record.expires_at < datetime.utcnow()
+            or not session_expiry
+            or session_expiry < datetime.now(timezone.utc)
         ):
             raise credentials_exception
 
         token_data = TokenData(
             username=username,
             role=user_role,
-            tenant_id=uuid.UUID(tenant_id_str)
+            tenant_id=uuid.UUID(tenant_id_str),
         )
     except (JWTError, ValueError):
         raise credentials_exception
 
     user = await get_user(db, username=token_data.username)
-    if user is None:
+    if (
+        user is None
+        or session_record.user_id != user.id
+        or str(user.tenant_id) != str(token_data.tenant_id)
+    ):
         raise credentials_exception
 
     return user

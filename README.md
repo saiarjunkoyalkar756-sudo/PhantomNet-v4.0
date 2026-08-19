@@ -180,7 +180,9 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [Governed Response and Replication](docs/governed-response-and-regional-replication.md) | Response governance and telemetry replication contracts. |
 | [Tenant Isolation and Audit Integrity](docs/tenant-isolation-and-audit-integrity.md) | Isolation checks and tamper-evident audit verification. |
 | [AWS Security Group Containment](docs/aws-security-group-containment.md) | Cloud firewall adapter safety and validation boundary. |
+| [Docker Topology Validation](docs/DOCKER_TOPOLOGY_VALIDATION.md) | Live internal PostgreSQL, Redis, Redpanda, and Neo4j round-trip proof. |
 | [Docker Recovery Validation](docs/DOCKER_RECOVERY_VALIDATION.md) | Isolated broker/database restart test runbook. |
+| [Production-Readiness Validation](docs/PRODUCTION_READINESS_VALIDATION.md) | Executed evidence, corrected findings, and remaining live-validation boundaries. |
 | [Core-First Platform Roadmap](docs/core-first-platform-roadmap.md) | Current engineering sequence and remaining platform work. |
 
 ## Current Engineering Focus

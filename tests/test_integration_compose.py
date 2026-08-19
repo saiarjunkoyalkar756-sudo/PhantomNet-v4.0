@@ -17,7 +17,18 @@ def test_integration_compose_has_health_gated_stateful_dependencies():
 
     runner = services["integration-tests"]
     assert runner["profiles"] == ["verify"]
+    assert runner["build"]["dockerfile"] == "infra/docker/integration-test.Dockerfile"
+    assert runner["command"] == [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/test_live_integration_topology.py",
+    ]
     assert runner["environment"]["PHANTOMNET_INTEGRATION"] == "1"
+    assert runner["environment"]["NEO4J_HTTP_URL"] == "http://neo4j:7474/db/neo4j/tx/commit"
     for dependency in ("postgres", "redis", "redpanda", "neo4j"):
         assert runner["depends_on"][dependency]["condition"] == "service_healthy"
 

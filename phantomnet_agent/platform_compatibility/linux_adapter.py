@@ -47,6 +47,71 @@ class LinuxAdapter(BaseAdapter):
             full_command = ["sudo"] + command
         return await self._run_command(full_command, cwd)
 
+    async def get_installed_software(self) -> List[Dict[str, str]]:
+        """Return Debian package inventory when the local package manager is available."""
+        success, output = await self._run_command(
+            ["dpkg-query", "-W", "-f=${Package}\\t${Version}\\n"]
+        )
+        if not success:
+            logger.warning("Package inventory is unavailable: %s", output)
+            return []
+        software: list[Dict[str, str]] = []
+        for line in output.splitlines():
+            name, separator, version = line.partition("\\t")
+            if separator and name and version:
+                software.append({"name": name, "version": version})
+        return software
+
+    async def get_process_by_pid(self, pid: int) -> Dict[str, Any]:
+        """Return a bounded process record without invoking a shell."""
+        if pid <= 0:
+            return {"status": "failed", "detail": "PID must be a positive integer."}
+        success, output = await self._run_command(["ps", "-p", str(pid), "-o", "pid=,user=,args="])
+        if not success or not output:
+            return {"status": "failed", "detail": "Process was not found or cannot be inspected."}
+        parts = output.split(maxsplit=2)
+        if len(parts) < 3:
+            return {"status": "failed", "detail": "Process inspection returned an unexpected format."}
+        return {"status": "success", "pid": int(parts[0]), "user": parts[1], "command": parts[2]}
+
+    async def ping_host(self, target: str) -> Dict[str, Any]:
+        """Run a bounded single ICMP probe without shell interpolation."""
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.:-]{0,252}", target):
+            return {"status": "failed", "detail": "Target is not a valid hostname or IP literal."}
+        success, output = await self._run_command(["ping", "-c", "1", "-W", "2", target])
+        return {
+            "status": "success" if success else "failed",
+            "output": output,
+        }
+
+    async def block_address(self, address: str) -> Dict[str, Any]:
+        """Fail closed until an allowlisted, verified firewall provider is configured."""
+        return {
+            "status": "failed",
+            "enforced": False,
+            "verified": False,
+            "detail": f"Address blocking for {address} requires the governed local or cloud firewall adapter; no rule was changed.",
+        }
+
+    async def kill_process(self, pid: int) -> Dict[str, Any]:
+        """Fail closed until a policy-bound process-response provider is configured."""
+        return {
+            "status": "failed",
+            "enforced": False,
+            "verified": False,
+            "detail": f"Process termination for PID {pid} requires a configured verified endpoint provider; no process was terminated.",
+        }
+
+    async def execute_command(self, cmd: str, shell: bool = False) -> Dict[str, Any]:
+        """Reject generic command execution in the endpoint adapter safety boundary."""
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "Generic OS command execution is disabled without a policy-bound endpoint provider.",
+            "enforced": False,
+            "verified": False,
+        }
+
     async def get_netstat_info(self) -> List[Dict[str, Any]]:
         """Retrieves network connection information with fallbacks for WSL2."""
         connections = []
@@ -173,8 +238,23 @@ class LinuxAdapter(BaseAdapter):
                     processes.append({"pid": parts[1], "user": parts[0], "command": parts[7]})
         return processes
 
-    async def isolate_system(self, reason: str) -> Dict[str, Any]:
-        """Isolates the system using iptables."""
-        pn_logger.warning(f"System isolation triggered: {reason}")
-        # Implementation depends on specific requirements
-        return {"status": "success", "message": "Isolation commands sent."}
+    async def isolate_system(self, reason: str, duration_seconds: Optional[int] = None) -> Dict[str, Any]:
+        """Fail closed until a configured endpoint provider can prove host isolation.
+
+        The backend must not interpret command acceptance as endpoint enforcement. A local
+        host-isolation implementation needs an explicit management-path allowlist, an
+        operator confirmation boundary, and post-command verification; none is inferred
+        from a generic agent command.
+        """
+        logger.error(
+            "Host isolation was requested without a configured verified provider: %s; duration=%s",
+            reason,
+            duration_seconds,
+        )
+        return {
+            "status": "failed",
+            "enforced": False,
+            "verified": False,
+            "rollback_available": False,
+            "detail": "Host isolation requires a configured and verifiable endpoint-management provider; no firewall state was changed.",
+        }

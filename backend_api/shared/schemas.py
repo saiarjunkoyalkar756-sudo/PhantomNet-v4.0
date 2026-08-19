@@ -36,6 +36,7 @@ class Token(StrictBaseModel):
 class TokenData(StrictBaseModel):
     username: Optional[str] = None
     role: Optional[str] = None
+    tenant_id: Optional[uuid.UUID] = None
     twofa_enabled: bool = False
     twofa_enforced: bool = False
 
