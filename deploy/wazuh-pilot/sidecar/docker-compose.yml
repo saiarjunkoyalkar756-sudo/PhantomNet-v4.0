@@ -1,0 +1,62 @@
+services:
+  wazuh-telemetry-sidecar:
+    build:
+      context: ../../..
+      dockerfile: infra/docker/wazuh-pilot-forwarder.Dockerfile
+    image: phantomnet/wazuh-pilot-forwarder:local
+    container_name: phantomnet-wazuh-telemetry-sidecar
+    command:
+      - tail
+      - --alert-file
+      - /wazuh-alerts/alerts.json
+    environment:
+      PHANTOMNET_WAZUH_STREAM_URL: ${PHANTOMNET_WAZUH_STREAM_URL:?Set the tenant-bound HTTPS stream URL}
+      PHANTOMNET_WAZUH_TOKEN_FILE: /run/secrets/phantomnet_forwarder_token
+      PHANTOMNET_WAZUH_STATE_FILE: /var/lib/phantomnet-wazuh-forwarder/state.json
+      PHANTOMNET_WAZUH_SPOOL_DIR: /var/lib/phantomnet-wazuh-forwarder/spool
+      PHANTOMNET_WAZUH_MIN_RULE_LEVEL: ${PHANTOMNET_WAZUH_MIN_RULE_LEVEL:-7}
+      PHANTOMNET_WAZUH_ALLOWED_GROUPS: ${PHANTOMNET_WAZUH_ALLOWED_GROUPS:-syscheck,syscollector,sca,rootcheck}
+      PHANTOMNET_WAZUH_BATCH_SIZE: ${PHANTOMNET_WAZUH_BATCH_SIZE:-25}
+      PHANTOMNET_WAZUH_POLL_INTERVAL_SECONDS: ${PHANTOMNET_WAZUH_POLL_INTERVAL_SECONDS:-1}
+      PHANTOMNET_ALLOW_INSECURE_HTTP: "false"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    secrets:
+      - phantomnet_forwarder_token
+    volumes:
+      - type: bind
+        source: ${WAZUH_ALERTS_JSON_PATH:?Set the host path to Wazuh alerts.json}
+        target: /wazuh-alerts/alerts.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: volume
+        source: wazuh_telemetry_state
+        target: /var/lib/phantomnet-wazuh-forwarder
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+    user: "65532:65532"
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from pathlib import Path; import json; state = Path('/var/lib/phantomnet-wazuh-forwarder/state.json'); assert not state.exists() or isinstance(json.loads(state.read_text()), dict)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+secrets:
+  phantomnet_forwarder_token:
+    file: ${PHANTOMNET_WAZUH_TOKEN_FILE:?Set the local forwarder-token file path}
+
+volumes:
+  wazuh_telemetry_state:
+    name: ${WAZUH_TELEMETRY_STATE_VOLUME:-phantomnet_wazuh_telemetry_state}

@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Wazuh Integrator entrypoint for the telemetry-only PhantomNet Phase 1 pilot.
+
+Wazuh passes the alert file path as argv[1]. This script only performs a durable local
+spool write. A separate constrained systemd service performs outbound HTTPS delivery.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import sys
+
+ENVIRONMENT_FILE = Path("/etc/phantomnet/wazuh-pilot.env")
+ALLOWED_ENVIRONMENT_KEYS = {
+    "PHANTOMNET_WAZUH_STREAM_URL",
+    "PHANTOMNET_WAZUH_TOKEN_FILE",
+    "PHANTOMNET_WAZUH_STATE_FILE",
+    "PHANTOMNET_WAZUH_SPOOL_DIR",
+    "PHANTOMNET_WAZUH_MIN_RULE_LEVEL",
+    "PHANTOMNET_WAZUH_ALLOWED_GROUPS",
+    "PHANTOMNET_WAZUH_BATCH_SIZE",
+    "PHANTOMNET_WAZUH_POLL_INTERVAL_SECONDS",
+    "PHANTOMNET_ALLOW_INSECURE_HTTP",
+    "LOG_LEVEL",
+}
+
+FORWARDER_ROOT = Path("/opt/phantomnet-wazuh-pilot")
+if str(FORWARDER_ROOT) not in sys.path:
+    sys.path.insert(0, str(FORWARDER_ROOT))
+
+from integrations.wazuh_pilot_forwarder.forwarder import (  # noqa: E402
+    ConfigurationError,
+    DeliveryError,
+    PilotConfig,
+    SpoolForwarder,
+)
+
+
+def _load_environment() -> None:
+    try:
+        lines = ENVIRONMENT_FILE.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ConfigurationError(f"Cannot read {ENVIRONMENT_FILE}.") from exc
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        key, separator, value = stripped.partition("=")
+        if not separator or key not in ALLOWED_ENVIRONMENT_KEYS:
+            raise ConfigurationError("The Wazuh pilot environment file contains an invalid setting.")
+        os.environ.setdefault(key, value)
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("Missing Wazuh alert-file argument; telemetry was not queued.", file=sys.stderr)
+        return 2
+    try:
+        _load_environment()
+        config = PilotConfig.from_environment()
+        queued = SpoolForwarder(config).enqueue_file(Path(sys.argv[1]))
+    except (ConfigurationError, DeliveryError) as exc:
+        print(f"PhantomNet Wazuh pilot queue failed closed: {exc}", file=sys.stderr)
+        return 1
+    if queued:
+        print(f"Queued Wazuh telemetry evidence at {queued.name}.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

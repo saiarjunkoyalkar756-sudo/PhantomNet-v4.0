@@ -185,6 +185,7 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [Production-Readiness Validation](docs/PRODUCTION_READINESS_VALIDATION.md) | Executed evidence, corrected findings, and remaining live-validation boundaries. |
 | [SOC and SIEM Comparison](docs/PHANTOMNET_SOC_SIEM_COMPARISON.md) | Evidence-based positioning against Splunk, Wazuh, Sentinel, Elastic, and Security Onion. |
 | [Wazuh Integration and Migration Guide](docs/WAZUH_INTEGRATION_AND_MIGRATION_GUIDE.md) | Phased telemetry-first pairing plan, governed-response boundaries, validation gates, and rollback procedure. |
+| [Wazuh Telemetry Pilot Deployment](docs/WAZUH_TELEMETRY_PILOT_DEPLOYMENT.md) | Phase 1 sidecar and manager-integrated manifests, secret handling, verification, and rollback. |
 | [Core-First Platform Roadmap](docs/core-first-platform-roadmap.md) | Current engineering sequence and remaining platform work. |
 
 ## Current Engineering Focus
