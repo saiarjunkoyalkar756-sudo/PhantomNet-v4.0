@@ -31,6 +31,9 @@ yara-python>=4.5.0
 pymisp>=2.4.180
 stix2>=3.0.1
 
+# Reporting
+fpdf2>=2.7,<3
+
 # Networking & Web
 websockets==12.0
 httpx==0.27.0

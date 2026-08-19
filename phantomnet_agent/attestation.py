@@ -24,13 +24,14 @@ def _get_machine_guid_windows() -> str:
     """
     try:
         result = subprocess.check_output(
-            "reg query HKLM\SOFTWARE\Microsoft\Cryptography /v MachineGuid",
+            r"reg query HKLM\SOFTWARE\Microsoft\Cryptography /v MachineGuid",
             shell=True,
             stderr=subprocess.PIPE,
         ).decode()
         # Output is in the format: '\r\n<key>\r\n    <name>    <type>    <value>\r\n'
         return result.split()[-1]
-    except Exception:
+    except (subprocess.CalledProcessError, OSError, UnicodeDecodeError, IndexError) as exc:
+        logger.warning("Unable to read the Windows MachineGuid for local attestation: %s", exc)
         return ""
 
 def _get_android_id_termux() -> str:
