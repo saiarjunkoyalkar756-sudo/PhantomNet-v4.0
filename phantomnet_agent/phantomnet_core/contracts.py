@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -298,6 +299,75 @@ class WazuhTelemetryBatch(BaseModel):
     batch_id: str = Field(min_length=8, max_length=128)
     sequence: int = Field(ge=1)
     alerts: List[Dict[str, Any]] = Field(min_length=1, max_length=250)
+
+
+class IntegratedEvidenceRecord(BaseModel):
+    """Tenant-owned read-only evidence from an asset, endpoint, Wazuh, identity, intelligence, or graph source."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    evidence_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    source_kind: Literal["asset", "endpoint", "wazuh", "identity", "intelligence", "graph"]
+    source_name: str = Field(min_length=2, max_length=120)
+    source_record_id: str = Field(min_length=1, max_length=255)
+    observed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    collected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    tags: List[str] = Field(default_factory=list, max_length=32)
+    provenance: Dict[str, Any] = Field(default_factory=dict)
+    read_only: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_integrated_evidence_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("observed_at", "collected_at")
+    @classmethod
+    def require_timezone_aware_evidence_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    @field_validator("read_only")
+    @classmethod
+    def require_read_only_evidence(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("integrated evidence must remain read-only.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def prohibit_evidence_automatic_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("integrated evidence cannot enable automatic enforcement.")
+        return value
+
+    @model_validator(mode="after")
+    def require_read_only_provenance(self) -> "IntegratedEvidenceRecord":
+        if self.provenance.get("read_only") is not True:
+            raise ValueError("integrated evidence provenance must explicitly attest read_only=true.")
+        canonical = json.dumps(self.payload, sort_keys=True, separators=(",", ":"), default=str)
+        if len(canonical.encode("utf-8")) > 65_536:
+            raise ValueError("integrated evidence payload exceeds the 64 KiB safety limit.")
+        return self
+
+    def payload_fingerprint(self) -> str:
+        material = {
+            "payload": self.payload,
+            "provenance": self.provenance,
+            "source_kind": self.source_kind,
+            "source_name": self.source_name,
+            "source_record_id": self.source_record_id,
+        }
+        canonical = json.dumps(material, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+        return sha256(canonical).hexdigest()
 
 
 class ContainmentRequest(BaseModel):

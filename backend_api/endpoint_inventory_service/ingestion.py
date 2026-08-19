@@ -6,6 +6,7 @@ from typing import Any, Mapping
 
 from backend_api.endpoint_inventory_service.repository import EndpointInventoryRepository
 from backend_api.endpoint_inventory_service.wazuh_adapter import WazuhReadOnlyAdapter
+from backend_api.evidence_vault.integration import EvidenceIntegrationService
 from phantomnet_core.contracts import EventEnvelope, HostAssetRecord, IntegrityObservation
 
 
@@ -16,9 +17,11 @@ class EndpointTelemetryIngestion:
         self,
         repository: EndpointInventoryRepository | None = None,
         wazuh_adapter: WazuhReadOnlyAdapter | None = None,
+        evidence_integration: EvidenceIntegrationService | None = None,
     ):
         self.repository = repository or EndpointInventoryRepository()
         self.wazuh_adapter = wazuh_adapter or WazuhReadOnlyAdapter()
+        self.evidence_integration = evidence_integration
 
     @staticmethod
     def _asset_event(asset: HostAssetRecord) -> EventEnvelope:
@@ -48,17 +51,30 @@ class EndpointTelemetryIngestion:
 
     async def ingest_asset(self, asset: HostAssetRecord) -> dict[str, Any]:
         persisted, created = await self.repository.upsert_asset(asset)
-        return {"asset": persisted, "created": created, "events": (self._asset_event(persisted),)}
+        result: dict[str, Any] = {"asset": persisted, "created": created, "events": (self._asset_event(persisted),)}
+        if self.evidence_integration is not None:
+            evidence = await self.evidence_integration.ingest_asset(persisted)
+            result["integrated_evidence"] = evidence.record
+            result["integrated_evidence_created"] = evidence.created
+        return result
 
     async def ingest_integrity(self, observation: IntegrityObservation) -> dict[str, Any]:
         persisted, created = await self.repository.persist_integrity(observation)
-        return {"observation": persisted, "created": created, "events": (self._integrity_event(persisted),)}
+        result: dict[str, Any] = {"observation": persisted, "created": created, "events": (self._integrity_event(persisted),)}
+        if self.evidence_integration is not None:
+            evidence = await self.evidence_integration.ingest_integrity(persisted)
+            result["integrated_evidence"] = evidence.record
+            result["integrated_evidence_created"] = evidence.created
+        return result
 
     async def ingest_wazuh_alert(self, tenant_id: str, alert: Mapping[str, Any]) -> dict[str, Any]:
         asset, observation = self.wazuh_adapter.normalize(tenant_id, alert)
         asset_result = await self.ingest_asset(asset)
         events = list(asset_result["events"])
         result: dict[str, Any] = {"asset": asset_result["asset"], "asset_created": asset_result["created"], "events": events}
+        if "integrated_evidence" in asset_result:
+            result["asset_integrated_evidence"] = asset_result["integrated_evidence"]
+            result["asset_integrated_evidence_created"] = asset_result["integrated_evidence_created"]
         if observation is not None:
             observation = observation.model_copy(update={"asset_id": asset_result["asset"].asset_id})
             integrity_result = await self.ingest_integrity(observation)
@@ -68,6 +84,9 @@ class EndpointTelemetryIngestion:
                     "integrity_created": integrity_result["created"],
                 }
             )
+            if "integrated_evidence" in integrity_result:
+                result["integrity_integrated_evidence"] = integrity_result["integrated_evidence"]
+                result["integrity_integrated_evidence_created"] = integrity_result["integrated_evidence_created"]
             result["events"].extend(integrity_result["events"])
         result["automatic_enforcement"] = False
         return result

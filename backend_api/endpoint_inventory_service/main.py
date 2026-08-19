@@ -16,15 +16,22 @@ from backend_api.endpoint_inventory_service.forwarders import (
 )
 from backend_api.endpoint_inventory_service.ingestion import EndpointTelemetryIngestion
 from backend_api.endpoint_inventory_service.repository import EndpointInventoryRepository, init_endpoint_inventory_store
+from backend_api.evidence_vault.integration import (
+    EvidenceIntegrationService,
+    EvidenceSourceKind,
+    IntegratedEvidenceRepository,
+    init_integrated_evidence_store,
+)
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
 from backend_api.shared.service_factory import create_phantom_service
-from phantomnet_core.contracts import HostAssetRecord, IntegrityObservation, WazuhTelemetryBatch
+from phantomnet_core.contracts import HostAssetRecord, IntegratedEvidenceRecord, IntegrityObservation, WazuhTelemetryBatch
 
 
 async def endpoint_inventory_startup(_app) -> None:
     await init_endpoint_inventory_store()
     await init_forwarder_store()
+    await init_integrated_evidence_store()
 
 
 app = create_phantom_service(
@@ -34,7 +41,9 @@ app = create_phantom_service(
     custom_startup=endpoint_inventory_startup,
 )
 repository = EndpointInventoryRepository()
-ingestion = EndpointTelemetryIngestion(repository)
+evidence_repository = IntegratedEvidenceRepository()
+evidence_integration = EvidenceIntegrationService(evidence_repository)
+ingestion = EndpointTelemetryIngestion(repository, evidence_integration=evidence_integration)
 forwarders = WazuhForwarderService(ingestion=ingestion)
 
 
@@ -54,14 +63,16 @@ async def ingest_asset(
     if asset.tenant_id != str(current_user.tenant_id):
         raise HTTPException(status_code=403, detail="Endpoint asset tenant does not match authenticated tenant.")
     result = await ingestion.ingest_asset(asset)
-    return success_response(
-        data={
-            "asset": result["asset"].model_dump(mode="json"),
-            "created": result["created"],
-            "events": [event.model_dump(mode="json") for event in result["events"]],
-            "automatic_enforcement": False,
-        }
-    )
+    data = {
+        "asset": result["asset"].model_dump(mode="json"),
+        "created": result["created"],
+        "events": [event.model_dump(mode="json") for event in result["events"]],
+        "automatic_enforcement": False,
+    }
+    if "integrated_evidence" in result:
+        data["integrated_evidence"] = result["integrated_evidence"].model_dump(mode="json")
+        data["integrated_evidence_created"] = result["integrated_evidence_created"]
+    return success_response(data=data)
 
 
 @app.post("/integrity", status_code=201)
@@ -77,14 +88,16 @@ async def ingest_integrity(
         raise HTTPException(status_code=404, detail="Referenced endpoint asset was not found.") from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return success_response(
-        data={
-            "observation": result["observation"].model_dump(mode="json"),
-            "created": result["created"],
-            "events": [event.model_dump(mode="json") for event in result["events"]],
-            "automatic_enforcement": False,
-        }
-    )
+    data = {
+        "observation": result["observation"].model_dump(mode="json"),
+        "created": result["created"],
+        "events": [event.model_dump(mode="json") for event in result["events"]],
+        "automatic_enforcement": False,
+    }
+    if "integrated_evidence" in result:
+        data["integrated_evidence"] = result["integrated_evidence"].model_dump(mode="json")
+        data["integrated_evidence_created"] = result["integrated_evidence_created"]
+    return success_response(data=data)
 
 
 @app.post("/wazuh/alerts", status_code=201)
@@ -104,9 +117,15 @@ async def ingest_wazuh_alert(
         "automatic_enforcement": False,
         "adapter_mode": "read_only",
     }
+    if "asset_integrated_evidence" in result:
+        data["asset_integrated_evidence"] = result["asset_integrated_evidence"].model_dump(mode="json")
+        data["asset_integrated_evidence_created"] = result["asset_integrated_evidence_created"]
     if "observation" in result:
         data["observation"] = result["observation"].model_dump(mode="json")
         data["integrity_created"] = result["integrity_created"]
+    if "integrity_integrated_evidence" in result:
+        data["integrity_integrated_evidence"] = result["integrity_integrated_evidence"].model_dump(mode="json")
+        data["integrity_integrated_evidence_created"] = result["integrity_integrated_evidence_created"]
     return success_response(data=data)
 
 
@@ -164,6 +183,48 @@ async def stream_wazuh_telemetry(
     except (LookupError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return success_response(data=result)
+
+
+@app.post("/evidence", status_code=201)
+async def ingest_integrated_evidence(
+    record: IntegratedEvidenceRecord,
+    current_user: User = Depends(require_capability("config:write")),
+):
+    """Persist tenant-owned read-only integration evidence; this route has no response capability."""
+    if record.tenant_id != str(current_user.tenant_id):
+        raise HTTPException(status_code=403, detail="Integrated evidence tenant does not match authenticated tenant.")
+    outcome = await evidence_integration.ingest(record)
+    return success_response(
+        data={
+            "evidence": outcome.record.model_dump(mode="json"),
+            "created": outcome.created,
+            "event": outcome.event.model_dump(mode="json"),
+            "automatic_enforcement": False,
+        }
+    )
+
+
+@app.get("/evidence")
+async def list_integrated_evidence(
+    source_kind: EvidenceSourceKind | None = None,
+    limit: int = Query(default=200, ge=1, le=500),
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """List only the authenticated tenant's read-only asset, endpoint, Wazuh, identity, intelligence, or graph evidence."""
+    records = await evidence_repository.list_for_tenant(str(current_user.tenant_id), source_kind=source_kind, limit=limit)
+    return success_response(data=[record.model_dump(mode="json") for record in records])
+
+
+@app.get("/evidence/{evidence_id}")
+async def get_integrated_evidence(
+    evidence_id: str,
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    try:
+        record = await evidence_repository.get_for_tenant(str(current_user.tenant_id), evidence_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Integrated evidence was not found.") from exc
+    return success_response(data=record.model_dump(mode="json"))
 
 
 @app.get("/assets")

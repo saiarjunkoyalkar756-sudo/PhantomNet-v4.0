@@ -360,6 +360,37 @@ class HostIntegrityObservationRow(Base):
     automatic_enforcement = Column(Boolean, nullable=False, default=False)
 
 
+class IntegratedEvidenceRow(Base):
+    """Durable tenant-owned read-only evidence with explicit adapter provenance."""
+
+    __tablename__ = "integrated_evidence"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "source_kind",
+            "source_name",
+            "source_record_id",
+            "payload_fingerprint",
+            name="uq_integrated_evidence_source_fingerprint",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    evidence_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    source_kind = Column(String, nullable=False, index=True)
+    source_name = Column(String, nullable=False, index=True)
+    source_record_id = Column(String, nullable=False, index=True)
+    observed_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    collected_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    payload = Column(JSONB, nullable=False)
+    tags = Column(JSONB, nullable=False)
+    provenance = Column(JSONB, nullable=False)
+    payload_fingerprint = Column(String(64), nullable=False, index=True)
+    read_only = Column(Boolean, nullable=False, default=True)
+    automatic_enforcement = Column(Boolean, nullable=False, default=False)
+
+
 class WazuhForwarderRow(Base):
     """Tenant-bound read-only forwarder registration; only a token digest is stored."""
     __tablename__ = "wazuh_forwarders"

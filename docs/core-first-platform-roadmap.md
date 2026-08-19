@@ -34,13 +34,13 @@ The current codebase already includes versioned canonical events; durable detect
 | 9 | **AI-native analyst assistance** | Explainable, advisory-only correlation suggestions, rule-draft workflows, and analyst review gates with no direct response authority. |
 | 10 | **External lab readiness** | Non-production deployment guide, operator runbooks, security review, onboarding checklist, and first external lab or university validation. |
 
-## Completed development increment: Phase 3
+## Completed development increment: Phase 4
 
-Phase 3 now provides **versioned detection and correlation engineering**. Tenant-owned deterministic rules require a strictly increasing dotted numeric version when their definition changes. Every accepted version retains an immutable definition snapshot and SHA-256 fingerprint, so historical rule evidence can be reviewed reproducibly without activating an old definition.
+Phase 4 now provides a **tenant-scoped evidence integration layer**. Assets, endpoint integrity, Wazuh telemetry, identity, intelligence, and graph context share one bounded evidence contract with explicit source identity, observed and collected timestamps, provenance, and read-only semantics. Records are persisted idempotently by tenant, source identity, and SHA-256 evidence fingerprint; they are retrievable only by their owner tenant.
 
-The implementation also provides bounded offline fixtures that evaluate canonical events in deterministic timestamp/event-ID order without broker, database-write, endpoint, cloud, or response-adapter activity. Technique-to-tactic MITRE mappings are complete by contract and can be summarized per tenant. Finally, rules can carry a bounded analyst-alert suppression window that groups repeated alerts without suppressing durable telemetry, match evidence, detections, approvals, or any high-impact action.
+The implementation projects each durable record to an informational canonical `EVIDENCE.<SOURCE>.OBSERVED` event, so existing governed correlation can use the context without treating any integration as a response authority. Existing asset, integrity, and Wazuh ingestion paths now emit integrated-evidence receipts, and successful read-only World Intel context can be admitted without initiating unreviewed external retrieval.
 
-> **Phase 3 closure rule:** rule governance, fixture evaluation, MITRE coverage, and alert-suppression controls remain advisory-only. They cannot alter containment scope, bypass human approval, execute a response adapter, or generate automatic enforcement.
+> **Phase 4 closure rule:** integrated evidence must attest `read_only=true`, cannot enable automatic enforcement, and cannot expose containment, response, cloud-control, identity-mutation, or endpoint-command operations.
 
 ## Sequencing principles
 
