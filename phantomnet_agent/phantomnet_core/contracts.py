@@ -8,7 +8,7 @@ from hashlib import sha256
 from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 CONTRACT_VERSION = "1.0.0"
@@ -478,6 +478,7 @@ class GovernedCorrelationRule(BaseModel):
     correlation_key_fields: List[str] = Field(default_factory=list, max_length=5)
     threshold: int = Field(default=1, ge=1, le=100)
     window_seconds: int = Field(default=300, ge=1, le=86_400)
+    suppression_window_seconds: int = Field(default=900, ge=0, le=86_400)
     enabled: bool = True
     automatic_enforcement: bool = False
 
@@ -513,6 +514,12 @@ class GovernedCorrelationRule(BaseModel):
                 raise ValueError("event types and correlation key fields must be bounded canonical names.")
         return values
 
+    @model_validator(mode="after")
+    def require_one_to_one_mitre_mapping(self) -> "GovernedCorrelationRule":
+        if len(self.mitre_techniques) != len(self.mitre_tactics):
+            raise ValueError("governed rules require exactly one MITRE tactic for each technique.")
+        return self
+
 
 class CorrelationMatchEvidence(BaseModel):
     """Bounded evidence that a tenant-owned rule matched canonical telemetry; it has no response fields."""
@@ -537,6 +544,56 @@ class CorrelationMatchEvidence(BaseModel):
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
+
+
+class GovernedCorrelationRuleFixture(BaseModel):
+    """A bounded, tenant-scoped offline corpus for deterministic advisory rule evaluation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fixture_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    rule_id: str
+    events: List[EventEnvelope] = Field(min_length=1, max_length=500)
+    expected_detection_event_ids: List[str] = Field(default_factory=list, max_length=500)
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_fixture_tenant_id(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @model_validator(mode="after")
+    def require_tenant_bound_unique_fixture_events(self) -> "GovernedCorrelationRuleFixture":
+        event_ids = [event.event_id for event in self.events]
+        if len(event_ids) != len(set(event_ids)):
+            raise ValueError("fixture event IDs must be unique.")
+        if any(event.tenant_id != self.tenant_id for event in self.events):
+            raise ValueError("fixture events must belong to the fixture tenant.")
+        if any(event_id not in event_ids for event_id in self.expected_detection_event_ids):
+            raise ValueError("fixture expected detection IDs must reference fixture events.")
+        return self
+
+
+class GovernedCorrelationFixtureEvaluation(BaseModel):
+    """Read-only deterministic evaluation output; it has no containment or response authority."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fixture_id: str
+    tenant_id: str
+    rule_id: str
+    rule_version: str
+    evaluated_event_ids: List[str] = Field(default_factory=list)
+    matched_event_ids: List[str] = Field(default_factory=list)
+    detection_event_ids: List[str] = Field(default_factory=list)
+    expected_detection_event_ids: List[str] = Field(default_factory=list)
+    expectations_met: bool
+    automatic_enforcement: bool = False
 
 
 class ResponseAutomationPolicy(BaseModel):

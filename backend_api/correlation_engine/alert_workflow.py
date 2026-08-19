@@ -50,6 +50,14 @@ def suppression_key_for(detection: DetectionRecord) -> str:
     return sha256(material.encode("utf-8")).hexdigest()
 
 
+def suppression_window_for(detection: DetectionRecord, default_seconds: int = SUPPRESSION_WINDOW_SECONDS) -> int:
+    """Honor a reviewed governed rule window only when its persisted evidence is bounded and well typed."""
+    configured = detection.evidence.get("alert_suppression_window_seconds", default_seconds)
+    if isinstance(configured, bool) or not isinstance(configured, int) or not 0 <= configured <= 86_400:
+        return default_seconds
+    return configured
+
+
 def _to_contract(row: AnalystAlertRow) -> AlertRecord:
     return AlertRecord(
         alert_id=row.alert_id,
@@ -91,7 +99,8 @@ class AlertWorkflow:
     async def ingest_detection(self, detection: DetectionRecord) -> AlertWorkflowResult:
         """Create one analyst alert or update the active alert suppressed by a repeat delivery."""
         now = detection.detected_at
-        cutoff = now - timedelta(seconds=self._suppression_window_seconds)
+        suppression_window_seconds = suppression_window_for(detection, self._suppression_window_seconds)
+        cutoff = now - timedelta(seconds=suppression_window_seconds)
         suppression_key = suppression_key_for(detection)
         async with self._session_factory() as session:
             active_alert = await session.scalar(
@@ -133,6 +142,7 @@ class AlertWorkflow:
                     "rule_version": detection.rule_version,
                     "event_id": detection.event_id,
                     "detection_evidence": detection.evidence,
+                    "suppression_window_seconds": suppression_window_seconds,
                 },
             )
             row = AnalystAlertRow(

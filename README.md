@@ -108,7 +108,7 @@ pip install -r requirements.txt
 python3 -m pytest -q -p no:cacheprovider
 ```
 
-The current isolated regression gate contains **308 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
+The current isolated regression gate contains **311 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
 
 ### Build the Operator Interfaces
 
@@ -179,6 +179,7 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [Operations Guide](docs/OPERATIONS.md) | Monitoring, logs, recovery, and operator practices. |
 | [API Documentation](docs/API_DOCUMENTATION.md) | Service and API reference material. |
 | [Event Bus Schema](docs/EVENT_BUS_SCHEMA.md) | Event-routing and schema conventions. |
+| [Governed Correlation Engineering](docs/governed-correlation-engineering.md) | Versioned deterministic rules, immutable revisions, offline fixtures, MITRE coverage, and bounded analyst-alert suppression. |
 | [Governed Response and Replication](docs/governed-response-and-regional-replication.md) | Response governance and telemetry replication contracts. |
 | [Tenant Isolation and Audit Integrity](docs/tenant-isolation-and-audit-integrity.md) | Isolation checks and tamper-evident audit verification. |
 | [AWS Security Group Containment](docs/aws-security-group-containment.md) | Cloud firewall adapter safety and validation boundary. |

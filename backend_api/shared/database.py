@@ -776,9 +776,28 @@ class GovernedCorrelationRuleRow(Base):
     correlation_key_fields = Column(JSONB, nullable=False)
     threshold = Column(Integer, nullable=False)
     window_seconds = Column(Integer, nullable=False)
+    suppression_window_seconds = Column(Integer, nullable=False, default=900)
     enabled = Column(Boolean, nullable=False, default=True, index=True)
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class GovernedCorrelationRuleRevisionRow(Base):
+    """Immutable governed-correlation snapshot retained for analyst review and reproducible tests."""
+
+    __tablename__ = "governed_correlation_rule_revisions"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "rule_id", "version", name="uq_governed_correlation_rule_revision_version"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    revision_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    rule_id = Column(String, ForeignKey("governed_correlation_rules.rule_id"), nullable=False, index=True)
+    version = Column(String, nullable=False)
+    definition_fingerprint = Column(String(64), nullable=False, index=True)
+    definition = Column(JSONB, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
 
 class CorrelationMatchEvidenceRow(Base):

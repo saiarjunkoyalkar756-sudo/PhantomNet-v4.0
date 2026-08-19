@@ -24,6 +24,7 @@ from typing import List, Optional
 from backend_api.core.response import success_response, error_response
 from phantomnet_core.contracts import (
     GovernedCorrelationRule,
+    GovernedCorrelationRuleFixture,
     ResponseAutomationPolicy,
     TelemetryReplicationTarget,
 )
@@ -163,6 +164,45 @@ async def upsert_governed_rule(
         return error_response(code="TENANT_SCOPE_MISMATCH", message="Rule tenant scope must match the authenticated user.", status_code=403)
     stored = await governed_correlation_repository.upsert(rule)
     return success_response(data=stored.model_dump(mode="json"))
+
+
+@app.get("/governed-rules/mitre-coverage")
+async def governed_rule_mitre_coverage(
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return tenant-owned deterministic ATT&CK coverage counts; this route has no tuning or response capability."""
+    return success_response(data=await governed_correlation_repository.mitre_coverage_summary(str(current_user.tenant_id)))
+
+
+@app.get("/governed-rules/{rule_id}/revisions")
+async def list_governed_rule_revisions(
+    rule_id: str,
+    current_user: User = Depends(require_capability("alerts:read")),
+):
+    """Return immutable version snapshots for one tenant-owned advisory correlation rule."""
+    try:
+        revisions = await governed_correlation_repository.list_revisions(str(current_user.tenant_id), rule_id)
+    except LookupError:
+        return error_response(code="NOT_FOUND", message="Governed correlation rule not found.", status_code=404)
+    return success_response(data=revisions)
+
+
+@app.post("/governed-rules/{rule_id}/fixtures/evaluate")
+async def evaluate_governed_rule_fixture(
+    rule_id: str,
+    fixture: GovernedCorrelationRuleFixture,
+    current_user: User = Depends(require_capability("rules:write")),
+):
+    """Evaluate an offline tenant-bound fixture deterministically without persisting events or executing response."""
+    if fixture.tenant_id != str(current_user.tenant_id) or fixture.rule_id != rule_id:
+        return error_response(code="TENANT_SCOPE_MISMATCH", message="Fixture tenant and rule scope must match the authenticated user.", status_code=403)
+    try:
+        evaluation = await governed_correlation_repository.evaluate_fixture(str(current_user.tenant_id), rule_id, fixture)
+    except LookupError:
+        return error_response(code="NOT_FOUND", message="Governed correlation rule not found.", status_code=404)
+    except ValueError as exc:
+        return error_response(code="INVALID_RULE_FIXTURE", message=str(exc), status_code=422)
+    return success_response(data=evaluation.model_dump(mode="json"))
 
 
 @app.get("/governed-rules/quality")
