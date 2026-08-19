@@ -1,0 +1,70 @@
+services:
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+    command:
+      - redpanda
+      - start
+      - --kafka-addr
+      - internal://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - internal://redpanda:9092
+      - --mode
+      - dev-container
+      - --smp
+      - "1"
+      - --set
+      - redpanda.auto_create_topics_enabled=true
+    networks:
+      - recovery_internal
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health --exit-when-healthy"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: recovery_validation
+      POSTGRES_USER: recovery_validator
+      POSTGRES_PASSWORD: ${RECOVERY_DB_PASSWORD:?Set an ephemeral non-production recovery test password}
+    networks:
+      - recovery_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recovery_validator -d recovery_validation"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+
+  recovery-probe:
+    build:
+      context: .
+      dockerfile: infra/docker/recovery-probe.Dockerfile
+    environment:
+      RECOVERY_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      RECOVERY_POSTGRES_DSN: postgresql://recovery_validator:${RECOVERY_DB_PASSWORD:?Set an ephemeral non-production recovery test password}@postgres:5432/recovery_validation
+      RECOVERY_TOPIC: phantomnet.recovery.validation
+      RECOVERY_AUDIT_HMAC_KEY: ${RECOVERY_AUDIT_HMAC_KEY:?Set an ephemeral non-production audit HMAC key}
+      RECOVERY_AUDIT_HMAC_KEY_ID: ${RECOVERY_AUDIT_HMAC_KEY_ID:?Set an ephemeral non-production audit HMAC key identifier}
+    networks:
+      - recovery_internal
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+networks:
+  recovery_internal:
+    internal: true
