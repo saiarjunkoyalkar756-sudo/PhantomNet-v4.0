@@ -16,6 +16,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     UniqueConstraint,
+    event,
     text
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as pgUUID
@@ -460,6 +461,16 @@ class ContainmentAuditRecordRow(Base):
     record_hash = Column(String, nullable=False, unique=True)
     signature = Column(String, nullable=True)
     signature_key_id = Column(String, nullable=True)
+
+
+@event.listens_for(ContainmentAuditRecordRow, "before_update")
+def _reject_containment_audit_update(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Containment audit records are immutable and cannot be updated through the application ORM.")
+
+
+@event.listens_for(ContainmentAuditRecordRow, "before_delete")
+def _reject_containment_audit_delete(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Containment audit records are immutable and cannot be deleted through the application ORM.")
 
 
 class ForensicRecord(Base):
