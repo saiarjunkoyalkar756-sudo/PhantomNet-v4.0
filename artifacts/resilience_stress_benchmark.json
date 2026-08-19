@@ -1,0 +1,21 @@
+{
+  "duplicate_delivery_count": 50,
+  "duration_seconds": 1.068899,
+  "event_count": 500,
+  "external_actions": false,
+  "invariants": {
+    "duplicate_delivery_idempotent": true,
+    "response_adapter_executed": false,
+    "unique_alert_per_event": true,
+    "unique_detection_per_event": true
+  },
+  "latency_ms": {
+    "p50": 2.126,
+    "p95": 2.257,
+    "p99": 2.461
+  },
+  "mode": "isolated_sqlite_bas_fixture",
+  "throughput_events_per_second": 467.771,
+  "unique_alert_count": 500,
+  "unique_detection_count": 500
+}
