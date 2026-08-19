@@ -11,6 +11,7 @@ from typing import Any
 
 from backend_api.soar_engine.aws_security_group_adapter import AwsSecurityGroupContainmentAdapter
 from backend_api.soar_engine.endpoint_containment_adapter import EndpointContainmentAdapter
+from backend_api.soar_engine.wazuh_active_response_adapter import WazuhActiveResponseContainmentAdapter
 from phantomnet_core.contracts import ContainmentApproval, ContainmentRequest
 
 
@@ -22,13 +23,17 @@ class GovernedResponseAdapterRouter:
         *,
         endpoint_adapter: EndpointContainmentAdapter | None = None,
         aws_security_group_adapter: AwsSecurityGroupContainmentAdapter | None = None,
+        wazuh_active_response_adapter: WazuhActiveResponseContainmentAdapter | None = None,
     ) -> None:
         self._endpoint_adapter = endpoint_adapter or EndpointContainmentAdapter()
         self._aws_security_group_adapter = aws_security_group_adapter or AwsSecurityGroupContainmentAdapter()
+        self._wazuh_active_response_adapter = wazuh_active_response_adapter or WazuhActiveResponseContainmentAdapter()
 
     def _adapter_for(self, request: ContainmentRequest):
         if request.action == "block_indicator":
             return self._aws_security_group_adapter
+        if request.action in {"isolate_endpoint", "release_endpoint"} and "wazuh_agent_id" in request.parameters:
+            return self._wazuh_active_response_adapter
         return self._endpoint_adapter
 
     def execute(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]:

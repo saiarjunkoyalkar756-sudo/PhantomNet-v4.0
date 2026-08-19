@@ -1,0 +1,15 @@
+<!--
+  Merge these command definitions inside <ossec_config> or the approved agent group configuration.
+  Do NOT add an <active-response> rule-trigger block for these commands. PhantomNet invokes
+  them only through the Wazuh API after a separately recorded human approval.
+-->
+<command>
+  <name>phantomnet-network-isolate</name>
+  <executable>phantomnet-network-isolate</executable>
+  <timeout_allowed>no</timeout_allowed>
+</command>
+<command>
+  <name>phantomnet-network-release</name>
+  <executable>phantomnet-network-release</executable>
+  <timeout_allowed>no</timeout_allowed>
+</command>

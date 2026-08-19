@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import inspect
 from datetime import datetime, timezone
 import os
 from typing import Any, Protocol
@@ -19,6 +20,7 @@ from backend_api.shared.database import (
     ContainmentExecutionRow,
     ContainmentRequestRow,
     engine,
+    WazuhResponseReceiptRow,
 )
 from phantomnet_core.contracts import (
     ContainmentApproval,
@@ -109,6 +111,7 @@ async def init_governed_containment_store() -> None:
             ContainmentRequestRow.__table__,
             ContainmentApprovalRow.__table__,
             ContainmentExecutionRow.__table__,
+            WazuhResponseReceiptRow.__table__,
             ContainmentAuditRecordRow.__table__,
         ):
             await connection.run_sync(table.create, checkfirst=True)
@@ -248,11 +251,26 @@ class GovernedContainmentService:
             approval = _approval_contract(approval_row)
 
         result = self._adapter.execute(request, approval)
+        if inspect.isawaitable(result):
+            result = await result
         adapter_name = str(result.get("provider") or self._adapter.name)
         enforced = bool(result.get("enforced"))
         verified = bool(result.get("verified"))
         status = "verified" if enforced and verified else "failed"
-        audit_hash = await self._audit(tenant_id, actor, "containment.executed", {"request_id": request_id, "approval_id": approval.approval_id, "adapter": adapter_name, "enforced": enforced, "verified": verified, "detail": result.get("detail", "")})
+        audit_hash = await self._audit(
+            tenant_id,
+            actor,
+            "containment.executed",
+            {
+                "request_id": request_id,
+                "approval_id": approval.approval_id,
+                "adapter": adapter_name,
+                "enforced": enforced,
+                "verified": verified,
+                "detail": result.get("detail", ""),
+                "verification": result,
+            },
+        )
         evidence = ContainmentExecutionEvidence(
             request_id=request_id,
             tenant_id=tenant_id,
@@ -297,9 +315,23 @@ class GovernedContainmentService:
             approval = _approval_contract(approval_row)
 
         result = self._adapter.rollback(request, approval)
+        if inspect.isawaitable(result):
+            result = await result
         adapter_name = str(result.get("provider") or self._adapter.name)
         verified = bool(result.get("verified"))
-        audit_hash = await self._audit(tenant_id, actor, "containment.rolled_back", {"request_id": request_id, "approval_id": approval.approval_id, "adapter": adapter_name, "verified": verified, "detail": result.get("detail", "")})
+        audit_hash = await self._audit(
+            tenant_id,
+            actor,
+            "containment.rolled_back",
+            {
+                "request_id": request_id,
+                "approval_id": approval.approval_id,
+                "adapter": adapter_name,
+                "verified": verified,
+                "detail": result.get("detail", ""),
+                "verification": result,
+            },
+        )
         async with self._session_factory() as session:
             request_row = await session.scalar(select(ContainmentRequestRow).where(ContainmentRequestRow.tenant_id == UUID(tenant_id), ContainmentRequestRow.request_id == request_id))
             execution_row = await session.scalar(select(ContainmentExecutionRow).where(ContainmentExecutionRow.tenant_id == UUID(tenant_id), ContainmentExecutionRow.request_id == request_id))

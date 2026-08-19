@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+exec /var/ossec/active-response/bin/phantomnet-network-response.py --mode release "$@"

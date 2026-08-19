@@ -14,12 +14,14 @@ from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
 from backend_api.soar_engine.governed_containment import GovernedContainmentService
 from backend_api.soar_engine.response_adapter_router import GovernedResponseAdapterRouter
+from backend_api.soar_engine.wazuh_response_receipts import WazuhResponseReceipt, WazuhResponseReceiptService
 from phantomnet_core.contracts import ContainmentApproval, ContainmentRequest
 
 
 router = APIRouter(prefix="/governed-containment", tags=["Governed Containment"])
 containment_service = GovernedContainmentService(adapter=GovernedResponseAdapterRouter())
 audit_verifier = ContainmentAuditVerifier()
+wazuh_response_receipt_service = WazuhResponseReceiptService()
 
 
 class ContainmentRequestCreate(BaseModel):
@@ -110,6 +112,23 @@ async def rollback_containment_request(
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return success_response(data=evidence.model_dump(mode="json"))
+
+
+@router.post("/wazuh/receipts", status_code=202)
+async def record_wazuh_response_receipt(receipt: WazuhResponseReceipt):
+    """Accept only a fresh HMAC-signed endpoint receipt; this route cannot create approvals or commands."""
+    try:
+        stored = await wazuh_response_receipt_service.submit(receipt)
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    return success_response(
+        data={
+            "receipt_id": stored.receipt_id,
+            "request_id": stored.request_id,
+            "accepted": True,
+            "automatic_enforcement": False,
+        }
+    )
 
 
 @router.get("/audit/verify")

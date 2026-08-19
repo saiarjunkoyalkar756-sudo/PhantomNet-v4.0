@@ -395,6 +395,30 @@ class WazuhForwarderBatchRow(Base):
     alert_count = Column(Integer, nullable=False)
 
 
+class WazuhResponseReceiptRow(Base):
+    """Signed endpoint receipt used to prove a named Wazuh Active Response outcome."""
+    __tablename__ = "wazuh_response_receipts"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "nonce", name="uq_wazuh_response_receipt_tenant_nonce"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    receipt_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    request_id = Column(String, ForeignKey("containment_requests.request_id"), nullable=False, index=True)
+    approval_id = Column(String, ForeignKey("containment_approvals.approval_id"), nullable=False, index=True)
+    asset_id = Column(String, nullable=False, index=True)
+    wazuh_agent_id = Column(String, nullable=False, index=True)
+    action = Column(String, nullable=False, index=True)
+    network_state = Column(String, nullable=False, index=True)
+    command_fingerprint = Column(String(length=64), nullable=False, index=True)
+    nonce = Column(String, nullable=False)
+    observed_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    received_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    signature = Column(String, nullable=False)
+    signature_key_id = Column(String, nullable=False)
+
+
 class ContainmentRequestRow(Base):
     """High-impact response intent; execution is impossible until a separate approval exists."""
     __tablename__ = "containment_requests"

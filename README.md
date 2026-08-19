@@ -108,7 +108,7 @@ pip install -r requirements.txt
 python3 -m pytest -q -p no:cacheprovider
 ```
 
-The current isolated regression gate contains **281 passing tests** and **2 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
+The current isolated regression gate contains **306 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
 
 ### Build the Operator Interfaces
 
@@ -186,6 +186,8 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [SOC and SIEM Comparison](docs/PHANTOMNET_SOC_SIEM_COMPARISON.md) | Evidence-based positioning against Splunk, Wazuh, Sentinel, Elastic, and Security Onion. |
 | [Wazuh Integration and Migration Guide](docs/WAZUH_INTEGRATION_AND_MIGRATION_GUIDE.md) | Phased telemetry-first pairing plan, governed-response boundaries, validation gates, and rollback procedure. |
 | [Wazuh Telemetry Pilot Deployment](docs/WAZUH_TELEMETRY_PILOT_DEPLOYMENT.md) | Phase 1 sidecar and manager-integrated manifests, secret handling, verification, and rollback. |
+| [Wazuh Governed Response Bridge Design](docs/WAZUH_GOVERNED_RESPONSE_BRIDGE.md) | Phase 2 approval, command-binding, verification-receipt, audit, and rollback model. |
+| [Wazuh Governed Response Deployment](docs/WAZUH_GOVERNED_RESPONSE_DEPLOYMENT.md) | Disabled-by-default bridge activation, agent staging, lab acceptance gates, failure injection, and emergency stop procedure. |
 | [Core-First Platform Roadmap](docs/core-first-platform-roadmap.md) | Current engineering sequence and remaining platform work. |
 
 ## Current Engineering Focus
