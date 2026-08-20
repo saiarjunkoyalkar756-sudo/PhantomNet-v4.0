@@ -36,9 +36,7 @@ export default function RoadmapPage() {
                 >
                     <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">See PhantomNet Today, Plan for Tomorrow</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto">
-                        PhantomNet is continuously evolving to meet the dynamic challenges of the cyber landscape.
-                        Explore our current capabilities and get a glimpse into the future of autonomous cyber defense
-                        with our transparent product roadmap.
+                        PhantomNet is continuously evolving through evidence-backed development increments. This roadmap distinguishes controls with current regression or lab evidence from future advisory, remediation, and integration work.
                     </p>
                 </motion.section>
 
@@ -53,12 +51,12 @@ export default function RoadmapPage() {
                     <h2 className="text-3xl font-semibold font-heading mb-8 text-center text-pn-heading">What Works Today</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[
-                            'Real-time Telemetry Ingestion & Normalization',
-                            'AI-Powered Behavioral Anomaly Detection',
-                            'Automated Threat Intelligence Correlation',
-                            'Basic SOAR Playbook Execution (Containment)',
-                            'Immutable Blockchain Audit Logging',
-                            'Secure Agent Deployment & Integrity Checks',
+                            'Canonical Telemetry Ingestion & Normalization',
+                            'Versioned Governed Correlation & MITRE Evidence',
+                            'Tenant-Scoped Read-Only Evidence Integration',
+                            'Approval-Bound Containment with Verification & Rollback',
+                            'HMAC-Signed Tamper-Evident Audit Chain',
+                            'Staged Agent and Wazuh Telemetry Boundaries',
                         ].map((item, index) => (
                             <motion.div
                                 key={index}
@@ -83,12 +81,12 @@ export default function RoadmapPage() {
                     <h2 className="text-3xl font-semibold font-heading mb-8 text-center text-pn-heading">What&apos;s In Progress</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[
-                            'Advanced Predictive Threat Forecasting',
-                            'Dynamic Incident Response Workflows (SOAR)',
-                            'Explainable AI (XAI) for Alert Context',
-                            'Multi-Cloud Security Posture Management',
-                            'Advanced Agent Self-Healing Capabilities',
-                            'Customizable Reporting & Dashboarding',
+                            'Advisory AI Rule-Draft and Triage Evaluation',
+                            'Additional Governed Response Adapters',
+                            'Expanded Analyst Context and Reporting',
+                            'Controlled Cloud and SIEM Integration Proof',
+                            'External Lab and Agent-Footprint Validation',
+                            'Operational Dashboard and Alerting Improvements',
                         ].map((item, index) => (
                             <motion.div
                                 key={index}
@@ -118,8 +116,7 @@ export default function RoadmapPage() {
                                 Enhanced Threat Remediation
                             </h3>
                             <p className="text-lg text-pn-text-muted leading-relaxed">
-                                Expanding autonomous remediation capabilities to include more complex
-                                system reconfigurations and automated patching integrations.
+                                Adding narrowly scoped response adapters only where explicit approval, least privilege, verification, rollback, and non-production lab validation can be demonstrated.
                             </p>
                         </motion.div>
                         <motion.div variants={itemVariants} className="p-6 bg-pn-dark-blue rounded-lg shadow-md border border-pn-border group hover:border-pn-electric-purple transition-all duration-300">
@@ -128,8 +125,7 @@ export default function RoadmapPage() {
                                 Integrated Vulnerability Management
                             </h3>
                             <p className="text-lg text-pn-text-muted leading-relaxed">
-                                Seamless integration with vulnerability scanners to automate discovery,
-                                prioritization, and mitigation of security weaknesses.
+                                Staged integration with vulnerability data sources for evidence-backed discovery and prioritization; mitigation remains an operator-approved workflow.
                             </p>
                         </motion.div>
                         <motion.div variants={itemVariants} className="p-6 bg-pn-dark-blue rounded-lg shadow-md border border-pn-border group hover:border-pn-neon-blue transition-all duration-300">

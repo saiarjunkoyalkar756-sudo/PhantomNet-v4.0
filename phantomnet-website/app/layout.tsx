@@ -17,54 +17,37 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: "PhantomNet - Autonomous AI Cyber Defense for the Modern Enterprise",
+    default: "PhantomNet - Evidence-First Self-Hosted SOC",
     template: "%s | PhantomNet",
   },
-  description: "PhantomNet delivers an AI-driven security operations platform that automatically detects, analyzes, and neutralizes cyber threats with unparalleled speed and precision. Secure your enterprise with real-time, self-healing cyber defense.",
+  description: "PhantomNet is an evidence-first self-hosted SOC foundation with canonical telemetry, governed detection, analyst workflows, and approval-bound response.",
   keywords: [
     "PhantomNet",
     "Cyber Defense",
-    "AI Security",
-    "Autonomous Security",
-    "Enterprise Security",
+    "Self-Hosted SOC",
+    "Governed Response",
+    "Detection Engineering",
     "SOC Automation",
     "Threat Detection",
     "Incident Response",
     "Zero Trust",
-    "Blockchain Audit",
+    "Tamper-Evident Audit",
     "Cybersecurity",
-    "SaaS",
+    "Open Security Operations",
   ],
-  authors: [{ name: "PhantomNet Team" }],
-  creator: "PhantomNet Team",
+  authors: [{ name: "PhantomNet Contributors" }],
   publisher: "PhantomNet",
   openGraph: {
-    title: "PhantomNet - Autonomous AI Cyber Defense for the Modern Enterprise",
-    description: "PhantomNet delivers an AI-driven security operations platform that automatically detects, analyzes, and neutralizes cyber threats with unparalleled speed and precision. Secure your enterprise with real-time, self-healing cyber defense.",
-    url: "https://www.phantomnet.com", // Replace with actual domain
+    title: "PhantomNet - Evidence-First Self-Hosted SOC",
+    description: "PhantomNet is an evidence-first self-hosted SOC foundation with canonical telemetry, governed detection, analyst workflows, and approval-bound response.",
     siteName: "PhantomNet",
-    images: [
-      {
-        url: "https://www.phantomnet.com/og-image.jpg", // Replace with actual OG image
-        width: 1200,
-        height: 630,
-        alt: "PhantomNet - AI-Driven Autonomous Cyber Defense",
-      },
-    ],
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PhantomNet - Autonomous AI Cyber Defense for the Modern Enterprise",
-    description: "PhantomNet delivers an AI-driven security operations platform that automatically detects, analyzes, and neutralizes cyber threats with unparalleled speed and precision. Secure your enterprise with real-time, self-healing cyber defense.",
-    creator: "@PhantomNetAI", // Replace with actual Twitter handle
-    images: ["https://www.phantomnet.com/twitter-image.jpg"], // Replace with actual Twitter image
-  },
-  // Additional SEO considerations
-  metadataBase: new URL("https://www.phantomnet.com"), // Replace with actual domain
-  alternates: {
-    canonical: "https://www.phantomnet.com", // Replace with actual domain
+    title: "PhantomNet - Evidence-First Self-Hosted SOC",
+    description: "PhantomNet is an evidence-first self-hosted SOC foundation with canonical telemetry, governed detection, analyst workflows, and approval-bound response.",
   },
 };
 

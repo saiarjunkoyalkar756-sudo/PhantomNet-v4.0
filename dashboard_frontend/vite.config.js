@@ -17,16 +17,6 @@ export default defineConfig({
     // React's intentionally isolated vendor bundle is currently ~512 kB minified.
     // Keep an explicit 600 kB budget so unexpected growth remains visible.
     chunkSizeWarningLimit: 600,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return undefined
-          if (id.includes('recharts') || id.includes('/d3-')) return 'vendor-charts'
-          if (id.includes('react') || id.includes('scheduler')) return 'vendor-react'
-          return 'vendor-core'
-        },
-      },
-    },
   },
   server: {
     proxy: {

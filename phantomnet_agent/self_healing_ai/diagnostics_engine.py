@@ -32,19 +32,19 @@ class DiagnosticsEngine:
         """
         patterns = {
             "MISSING_REQUIREMENT": {
-                "regex": r"(ModuleNotFoundError|ImportError):\s*No module named\s*['"]?([\w\.]+)['"]?",
+                "regex": r'''(ModuleNotFoundError|ImportError):\s*No module named\s*['"]?([\w\.]+)['"]?''',
                 "severity": "SEV3",
                 "description": "Missing Python package dependency.",
                 "fix_suggestion": "Install package: pip install {group1}"
             },
             "FILE_NOT_FOUND": {
-                "regex": r"(FileNotFoundError|IOError).*:\s*\[Errno 2\] No such file or directory:\s*['"]?(.+?)['"]?",
+                "regex": r'''(FileNotFoundError|IOError).*:\s*\[Errno 2\] No such file or directory:\s*['"]?(.+?)['"]?''',
                 "severity": "SEV3",
                 "description": "Required file not found.",
                 "fix_suggestion": "Verify file path and existence: {group1}"
             },
             "PERMISSION_DENIED": {
-                "regex": r"(PermissionError).*:\s*\[Errno 13\] Permission denied:\s*['"]?(.+?)['"]?",
+                "regex": r'''(PermissionError).*:\s*\[Errno 13\] Permission denied:\s*['"]?(.+?)['"]?''',
                 "severity": "SEV2",
                 "description": "Permission denied for a file or resource.",
                 "fix_suggestion": "Check file/directory permissions or run with elevated privileges: {group1}"
@@ -74,8 +74,7 @@ class DiagnosticsEngine:
                 "fix_suggestion": "Examine recent code changes or revert to last known good version."
             },
              "EBPF_LOAD_ERROR": {
-                "regex": r"Failed to initialize eBPF:.*
-",
+                "regex": r"Failed to initialize eBPF:.*",
                 "severity": "SEV2",
                 "description": "eBPF program failed to load (Linux only).",
                 "fix_suggestion": "Ensure BCC tools and kernel headers are installed and up-to-date. Verify kernel version support."

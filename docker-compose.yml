@@ -1,3 +1,6 @@
+# Legacy broad development topology. It is not the Phase 7 self-hosted deployment reference.
+# For a network-segmented, loopback-ingress, health-gated deployment, use:
+# deploy/self-hosted/docker-compose.yml and docs/PHASE_7_SELF_HOSTED_DEPLOYMENT_AND_OBSERVABILITY.md
 version: '3.8'
 
 services:
@@ -433,7 +436,7 @@ services:
       DB_NAME: 'phantomnet_db'
       DB_USER: 'phantomnet'
       DB_PASSWORD: '${DB_PASSWORD}'
-      SERVICE_name: 'audit-log-collector'
+      SERVICE_NAME: 'audit-log-collector'
       ENVIRONMENT: 'development'
       APP_PORT: '8000'
     env_file:

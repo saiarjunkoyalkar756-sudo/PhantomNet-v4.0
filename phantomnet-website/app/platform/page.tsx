@@ -42,11 +42,7 @@ export default function PlatformOverviewPage() {
                         <div>
                             <h2 className="text-3xl font-semibold font-heading mb-4 text-pn-heading">What is PhantomNet?</h2>
                             <p className="text-lg text-pn-text-muted leading-relaxed">
-                                PhantomNet is a cutting-edge, AI-driven platform that revolutionizes cybersecurity operations.
-                                It integrates advanced artificial intelligence with autonomous response capabilities to create
-                                a self-healing security ecosystem. Unlike traditional Security Information and Event Management (SIEM)
-                                systems, PhantomNet operates with real-time threat detection and automated remediation,
-                                minimizing human intervention and maximizing defense efficacy.
+                                PhantomNet is a self-hosted SOC foundation under active development. It connects canonical telemetry, governed correlation, tenant-owned evidence, case workflows, analyst context, and approval-bound response so teams can inspect and operate the security controls they rely on.
                             </p>
                         </div>
                     </div>
@@ -68,16 +64,16 @@ export default function PlatformOverviewPage() {
                             <h2 className="text-3xl font-semibold font-heading mb-4 text-pn-heading">Problems PhantomNet Solves</h2>
                             <ul className="list-disc list-inside text-lg text-pn-text-muted leading-relaxed space-y-2">
                                 <li>
-                                    <strong className="text-pn-neon-blue">Alert Fatigue:</strong> Automates triage and response, drastically reducing the volume of alerts for human analysts.
+                                    <strong className="text-pn-neon-blue">Alert Fatigue:</strong> Provides deterministic suppression controls, structured hunts, and evidence-to-decision traces for analyst review.
                                 </li>
                                 <li>
-                                    <strong className="text-pn-neon-blue">Slow Response Times:</strong> Provides real-time, autonomous threat containment and remediation, measured in seconds, not hours or days.
+                                    <strong className="text-pn-neon-blue">Response Governance:</strong> Supports approval-bound containment requests with signed audit, verification, and rollback evidence; it does not autonomously contain threats.
                                 </li>
                                 <li>
-                                    <strong className="text-pn-neon-blue">Complex Threat Landscape:</strong> Leverages AI to detect sophisticated, evolving threats that bypass traditional signature-based defenses.
+                                    <strong className="text-pn-neon-blue">Complex Threat Landscape:</strong> Preserves canonical events, MITRE mappings, provenance, and graph context for repeatable investigation and detection engineering.
                                 </li>
                                 <li>
-                                    <strong className="text-pn-neon-blue">Talent Shortage:</strong> Augments existing security teams, allowing them to do more with less by automating routine and complex tasks.
+                                    <strong className="text-pn-neon-blue">Talent Shortage:</strong> Gives analysts documented workflows, evidence context, and deterministic prioritization while keeping accountability with human operators.
                                 </li>
                             </ul>
                         </div>
@@ -99,21 +95,20 @@ export default function PlatformOverviewPage() {
                         <div>
                             <h2 className="text-3xl font-semibold font-heading mb-4 text-pn-heading">Why PhantomNet is Different</h2>
                             <p className="text-lg text-pn-text-muted leading-relaxed mb-4">
-                                PhantomNet stands apart with its truly autonomous capabilities and a proactive, AI-first philosophy.
-                                We don&apos;t just alert; we act. Our platform is built from the ground up for self-governing security.
+                                PhantomNet is differentiated by its evidence-first architecture and its refusal to bypass approval for high-impact action. It treats response as a governed lifecycle with explicit audit, verification, and rollback boundaries.
                             </p>
                             <ul className="list-disc list-inside text-lg text-pn-text-muted leading-relaxed space-y-2">
                                 <li>
-                                    <strong className="text-pn-neon-blue">Autonomous Response:</strong> Beyond SOAR, our AI executes complex defensive actions without direct human oversight.
+                                    <strong className="text-pn-neon-blue">Governed Response:</strong> High-impact actions require a recorded human approval, HMAC-signed audit evidence, adapter-specific verification, and governed rollback.
                                 </li>
                                 <li>
-                                    <strong className="text-pn-neon-blue">Predictive Threat Intelligence:</strong> Foresees potential attacks by analyzing behavioral patterns and global threat data.
+                                    <strong className="text-pn-neon-blue">Read-Only Intelligence Context:</strong> Source-provenance intelligence can enrich evidence but cannot bypass correlation or response safeguards.
                                 </li>
                                 <li>
-                                    <strong className="text-pn-neon-blue">Self-Healing Infrastructure:</strong> Agents can automatically patch vulnerabilities or reconfigure systems in response to threats.
+                                    <strong className="text-pn-neon-blue">Staged Integrations:</strong> Endpoint, AWS, and Wazuh response paths remain disabled until their separate non-production validation gates are completed.
                                 </li>
                                 <li>
-                                    <strong className="text-pn-neon-blue">Blockchain Audit Trail:</strong> Ensures every action and event is immutably recorded for unparalleled integrity and compliance.
+                                    <strong className="text-pn-neon-blue">Tamper-Evident Audit Chain:</strong> Governed containment records form a verifiable HMAC-signed application audit chain; this is not presented as a distributed blockchain or compliance certification.
                                 </li>
                             </ul>
                         </div>
@@ -128,11 +123,9 @@ export default function PlatformOverviewPage() {
                     variants={featureVariants}
                     className="p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border"
                 >
-                    <h2 className="text-3xl font-semibold font-heading mb-4 text-center text-pn-heading">The AI-First Autonomous SOC</h2>
+                    <h2 className="text-3xl font-semibold font-heading mb-4 text-center text-pn-heading">The Evidence-First SOC</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed text-center max-w-4xl mx-auto mb-8">
-                        PhantomNet embodies the future of security operations, where AI is not just an additive feature, but the core
-                        driving force. Our autonomous SOC concept shifts from reactive human-centric models to a proactive,
-                        AI-powered defense that continuously adapts, learns, and protects your enterprise.
+                        PhantomNet concentrates on reproducible security operations: observable ingestion, governed correlation, analyst review, and accountable response. AI-native assistance is a future advisory layer and cannot replace evidence or human approval.
                     </p>
                     <div className="grid md:grid-cols-3 gap-8 mt-8">
                         <div className="text-center">
@@ -141,8 +134,8 @@ export default function PlatformOverviewPage() {
                                     <Lightbulb size={48} />
                                 </span>
                             </motion.div>
-                            <h3 className="text-xl font-semibold font-heading mb-2 text-pn-heading">Continuous Vigilance</h3>
-                            <p className="text-pn-text-muted text-base">24/7 AI monitoring and analysis, far beyond human capacity.</p>
+                            <h3 className="text-xl font-semibold font-heading mb-2 text-pn-heading">Observable Workflows</h3>
+                            <p className="text-pn-text-muted text-base">Health, readiness, evidence, audit, and analyst-context controls can be inspected and validated by operators.</p>
                         </div>
                         <div className="text-center">
                             <motion.div variants={iconVariants} className="flex justify-center mb-4">
@@ -150,8 +143,8 @@ export default function PlatformOverviewPage() {
                                     <Zap size={48} />
                                 </span>
                             </motion.div>
-                            <h3 className="text-xl font-semibold font-heading mb-2 text-pn-heading">Automated Remediation</h3>
-                            <p className="text-pn-text-muted text-base">Threats are neutralized instantly and automatically.</p>
+                            <h3 className="text-xl font-semibold font-heading mb-2 text-pn-heading">Accountable Response</h3>
+                            <p className="text-pn-text-muted text-base">Containment remains approval-bound, verified, rollback-capable, and disabled by default until validated.</p>
                         </div>
                         <div className="text-center">
                             <motion.div variants={iconVariants} className="flex justify-center mb-4">
@@ -159,8 +152,8 @@ export default function PlatformOverviewPage() {
                                     <Shield size={48} />
                                 </span>
                             </motion.div>
-                            <h3 className="text-xl font-semibold font-heading mb-2 text-pn-heading">Adaptive Defense</h3>
-                            <p className="text-pn-text-muted text-base">AI learns from every incident, strengthening defenses over time.</p>
+                            <h3 className="text-xl font-semibold font-heading mb-2 text-pn-heading">Evidence-Led Improvement</h3>
+                            <p className="text-pn-text-muted text-base">Rules, fixtures, baselines, and lab evidence define what can be improved and what remains a roadmap item.</p>
                         </div>
                     </div>
                 </motion.section>

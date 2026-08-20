@@ -111,7 +111,7 @@ class ErrorClassifier:
     def _predict_root_cause(self, issue_type: str, message: str) -> str:
         """Predicts the root cause based on issue type and message."""
         if issue_type == "MISSING_REQUIREMENT":
-            match = re.search(r"No module named\s*['"]?([\w\.]+)['"]?", message)
+            match = re.search(r'''No module named\s*['"]?([\w\.]+)['"]?''', message)
             if match:
                 return f"Python package '{match.group(1)}' is not installed."
             return "A required Python package is missing."
@@ -133,7 +133,7 @@ class ErrorClassifier:
             return [error_details["fix_suggestion"]]
         
         if issue_type == "MISSING_REQUIREMENT":
-            match = re.search(r"No module named\s*['"]?([\w\.]+)['"]?", message)
+            match = re.search(r'''No module named\s*['"]?([\w\.]+)['"]?''', message)
             package_name = match.group(1) if match else "missing_package"
             return [f"Attempt to install the missing Python package: pip install {package_name}"]
         elif issue_type == "PERMISSION_DENIED":

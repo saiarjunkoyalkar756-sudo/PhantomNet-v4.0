@@ -75,8 +75,11 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install dashboard dependencies
-        run: npm install
+      - name: Install dashboard dependencies from lockfile
+        run: npm ci
+
+      - name: Audit dashboard dependencies
+        run: npm audit --audit-level=low
 
       - name: Lint dashboard
         run: npm run lint
@@ -102,8 +105,11 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install portal dependencies
-        run: npm install
+      - name: Install portal dependencies from lockfile
+        run: npm ci
+
+      - name: Audit portal dependencies
+        run: npm audit --audit-level=low
 
       - name: Lint portal
         run: npm run lint

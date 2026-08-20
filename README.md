@@ -108,11 +108,11 @@ pip install -r requirements.txt
 python3 -m pytest -q -p no:cacheprovider
 ```
 
-The current isolated regression gate contains **331 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
+The current isolated regression gate contains **337 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
 
 ### Build the Operator Interfaces
 
-The repository does not ship lockfiles, so use `npm install` for a fresh development checkout.
+The frontend projects ship committed `package-lock.json` files. Use `npm ci` for a reproducible checkout; use `npm install` only when intentionally updating dependencies and commit the resulting lockfile change.
 
 ```bash
 # React/Vite SOC dashboard
@@ -184,6 +184,8 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [Phase 5 Analyst Operations](docs/PHASE_5_ANALYST_OPERATIONS.md) | Evidence-aware hunts, dashboard context, alert and case decision traces, explainable review priority, and human-review-only guidance. |
 | [Phase 6 Governed Response Readiness](docs/PHASE_6_GOVERNED_RESPONSE_READINESS.md) | Signed-audit request gating, side-effect-free preflight, adapter verification expectations, rollback readiness, and Wazuh posture. |
 | [Phase 7 Self-Hosted Deployment and Observability](docs/PHASE_7_SELF_HOSTED_DEPLOYMENT_AND_OBSERVABILITY.md) | Internal Compose topology, loopback ingress, readiness, bounded metrics, recovery, backup, and upgrade requirements. |
+| [Credibility and External-Proof Baseline](docs/CREDIBILITY_AND_EXTERNAL_PROOF_BASELINE.md) | Evidence taxonomy, public-claim policy, hardening priorities, and controlled external-lab proof gates. |
+| [Controlled External-Lab Validation](docs/CONTROLLED_EXTERNAL_LAB_VALIDATION.md) | Safe, non-production topology, recovery, BAS, Wazuh, AWS, agent, and benchmark proof protocols. |
 | [Governed Response and Replication](docs/governed-response-and-regional-replication.md) | Response governance and telemetry replication contracts. |
 | [Tenant Isolation and Audit Integrity](docs/tenant-isolation-and-audit-integrity.md) | Isolation checks and tamper-evident audit verification. |
 | [AWS Security Group Containment](docs/aws-security-group-containment.md) | Cloud firewall adapter safety and validation boundary. |

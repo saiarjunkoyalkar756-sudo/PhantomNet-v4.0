@@ -34,12 +34,9 @@ export default function AIIntelligencePage() {
                     variants={sectionVariants}
                     className="mb-16 md:mb-24 p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border text-center"
                 >
-                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Beyond Signatures: True AI-Driven Cyber Defense</h2>
+                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Evidence-Grounded Detection and Advisory Intelligence</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto mb-10">
-                        PhantomNet&apos;s core strength lies in its sophisticated AI engine, designed not just to detect,
-                        but to understand, predict, and autonomously respond to the most advanced cyber threats.
-                        We harness the power of machine learning, behavioral analytics, and real-time data
-                        processing to deliver intelligence that truly matters.
+                        PhantomNet currently provides deterministic correlation, versioned rule governance, MITRE evidence, and analyst decision traces. AI-assisted triage and rule drafting are planned as advisory workflows that must remain evidence-grounded, reviewable, and unable to execute containment.
                     </p>
                 </motion.section>
 
@@ -53,12 +50,9 @@ export default function AIIntelligencePage() {
                         className="p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border group hover:border-pn-neon-blue transition-all duration-300"
                     >
                         <Brain size={48} className="text-pn-neon-blue mb-4" />
-                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Behavioral AI</h3>
+                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Versioned Detection Rules</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            Our AI baselines normal user and system behavior across your entire infrastructure.
-                            Any deviation, no matter how subtle, is immediately flagged and analyzed for malicious intent.
-                            This allows us to detect zero-day threats, insider threats, and sophisticated attacks that
-                            evade traditional signature-based detection methods. We focus on patterns, not just payloads.
+                            Correlation rules are versioned, tenant-scoped, fixture-tested, and mapped to MITRE evidence. They emit analyst evidence deterministically and do not claim universal behavioral baselining or zero-day detection coverage.
                         </p>
                     </motion.div>
 
@@ -71,12 +65,9 @@ export default function AIIntelligencePage() {
                         className="p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border group hover:border-pn-electric-purple transition-all duration-300"
                     >
                         <TrendingUp size={48} className="text-pn-electric-purple mb-4" />
-                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Threat Forecasting</h3>
+                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Read-Only Intelligence Context</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            Leveraging global threat intelligence feeds, historical attack data, and predictive analytics,
-                            PhantomNet forecasts potential attack vectors and vulnerabilities specific to your environment.
-                            This enables proactive defense strategies, allowing your security posture to evolve
-                            ahead of emerging threats.
+                            Integrated evidence preserves source provenance and can enrich investigation context through explicitly configured, read-only integrations. Forecasting and broad global-feed coverage are not represented as implemented capabilities.
                         </p>
                     </motion.div>
 
@@ -89,12 +80,9 @@ export default function AIIntelligencePage() {
                         className="p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border group hover:border-pn-neon-blue transition-all duration-300"
                     >
                         <GitFork size={48} className="text-pn-neon-blue mb-4" />
-                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Correlation Engine</h3>
+                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Evidence-to-Decision Context</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            PhantomNet&apos;s advanced correlation engine processes millions of events per second,
-                            identifying complex attack chains and linking seemingly disparate activities into
-                            cohesive incident narratives. This contextual awareness eliminates false positives
-                            and provides a clear, actionable picture of actual threats.
+                            Analysts can inspect tenant-bound alerts, detections, cases, evidence, graph context, and deterministic priority factors. Performance claims are limited to published benchmark evidence; the platform does not claim to eliminate false positives.
                         </p>
                     </motion.div>
 
@@ -107,12 +95,9 @@ export default function AIIntelligencePage() {
                         className="p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border group hover:border-pn-electric-purple transition-all duration-300"
                     >
                         <MessageSquare size={48} className="text-pn-electric-purple mb-4" />
-                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Explainable AI (XAI)</h3>
+                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Explainable Analyst Review</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            We believe in transparency. PhantomNet&apos;s AI provides clear, concise explanations for
-                            why an alert was generated or an autonomous action was taken. This explainability empowers
-                            security analysts to understand the AI&apos;s reasoning, validate its decisions, and build trust
-                            in the autonomous defense system. No black boxes, just verifiable intelligence.
+                            Alert and case decision traces show the identifiers and factors used to construct an analyst review view. Any future AI suggestion must expose its supporting evidence, remain subject to human review, and never create or execute containment on its own.
                         </p>
                     </motion.div>
                 </div>
@@ -124,12 +109,9 @@ export default function AIIntelligencePage() {
                     variants={sectionVariants}
                     className="p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border text-center"
                 >
-                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Realistic Intelligence, Not Hype</h2>
+                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Evidence Before Intelligence Claims</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto">
-                        PhantomNet focuses on practical, deployable AI that delivers tangible security outcomes.
-                        We avoid unverified claims and buzzwords, instead offering a robust, scientifically-backed
-                        approach to autonomous cyber defense that CISOs can trust. Our intelligence augments
-                        your team, allowing them to scale their expertise and respond effectively.
+                        The current platform makes claims only for implemented controls with regression or lab evidence. AI-native assistance is a roadmap direction: it will be evaluated against explicit fixtures and analyst-review gates before it is positioned as an operational capability.
                     </p>
                 </motion.section>
 

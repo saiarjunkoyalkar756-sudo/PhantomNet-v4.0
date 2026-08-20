@@ -1,98 +1,45 @@
-name: Cross-Platform CI
+name: Cross-Platform Source Contract
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
+  agent-source-contract:
+    name: Portable agent source contract (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.11"]
+        python-version: ["3.12"]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v5
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies (Linux)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-venv python3-dev libpcap-dev clang llvm libxml2-dev libxslt1-dev zlib1g-dev nmap
-        python -m venv .venv_phantomnet
-        source .venv_phantomnet/bin/activate
-        pip install --upgrade pip
-        pip install wheel
-        pip install -r requirements-linux.txt
-        pip install pytest pytest-asyncio httpx
+      - name: Compile and validate agent source
+        run: python scripts/check_agent_source_contract.py
 
-    - name: Install dependencies (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        python -m venv .venv_phantomnet
-        .\.venv_phantomnet\Scripts\activate.ps1
-        pip install --upgrade pip
-        pip install wheel
-        pip install -r requirements-windows.txt
-        pip install pytest pytest-asyncio httpx
-        # Mock npcap for CI testing if it's not installed or difficult to set up
-        # or integrate silent npcap installer if possible
+      - name: Upload portable source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-platform-agent-source-${{ matrix.os }}
+          path: artifacts/agent_source_contract.json
+          if-no-files-found: error
+          retention-days: 14
 
-    - name: Run Python Unit Tests (platform_utils, SAFE_MODE toggles)
-      run: |
-        source .venv_phantomnet/bin/activate
-        pytest tests/unit/test_platform_utils.py # Assuming unit tests for platform_utils are here
-        # Add more unit tests for SAFE_MODE toggles here
-
-    - name: Run Agent Tests (OS-specific)
-      run: |
-        source .venv_phantomnet/bin/activate
-        if [[ "${{ runner.os }}" == "Linux" ]]; then
-          pytest tests/linux/test_agent_linux.py
-        elif [[ "${{ runner.os }}" == "Windows" ]]; then
-          pytest tests/windows/test_agent_windows.py
-        fi
-        # Termux tests will be run in a separate job or environment if possible
-
-    - name: Run Integration Smoke Tests (Backend)
-      run: |
-        source .venv_phantomnet/bin/activate
-        # Start backend in a background process
-        python -m uvicorn backend_api.gateway_service.main:app --host 127.0.0.1 --port 8000 &
-        BACKEND_PID=$!
-        sleep 5 # Give backend time to start
-        
-        # Check health endpoint
-        curl -f http://127.0.0.1:8000/health
-        
-        # Kill backend process
-        kill $BACKEND_PID
-
-    # --- Termux/aarch64 specific job (conceptual/future) ---
-  termux-test:
-    runs-on: ubuntu-latest # Use ubuntu to run an emulator or container for aarch64
-    if: false # Disable for now, enable when aarch64 emulation/container setup is ready
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up QEMU for aarch64 (Conceptual)
-      run: |
-        echo "Setup QEMU and aarch64 environment here"
-        # Example: docker run --rm -it --privileged multiarch/qemu-user-static --reset -p yes
-        # docker run -it --platform linux/arm64 termux/termux-docker-image bash
-        
-    - name: Run Termux Tests (Conceptual)
-      run: |
-        echo "Run Termux specific tests using the Termux install script and test_agent_termux.py"
-        # ./install_termux.sh
-        # pytest tests/termux/test_agent_termux.py
+# No hosted workflow is presented as eBPF, native-binary, Android, or Termux runtime proof.
+# Those controls belong to a controlled external lab with recorded host and device evidence.

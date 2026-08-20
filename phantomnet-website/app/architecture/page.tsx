@@ -36,11 +36,9 @@ export default function ArchitecturePage() {
                     variants={sectionVariants}
                     className="mb-16 md:mb-24 p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border text-center"
                 >
-                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">A Resilient & Scalable Foundation</h2>
+                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">A Composable, Testable Foundation</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto mb-10">
-                        PhantomNet&apos;s architecture is engineered for maximum resilience, scalability, and security.
-                        Built on a foundation of loosely coupled microservices, it processes billions of events
-                        daily, providing real-time autonomous cyber defense.
+                        PhantomNet separates canonical ingestion, governed detection, evidence integration, analyst workflow, response adapters, and audit evidence into explicit modules. Scalability and availability claims require published Docker-host and lab evidence rather than architectural intent alone.
                     </p>
                     <ArchitectureDiagram />
                     <p className="text-sm text-pn-text-muted mt-8">Hover over components for conceptual details (future interaction).</p>
@@ -54,19 +52,18 @@ export default function ArchitecturePage() {
                     variants={sectionVariants}
                     className="mb-16 md:mb-24 p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border"
                 >
-                    <h2 className="text-3xl font-semibold font-heading mb-6 text-center text-pn-heading">The Autonomous Event Flow</h2>
+                    <h2 className="text-3xl font-semibold font-heading mb-6 text-center text-pn-heading">The Governed Event Flow</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed text-center max-w-4xl mx-auto mb-10">
-                        Our event-driven pipeline ensures every security event is processed, analyzed, and acted upon
-                        with lightning speed, creating a truly self-healing defense mechanism.
+                        The event flow preserves source provenance from telemetry through deterministic detection and analyst review. High-impact response is a separate approval-bound lifecycle, not an automatic result of event processing.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[
                             { title: 'Agent Deployment', description: 'Lightweight agents collect telemetry from diverse endpoints and infrastructure.', icon: <Fingerprint size={24} /> },
                             { title: 'Telemetry Ingestion', description: 'Raw data is securely ingested and normalized into a unified format.', icon: <Cloud size={24} /> },
-                            { title: 'AI-Powered Analysis', description: 'Advanced AI engines detect anomalies, threats, and behavioral deviations.', icon: <ShieldPlus size={24} /> },
-                            { title: 'Threat Correlation', description: 'AI correlates events with global and custom threat intelligence.', icon: <GitBranch size={24} /> },
-                            { title: 'Autonomous SOAR', description: 'Orchestrated playbooks execute containment and remediation actions.', icon: <Zap size={24} /> },
-                            { title: 'Blockchain Audit', description: 'All actions and events are immutably logged for integrity and compliance.', icon: <Book size={24} /> },
+                            { title: 'Governed Correlation', description: 'Versioned rules, fixtures, MITRE mappings, and bounded suppression create deterministic analyst evidence.', icon: <ShieldPlus size={24} /> },
+                            { title: 'Read-Only Context', description: 'Tenant-scoped intelligence and graph context enrich investigation without creating response authority.', icon: <GitBranch size={24} /> },
+                            { title: 'Governed Response', description: 'Approved requests require signed audit, adapter verification, and rollback evidence before containment is recorded.', icon: <Zap size={24} /> },
+                            { title: 'Tamper-Evident Audit', description: 'Containment lifecycle records form an HMAC-signed application audit chain that can be verified after recovery.', icon: <Book size={24} /> },
                         ].map((item, index) => (
                             <motion.div
                                 key={index}

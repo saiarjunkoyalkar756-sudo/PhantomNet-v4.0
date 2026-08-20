@@ -24,33 +24,33 @@ const featureCardVariants = {
 export default function FeaturesPage() {
     const features = [
         {
-            title: 'Telemetry Ingestion',
-            description: 'Ingest security telemetry from diverse sources – endpoints, cloud, network, applications – at hyperscale. Our intelligent collectors normalize data for unified analysis, ensuring no blind spots in your defense.',
+            title: 'Canonical Telemetry Ingestion',
+            description: 'Normalize supported endpoint and Wazuh telemetry into a versioned canonical event contract. Source adapters are tenant-scoped, evidence-preserving, and validated through controlled integration paths.',
             icon: CloudUpload,
         },
         {
-            title: 'AI Behavioral Detection',
-            description: 'Leverage advanced AI and machine learning to establish behavioral baselines for every entity. Detect anomalous activities, insider threats, and zero-day attacks that bypass traditional signature-based methods in real-time.',
+            title: 'Governed Detection Engineering',
+            description: 'Use versioned deterministic correlation rules, offline fixtures, MITRE coverage evidence, and bounded analyst-alert suppression. Advisory AI-assisted rule drafting remains a roadmap capability and cannot execute response.',
             icon: BrainCircuit,
         },
         {
-            title: 'Threat Intelligence Correlation',
-            description: 'Automatically correlate internal security events with a vast network of global, real-time threat intelligence feeds. Proactively identify known bad actors, indicators of compromise (IOCs), and attack campaigns targeting your industry.',
+            title: 'Read-Only Intelligence Context',
+            description: 'Attach tenant-scoped, provenance-preserving intelligence context to investigation evidence. Enrichment remains read-only and cannot bypass correlation, approval, or containment safeguards.',
             icon: Eye,
         },
         {
-            title: 'SOAR Automation & Orchestration',
-            description: 'Automate repetitive security tasks, orchestrate complex incident response playbooks, and accelerate threat containment and remediation. PhantomNet\'s SOAR capabilities empower your team to respond at machine speed.',
+            title: 'Governed Response Workflow',
+            description: 'Create approval-bound containment requests with HMAC-signed audit evidence, adapter-specific verification, and governed rollback. High-impact actions are never automatic and remain disabled until separately validated.',
             icon: Zap,
         },
         {
-            title: 'Blockchain Audit Logs',
-            description: 'Ensure the undeniable integrity and immutability of all security events and actions. Our blockchain-powered audit trail provides cryptographic proof, making logs tamper-proof and compliance-ready for stringent regulatory requirements.',
+            title: 'Tamper-Evident Audit Chain',
+            description: 'Containment lifecycle records form a tenant-scoped HMAC-signed hash chain that can be verified after execution, rollback, and recovery. It is an application-level tamper-evident audit control, not a distributed blockchain.',
             icon: ScrollText,
         },
         {
-            title: 'Agent Security & Integrity',
-            description: 'PhantomNet agents are built with robust security measures, including Mutual TLS (mTLS) for secure communication and continuous integrity checks to prevent tampering or compromise, ensuring the trustworthiness of your data sources.',
+            title: 'Agent Security Boundaries',
+            description: 'Agent and endpoint integrations use explicit identity, integrity, and telemetry boundaries. Deployment-specific controls must be staged and independently validated before they are relied upon in an operational environment.',
             icon: ShieldCheck,
         },
     ];
@@ -74,10 +74,9 @@ export default function FeaturesPage() {
                     variants={sectionVariants}
                     className="mb-16 md:mb-24 p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border text-center"
                 >
-                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Comprehensive Capabilities for Total Cyber Resilience</h2>
+                    <h2 className="text-3xl font-semibold font-heading mb-6 text-pn-heading">Evidence-First SOC Building Blocks</h2>
                     <p className="text-lg text-pn-text-muted leading-relaxed max-w-4xl mx-auto mb-10">
-                        PhantomNet provides a suite of enterprise-grade features designed to give your organization
-                        unparalleled visibility, detection, and autonomous response capabilities across your entire digital estate.
+                        PhantomNet is a self-hosted SOC foundation under active development. The platform distinguishes implemented and tested controls from lab-validation gates and future roadmap capabilities.
                     </p>
                 </motion.section>
 

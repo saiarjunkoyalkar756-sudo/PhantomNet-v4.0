@@ -225,8 +225,10 @@ if __name__ == "__main__":
             return {"test_key": "test_value"}
     
     from unittest.mock import patch, MagicMock
-    with patch('core.config.load_config', return_value=MockAgentConfig()), 
-         patch('core.config.AgentConfigSchema', MagicMock()): # Mock the schema as well
+    with (
+        patch('core.config.load_config', return_value=MockAgentConfig()),
+        patch('core.config.AgentConfigSchema', MagicMock()),
+    ):  # Mock the schema as well
 
         recovery_manager = SystemRecovery()
 

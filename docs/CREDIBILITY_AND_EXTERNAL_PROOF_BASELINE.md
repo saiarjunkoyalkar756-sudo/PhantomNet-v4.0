@@ -1,0 +1,84 @@
+# PhantomNet Credibility and External-Proof Baseline
+
+## Purpose
+
+This document is the project’s evidence-led response to legitimate questions about scope, production readiness, AI claims, response safety, deployment proof, and long-term operability. It replaces broad product language with four explicit evidence classes.
+
+> **A claim is not treated as operational proof merely because it has code, documentation, or a passing isolated test.** The project distinguishes source evidence, controlled harness evidence, non-production external-lab evidence, and production evidence.
+
+## Evidence taxonomy
+
+| Class | Meaning | Examples |
+|---|---|---|
+| **A — Implemented and regression-covered** | Source-controlled code with deterministic isolated regression evidence. | Canonical contracts, governed correlation, evidence integration, case and analyst workflow, signed containment lifecycle, audit-chain verification, Phase 7 Compose static contract. |
+| **B — Controlled harness evidence** | Mocked, SQLite, LocalStack-gated, disposable Docker, or simulated endpoint proof. | Wazuh governed-response dry run, AWS adapter unit coverage, recovery harness, source-contract CI. |
+| **C — Non-production external-lab proof required** | Requires a real but isolated dependency, account, host, device, manager, or operator. | Live Wazuh manager, AWS sandbox account, Docker-host topology, endpoint agent footprint, real proxy/TLS ingress, backup restore. |
+| **D — Roadmap or intentionally unsupported** | Not currently represented as an operational capability. | Autonomous containment, self-healing infrastructure, predictive threat forecasting, distributed blockchain, post-quantum audit, independently evaluated AI models. |
+
+## Claim ledger
+
+| Area | Evidence class | Current evidence | Public positioning rule |
+|---|---|---|---|
+| Canonical telemetry, tenant-scoped evidence, governed correlation, MITRE mappings, analyst traces | A | Versioned contracts, durable projections, rule fixtures, evidence and analyst regressions. | Describe as implemented controls; do not promise universal source coverage or detection efficacy. |
+| High-impact containment | A/B | Approval-bound request, HMAC audit, adapter routing, verification, rollback, receipt handling, and dry-run regressions. | State that adapters are disabled by default and require human approval plus adapter-specific verification. |
+| Wazuh bridge | B/C | Read-only telemetry path, signed command envelope, signed endpoint receipt, isolated dry run, deployment runbook. | Describe as a staged integration; live Wazuh-manager and endpoint proof remains a lab gate. |
+| AWS Security Group adapter | B/C | Narrow reviewed-rule revoke/restore semantics, read-back checks, LocalStack-gated integration harness. | Do not claim a live AWS action until an isolated account, IAM policy, CloudTrail evidence, and rollback proof exist. |
+| Tamper-evident audit | A/B | Tenant-scoped HMAC-signed application hash chain and verification tests. | Use “tamper-evident audit chain”; do not call it a distributed blockchain, immutable ledger, proof of compliance, or post-quantum system. |
+| AI-native capability | D | Current implementation centers on deterministic rules and evidence-led analyst context. | Position AI-assisted triage and rule drafting as future advisory work subject to fixtures and review gates. |
+| Performance and scale | B/C | Isolated benchmark and resilience evidence exists; Phase 7 deployment reference is static and tested. | Publish only measured workload, environment, and percentile results. Do not generalize to real-time or high-scale operational capacity. |
+| Self-hosted deployment | A/B/C | Reference Compose topology, internal networking, readiness, metrics, recovery runbook, static YAML tests. | Call it a self-hosted deployment reference; live host, persistence, backup, proxy, and upgrade proof remain required. |
+| Cross-platform agent | A/B/C | Cross-platform source contract compiles source and verifies required packaging inputs on hosted runners. | Do not equate source portability with native binaries, eBPF proof, Termux proof, or measured device resource use. |
+| CI quality gates | A | Main-branch Quality Gates enforce Python regression/benchmarks, deterministic frontend lockfile installs, full dependency audits, and frontend lint/build; current workflow result must be checked per revision. | Reference the current workflow state, not historical counts or assertions. |
+| License | A | Complete MIT License text is source-controlled. | Avoid stating legal or compliance conclusions beyond the license grant itself. |
+| Broad legacy Compose topology | A/D | Root `docker-compose.yml` contains a broad development topology; the Phase 7 manifest is the hardened reference. | Do not present the broad development Compose file as a production topology. |
+
+## Findings from the external review
+
+The external report correctly identified several credibility risks: unsupported autonomous-AI and blockchain language, lack of external operational proof, a broad Compose surface, unvalidated real integrations, and the need for recovery, scalability, device, and security evidence. It also contained stale or incomplete assertions. The repository now contains a CI quality-gate workflow, committed frontend lockfiles, a Phase 7 self-hosted reference topology, governed Wazuh dry-run coverage, and more than 300 isolated regression tests.
+
+The report’s license observation was confirmed: the prior source file was truncated despite naming MIT. The license is now replaced with the complete MIT grant. The report’s CI observation was historically true for an earlier state but not for the current quality-gate workflow; a Phase 7 environment-template omission briefly caused a remote CI failure and was corrected by tracking the safe template explicitly. This incident is retained as evidence that workflow status must be verified on the current revision rather than asserted from local results.
+
+## Public claims policy
+
+The portal now follows these rules.
+
+| Do state | Do not state |
+|---|---|
+| The concrete control, its evidence type, and its explicit boundary. | That a design goal, roadmap item, or simulated path is production proof. |
+| “HMAC-signed tamper-evident application audit chain.” | “Blockchain,” “immutable ledger,” “post-quantum audit,” or compliance certification. |
+| “Approval-bound containment with verification and rollback.” | “Autonomous containment,” “self-healing defense,” or instant remediation. |
+| “Deterministic correlation, fixtures, MITRE evidence, and analyst context.” | Generalized AI/ML, prediction, global-feed, zero-day, or universal detection claims. |
+| “Self-hosted deployment reference with a Docker-host lab gate.” | A production-ready or fully validated deployment claim. |
+
+The credibility regression suite prevents known unsupported phrases from returning to the public portal without a deliberate review and evidence reclassification.
+
+## Prioritized hardening plan
+
+| Priority | Work item | Acceptance evidence |
+|---:|---|---|
+| P0 | Keep remote quality gates green and remove stale failing workflow behavior. | Current main-branch run succeeds; workflows state their actual proof boundary. |
+| P0 | Keep runtime frontend dependencies in audited, lockfile-controlled ranges. | `npm ci` plus the full dependency audit gate passes; no known advisory in the resolved lockfile is ignored. |
+| P0 | Maintain accurate public positioning and complete licensing. | Claim-regression tests pass; MIT text is complete; no placeholder public social or domain metadata remains. |
+| P1 | Validate the Phase 7 Compose reference on a controlled Docker host. | Health-gated startup, dependency readiness, loopback ingress, metrics scrape, durable-volume restart, and recovery report. |
+| P1 | Rehearse PostgreSQL, Redpanda, Neo4j, Redis, and audit-chain recovery. | Backup and restore evidence, RPO/RTO targets set by the operator, post-restore chain verification. |
+| P1 | Execute Wazuh and AWS tests in non-production environments only. | Manager/endpoint receipt evidence; scoped IAM policy, CloudTrail evidence, exact-rule read-back, and rollback evidence. |
+| P2 | Expand detection content through fixture-backed, MITRE-mapped rules. | Rule count and technique coverage published with fixtures, expected detections, and false-positive methodology. |
+| P2 | Establish benchmark discipline. | Versioned workload, host specification, event mix, dependency topology, p50/p95/p99, error rate, and retained artifacts. |
+| P2 | Validate agent packaging and footprint on supported lab devices. | Signed or checksummed artifacts, OS/device matrix, CPU/memory/battery measurements, and failure-mode documentation. |
+| P3 | Add advisory AI assistance only after an evaluation set and human-review gate exist. | Evidence-grounded suggestion fixtures, refusal tests, analyst acceptance metrics, and no-response-authority proof. |
+
+## Controlled external-lab proof gates
+
+No external proof gate may use a production target, production secrets, an unrestricted cloud account, live customer telemetry, or an unapproved endpoint. The following gates are documented for controlled execution:
+
+1. **Topology gate:** start the Phase 7 reference on a lab Docker host; record image tags, rendered Compose configuration, readiness state, metrics scrape, and internal-network inspection.
+2. **Recovery gate:** create disposable test data, take operator-managed backups, restore to a blank lab environment, and verify broker/database round trips plus HMAC audit chain.
+3. **Incident-flow gate:** inject only approved BAS fixtures or lab honeypot telemetry; prove event → detection → alert → case → approval → signed audit → verified mock or lab response → rollback.
+4. **Wazuh gate:** use a lab manager and allowlisted endpoint; verify telemetry provenance, one named command, exact signed receipt, replay rejection, and governed release.
+5. **AWS gate:** use a dedicated sandbox account and a reviewed security-group rule; verify least-privilege identity, CloudTrail, exact read-back, and restoration. Never use production rules.
+6. **Agent gate:** use test Linux, Windows, and Android/Termux devices; record installed version, host details, permissions, telemetry output, CPU, memory, battery observations, and clean uninstall behavior.
+7. **Scale gate:** use synthetic, non-sensitive event fixtures; publish the exact rate, duration, host specification, topology, latency distribution, loss/error rate, and resource measurements.
+
+## Remaining limits
+
+This program improves honesty, repeatability, and readiness. It does not turn PhantomNet into a Splunk-, Sentinel-, Elastic-, or Wazuh-equivalent platform; certify regulatory compliance; create a third-party audit; establish a support SLA; prove production availability; or validate live attack tooling. Those outcomes require independent operational evidence, governance, sustained maintenance, and explicit owner acceptance.

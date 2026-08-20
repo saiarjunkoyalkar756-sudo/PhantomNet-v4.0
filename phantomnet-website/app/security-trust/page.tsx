@@ -110,11 +110,9 @@ export default function SecurityTrustPage() {
                         className="p-8 bg-pn-dark-light rounded-lg shadow-xl border border-pn-border group hover:border-pn-electric-purple transition-all duration-300"
                     >
                         <Fingerprint size={48} className="text-pn-electric-purple mb-4" />
-                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Unquestionable Auditability</h3>
+                        <h3 className="text-2xl font-semibold font-heading mb-3 text-pn-heading">Verifiable Governed Auditability</h3>
                         <p className="text-lg text-pn-text-muted leading-relaxed">
-                            Every action within PhantomNet, from data ingestion to autonomous response,
-                            is logged and made available for detailed auditing. Combined with our Blockchain Audit Logs,
-                            this provides an irrefutable record for investigations and compliance.
+                            Governed containment requests, approvals, executions, and rollbacks produce tenant-scoped HMAC-signed audit-chain evidence that operators can verify. This is an application-level tamper-evident control, not a distributed blockchain or a compliance certification.
                         </p>
                     </motion.div>
 
