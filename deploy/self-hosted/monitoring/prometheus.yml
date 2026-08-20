@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 5s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: phantomnet-gateway
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - gateway-service:8000
+        labels:
+          deployment: self_hosted

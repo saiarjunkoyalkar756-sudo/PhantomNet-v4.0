@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
@@ -85,6 +85,12 @@ def create_phantom_service(
         version=version,
         lifespan=lifespan
     )
+    app.state.observability = {
+        "requests_total": 0,
+        "requests_4xx_total": 0,
+        "requests_5xx_total": 0,
+        "request_duration_seconds_sum": 0.0,
+    }
 
     # Standard Middleware: Security Headers
     @app.middleware("http")
@@ -108,6 +114,13 @@ def create_phantom_service(
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
+        metrics = request.app.state.observability
+        metrics["requests_total"] += 1
+        metrics["request_duration_seconds_sum"] += process_time
+        if 400 <= response.status_code < 500:
+            metrics["requests_4xx_total"] += 1
+        elif response.status_code >= 500:
+            metrics["requests_5xx_total"] += 1
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Process-Time"] = str(process_time)
         return response
@@ -144,6 +157,30 @@ def create_phantom_service(
             except Exception:
                 # Fallback to original response on failure
                 return response
+
+    @app.get("/metrics", tags=["Infrastructure"], include_in_schema=False)
+    async def metrics() -> PlainTextResponse:
+        """Expose bounded process metrics for an internal scraper; no tenant, request body, or secret is emitted."""
+        values = app.state.observability
+        service_label = name.replace("\\", "\\\\").replace('"', '\\"')
+        body = "\n".join(
+            [
+                "# HELP phantomnet_http_requests_total Total HTTP requests handled by this process.",
+                "# TYPE phantomnet_http_requests_total counter",
+                f'phantomnet_http_requests_total{{service="{service_label}"}} {values["requests_total"]}',
+                "# HELP phantomnet_http_requests_4xx_total Total client-error HTTP responses.",
+                "# TYPE phantomnet_http_requests_4xx_total counter",
+                f'phantomnet_http_requests_4xx_total{{service="{service_label}"}} {values["requests_4xx_total"]}',
+                "# HELP phantomnet_http_requests_5xx_total Total server-error HTTP responses.",
+                "# TYPE phantomnet_http_requests_5xx_total counter",
+                f'phantomnet_http_requests_5xx_total{{service="{service_label}"}} {values["requests_5xx_total"]}',
+                "# HELP phantomnet_http_request_duration_seconds_sum Total wall-clock duration of handled HTTP requests.",
+                "# TYPE phantomnet_http_request_duration_seconds_sum counter",
+                f'phantomnet_http_request_duration_seconds_sum{{service="{service_label}"}} {values["request_duration_seconds_sum"]:.6f}',
+                "",
+            ]
+        )
+        return PlainTextResponse(body, media_type="text/plain; version=0.0.4; charset=utf-8")
 
     # Default health check
     @app.get("/health", tags=["Infrastructure"])

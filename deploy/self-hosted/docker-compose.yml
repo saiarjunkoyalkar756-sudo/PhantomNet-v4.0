@@ -1,0 +1,179 @@
+name: phantomnet-self-hosted
+
+x-service-security: &service-security
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_DB: ${PHANTOMNET_POSTGRES_DB:-phantomnet}
+      POSTGRES_USER: ${PHANTOMNET_POSTGRES_USER:-phantomnet}
+      POSTGRES_PASSWORD: ${PHANTOMNET_POSTGRES_PASSWORD:?Set a strong non-production or production PostgreSQL password outside version control}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - platform_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.1-alpine
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${PHANTOMNET_REDIS_PASSWORD:?Set a strong Redis password outside version control}
+    volumes:
+      - redis_data:/data
+    networks:
+      - platform_internal
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.1.16
+    command:
+      - redpanda
+      - start
+      - --smp
+      - "1"
+      - --memory
+      - 1024M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:9092
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    networks:
+      - platform_internal
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health --brokers=localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5.24.0-community
+    environment:
+      NEO4J_AUTH: neo4j/${PHANTOMNET_NEO4J_PASSWORD:?Set a strong Neo4j password outside version control}
+      NEO4J_server_memory_heap_initial__size: 512M
+      NEO4J_server_memory_heap_max__size: 512M
+      NEO4J_server_memory_pagecache_size: 256M
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - platform_internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  gateway-service:
+    build:
+      context: ../..
+      dockerfile: backend_api/gateway_service/Dockerfile
+    environment:
+      ENVIRONMENT: ${PHANTOMNET_ENVIRONMENT:-staging}
+      PHANTOMNET_SAFE_MODE: ${PHANTOMNET_SAFE_MODE:-false}
+      DATABASE_URL: postgresql+asyncpg://${PHANTOMNET_POSTGRES_USER:-phantomnet}:${PHANTOMNET_POSTGRES_PASSWORD:?Set PostgreSQL password}@postgres:5432/${PHANTOMNET_POSTGRES_DB:-phantomnet}
+      REDIS_URL: redis://:${PHANTOMNET_REDIS_PASSWORD:?Set Redis password}@redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      NEO4J_HOST: neo4j
+      NEO4J_PORT: "7687"
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${PHANTOMNET_NEO4J_PASSWORD:?Set Neo4j password}
+      JWT_SECRET_KEY: ${PHANTOMNET_JWT_SECRET_KEY:?Set a 32+ character JWT signing secret}
+      PHANTOMNET_CONTAINMENT_AUDIT_HMAC_KEY: ${PHANTOMNET_CONTAINMENT_AUDIT_HMAC_KEY:?Set containment audit HMAC key}
+      PHANTOMNET_CONTAINMENT_AUDIT_HMAC_KEY_ID: ${PHANTOMNET_CONTAINMENT_AUDIT_HMAC_KEY_ID:?Set containment audit key identifier}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PHANTOMNET_GATEWAY_PORT:-8001}:8000"
+    networks:
+      - operator_ingress
+      - platform_internal
+      - observability_internal
+    healthcheck:
+      test: ["CMD", "python", "/app/backend_api/shared/container_healthcheck.py", "--url", "http://127.0.0.1:8000/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *service-security
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PHANTOMNET_METRICS_RETENTION:-15d}
+      - --web.enable-lifecycle=false
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      gateway-service:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PHANTOMNET_PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - observability_internal
+    read_only: true
+    tmpfs:
+      - /tmp
+    <<: *service-security
+
+volumes:
+  postgres_data:
+  redis_data:
+  redpanda_data:
+  neo4j_data:
+  prometheus_data:
+
+networks:
+  operator_ingress:
+    driver: bridge
+  platform_internal:
+    internal: true
+  observability_internal:
+    internal: true

@@ -34,13 +34,13 @@ The current codebase already includes versioned canonical events; durable detect
 | 9 | **AI-native analyst assistance** | Explainable, advisory-only correlation suggestions, rule-draft workflows, and analyst review gates with no direct response authority. |
 | 10 | **External lab readiness** | Non-production deployment guide, operator runbooks, security review, onboarding checklist, and first external lab or university validation. |
 
-## Completed development increment: Phase 6
+## Completed development increment: Phase 7
 
-Phase 6 now provides **governed response readiness**. A high-impact containment request cannot be persisted without configured HMAC audit capability. After a request exists, operators can use a tenant-scoped, read-only preflight to examine audit readiness, approval state, adapter-local scope, live-verification expectation, execution idempotency, and rollback readiness without contacting an endpoint, AWS, or Wazuh.
+Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
 
-The endpoint, AWS Security Group, and Wazuh adapters share deterministic preflight routing. Preflight validates only local declared scope and allowlists; live execution retains mandatory dispatcher evidence, AWS identity/rule read-back, or Wazuh command acknowledgement plus fresh signed endpoint receipt. Runtime posture now reports non-secret Wazuh readiness and fails closed for unsafe or incomplete production configuration.
+The standard service factory now exposes bounded, Prometheus-compatible process counters. Readiness continues to combine upstream dependency checks with secret-safe runtime posture, while the existing recovery harness remains the minimum Docker-host proof for broker, database, and HMAC audit-chain recovery. The architecture documentation defines backup, restore, upgrade, ingress, and external Docker-host validation requirements without claiming a live deployment from this sandbox.
 
-> **Phase 6 closure rule:** readiness is not execution. No request without signed audit capability, no execution without human approval, no verified state without adapter evidence, and no rollback without durable verified rollback evidence.
+> **Phase 7 closure rule:** internal topology is not public ingress, liveness is not readiness, static Compose proof is not live-host proof, and a successful start does not replace backup, recovery, audit-chain, or operator acceptance evidence.
 
 ## Sequencing principles
 
