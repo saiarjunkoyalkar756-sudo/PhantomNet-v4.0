@@ -128,6 +128,9 @@ venv/
 .venv_phantomnet/
 env/
 
+# Checked-in deployment templates contain variable names only; real .env files remain ignored.
+!deploy/self-hosted/env/
+!deploy/self-hosted/env/.env.example
 
 # OS
 .DS_Store
