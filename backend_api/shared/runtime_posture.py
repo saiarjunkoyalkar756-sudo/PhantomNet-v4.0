@@ -27,6 +27,22 @@ def _control(status: str, reason: str, **details: Any) -> dict[str, Any]:
     return {"status": status, "reason": reason, **details}
 
 
+def _wazuh_allowlist_state(environment: Mapping[str, str]) -> tuple[bool, str | None, int]:
+    raw = environment.get("PHANTOMNET_WAZUH_RESPONSE_TENANT_AGENT_ALLOWLIST", "{}")
+    try:
+        mapping = json.loads(raw)
+    except json.JSONDecodeError:
+        return False, "invalid_tenant_agent_allowlist_json", 0
+    if not isinstance(mapping, dict) or any(
+        not isinstance(tenant_id, str)
+        or not isinstance(agent_ids, list)
+        or not all(isinstance(agent_id, str) and agent_id.isdigit() and 3 <= len(agent_id) <= 16 for agent_id in agent_ids)
+        for tenant_id, agent_ids in mapping.items()
+    ):
+        return False, "invalid_tenant_agent_allowlist_shape", 0
+    return True, None, len(mapping)
+
+
 def _aws_allowlist_state(environment: Mapping[str, str]) -> tuple[bool, str | None, int]:
     raw = environment.get("PHANTOMNET_AWS_TENANT_SECURITY_GROUP_ALLOWLIST", "{}")
     try:
@@ -113,6 +129,40 @@ def assess_runtime_posture(
             allowed_cidr_count=len(aws_cidrs),
             allowed_tenant_count=aws_tenant_count,
             endpoint_override_configured=bool(aws_endpoint_override),
+        )
+
+    wazuh_enabled = _enabled(values, "PHANTOMNET_WAZUH_RESPONSE_ENABLED")
+    wazuh_url = values.get("PHANTOMNET_WAZUH_RESPONSE_API_BASE_URL", "").strip()
+    wazuh_profiles = _csv(values, "PHANTOMNET_WAZUH_RESPONSE_ALLOWED_PROFILES")
+    wazuh_allowlist_valid, wazuh_allowlist_error, wazuh_tenant_count = _wazuh_allowlist_state(values)
+    wazuh_credentials_configured = bool(values.get("PHANTOMNET_WAZUH_RESPONSE_API_USERNAME")) and bool(
+        values.get("PHANTOMNET_WAZUH_RESPONSE_API_PASSWORD")
+    )
+    wazuh_command_key_configured = bool(values.get("PHANTOMNET_WAZUH_RESPONSE_COMMAND_HMAC_KEY")) and bool(
+        values.get("PHANTOMNET_WAZUH_RESPONSE_COMMAND_HMAC_KEY_ID")
+    )
+    wazuh_insecure_lab = _enabled(values, "PHANTOMNET_WAZUH_RESPONSE_ALLOW_INSECURE_HTTP")
+    if not wazuh_enabled:
+        controls["wazuh_active_response"] = _control("disabled", "adapter_disabled_by_default")
+    elif not hmac_ready:
+        controls["wazuh_active_response"] = _control("not_ready", "missing_hmac_execution_audit")
+    elif not wazuh_allowlist_valid:
+        controls["wazuh_active_response"] = _control("not_ready", wazuh_allowlist_error or "invalid_tenant_agent_allowlist")
+    elif not wazuh_url or not (wazuh_url.startswith("https://") or wazuh_url.startswith("http://")):
+        controls["wazuh_active_response"] = _control("not_ready", "missing_or_invalid_api_base_url")
+    elif wazuh_url.startswith("http://") and (deployment_environment in STRICT_ENVIRONMENTS or not wazuh_insecure_lab):
+        controls["wazuh_active_response"] = _control("not_ready", "https_required_outside_explicit_isolated_lab")
+    elif not wazuh_credentials_configured or not wazuh_command_key_configured:
+        controls["wazuh_active_response"] = _control("not_ready", "missing_wazuh_credentials_or_command_hmac")
+    elif not wazuh_tenant_count or not wazuh_profiles:
+        controls["wazuh_active_response"] = _control("not_ready", "missing_tenant_agent_or_profile_allowlist")
+    else:
+        controls["wazuh_active_response"] = _control(
+            "ready" if wazuh_url.startswith("https://") else "degraded",
+            "https_command_transport_configured" if wazuh_url.startswith("https://") else "isolated_lab_http_explicitly_enabled",
+            allowed_tenant_count=wazuh_tenant_count,
+            allowed_profile_count=len(wazuh_profiles),
+            transport="https" if wazuh_url.startswith("https://") else "http",
         )
 
     replication_enabled = _enabled(values, "PHANTOMNET_TELEMETRY_REPLICATION_ENABLED")

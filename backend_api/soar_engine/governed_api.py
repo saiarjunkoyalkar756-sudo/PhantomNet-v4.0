@@ -58,6 +58,8 @@ async def create_containment_request(
                 automatic_enforcement=False,
             )
         )
+    except PermissionError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return success_response(data={"request": containment.model_dump(mode="json"), "created": created})
@@ -86,6 +88,19 @@ async def decide_containment_request(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return success_response(data=approval.model_dump(mode="json"))
+
+
+@router.get("/requests/{request_id}/preflight")
+async def preflight_containment_request(
+    request_id: str,
+    current_user: User = Depends(require_capability("response:approve")),
+):
+    """Return readiness only; this route never contacts an adapter, creates approval, or dispatches containment."""
+    try:
+        readiness = await containment_service.preflight(str(current_user.tenant_id), request_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Containment request not found.") from exc
+    return success_response(data=readiness)
 
 
 @router.post("/requests/{request_id}/execute")

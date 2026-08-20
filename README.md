@@ -108,7 +108,7 @@ pip install -r requirements.txt
 python3 -m pytest -q -p no:cacheprovider
 ```
 
-The current isolated regression gate contains **320 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
+The current isolated regression gate contains **325 passing tests** and **6 explicitly skipped environment-gated tests**. The skipped checks require Docker or LocalStack and are not silently treated as successful integration validation.
 
 ### Build the Operator Interfaces
 
@@ -182,6 +182,7 @@ Before running it, generate fresh test-only values for `RECOVERY_DB_PASSWORD`, `
 | [Governed Correlation Engineering](docs/governed-correlation-engineering.md) | Versioned deterministic rules, immutable revisions, offline fixtures, MITRE coverage, and bounded analyst-alert suppression. |
 | [Phase 4 Evidence Integration](docs/PHASE_4_EVIDENCE_INTEGRATION.md) | Tenant-scoped asset, endpoint, Wazuh, identity, intelligence, and graph evidence with explicit read-only provenance and canonical correlation projection. |
 | [Phase 5 Analyst Operations](docs/PHASE_5_ANALYST_OPERATIONS.md) | Evidence-aware hunts, dashboard context, alert and case decision traces, explainable review priority, and human-review-only guidance. |
+| [Phase 6 Governed Response Readiness](docs/PHASE_6_GOVERNED_RESPONSE_READINESS.md) | Signed-audit request gating, side-effect-free preflight, adapter verification expectations, rollback readiness, and Wazuh posture. |
 | [Governed Response and Replication](docs/governed-response-and-regional-replication.md) | Response governance and telemetry replication contracts. |
 | [Tenant Isolation and Audit Integrity](docs/tenant-isolation-and-audit-integrity.md) | Isolation checks and tamper-evident audit verification. |
 | [AWS Security Group Containment](docs/aws-security-group-containment.md) | Cloud firewall adapter safety and validation boundary. |

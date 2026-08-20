@@ -45,6 +45,19 @@ class EndpointContainmentAdapter:
             return "No endpoint command dispatcher is configured."
         return None
 
+    def preflight(self, request: ContainmentRequest) -> dict[str, Any]:
+        """Evaluate local configuration and exact allowlist scope without dispatching an endpoint command."""
+        denial = self._allowed(request)
+        return {
+            "eligible": denial is None,
+            "provider": self.name,
+            "detail": denial or "Endpoint containment scope and dispatcher are configured for the requested action.",
+            "rollback_available": request.action == "isolate_endpoint" and denial is None,
+            "verification_mode": "dispatcher_evidence_required",
+            "external_calls": False,
+            "automatic_enforcement": False,
+        }
+
     def execute(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]:
         denial = self._allowed(request)
         if denial:

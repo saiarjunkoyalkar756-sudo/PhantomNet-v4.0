@@ -214,6 +214,32 @@ class AwsSecurityGroupContainmentAdapter:
             return None, "AWS caller account is not allowlisted for cloud containment."
         return account_id, None
 
+    def preflight(self, request: ContainmentRequest) -> dict[str, Any]:
+        """Validate local request scope and allowlists only; live account and rule reads remain execution-time checks."""
+        if not self._config.enabled:
+            return {"eligible": False, "provider": self.name, "detail": "AWS Security Group containment adapter is disabled by default.", "rollback_available": False, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False}
+        if self._config.configuration_error:
+            return {"eligible": False, "provider": self.name, "detail": self._config.configuration_error, "rollback_available": False, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False}
+        if request.action != "block_indicator":
+            return {"eligible": False, "provider": self.name, "detail": f"Unsupported AWS Security Group containment action: {request.action}.", "rollback_available": False, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False}
+        if not request.requires_approval or request.automatic_enforcement:
+            return {"eligible": False, "provider": self.name, "detail": "AWS Security Group containment requires a non-automatic approval-bound request.", "rollback_available": False, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False}
+        try:
+            spec = AwsSecurityGroupBlockSpec.model_validate(request.parameters)
+        except ValidationError as exc:
+            return {"eligible": False, "provider": self.name, "detail": f"Invalid AWS Security Group containment parameters: {exc.errors()[0]['msg']}", "rollback_available": False, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False}
+        if request.target != spec.cidr_ipv4 or request.asset_id != spec.security_group_id:
+            return {"eligible": False, "provider": self.name, "detail": "Containment target and asset_id must exactly match the reviewed AWS scope.", "rollback_available": False, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False, "aws": self._public_spec(spec)}
+        if spec.security_group_id not in self._config.tenant_security_groups.get(request.tenant_id, frozenset()):
+            detail = "Tenant is not allowlisted for the requested AWS Security Group."
+        elif spec.aws_region not in self._config.allowed_regions:
+            detail = "AWS region is not allowlisted for cloud containment."
+        elif spec.cidr_ipv4 not in self._config.allowed_cidrs:
+            detail = "CIDR is not allowlisted for cloud containment."
+        else:
+            return {"eligible": True, "provider": self.name, "detail": "AWS request scope and local allowlists are ready; execution will still verify caller account and exact rule state.", "rollback_available": True, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False, "aws": self._public_spec(spec)}
+        return {"eligible": False, "provider": self.name, "detail": detail, "rollback_available": False, "verification_mode": "aws_readback_required", "external_calls": False, "automatic_enforcement": False, "aws": self._public_spec(spec)}
+
     def execute(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]:
         spec, denial = self._parse_and_authorize(request, approval)
         if denial:

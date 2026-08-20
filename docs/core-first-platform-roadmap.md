@@ -34,13 +34,13 @@ The current codebase already includes versioned canonical events; durable detect
 | 9 | **AI-native analyst assistance** | Explainable, advisory-only correlation suggestions, rule-draft workflows, and analyst review gates with no direct response authority. |
 | 10 | **External lab readiness** | Non-production deployment guide, operator runbooks, security review, onboarding checklist, and first external lab or university validation. |
 
-## Completed development increment: Phase 5
+## Completed development increment: Phase 6
 
-Phase 5 now provides an **analyst operations layer**. Structured hunts can inspect tenant-owned integrated-evidence metadata, dashboard health reports evidence availability by source, and analysts can request an alert or case decision trace that joins durable alerts, detections, read-only evidence, and graph context using only same-tenant record identifiers.
+Phase 6 now provides **governed response readiness**. A high-impact containment request cannot be persisted without configured HMAC audit capability. After a request exists, operators can use a tenant-scoped, read-only preflight to examine audit readiness, approval state, adapter-local scope, live-verification expectation, execution idempotency, and rollback readiness without contacting an endpoint, AWS, or Wazuh.
 
-The implementation includes deterministic, factor-by-factor review priority based on existing severity, alert occurrences, linked detections, endpoint/Wazuh evidence, and graph context. Every trace includes exact IDs for auditability and returns `human_review_required`; it does not modify alert or case state, suppress evidence, propose containment, execute a playbook, or bypass approval.
+The endpoint, AWS Security Group, and Wazuh adapters share deterministic preflight routing. Preflight validates only local declared scope and allowlists; live execution retains mandatory dispatcher evidence, AWS identity/rule read-back, or Wazuh command acknowledgement plus fresh signed endpoint receipt. Runtime posture now reports non-secret Wazuh readiness and fails closed for unsafe or incomplete production configuration.
 
-> **Phase 5 closure rule:** analyst context is read-only and advisory. Evidence before action, explanation before recommendation, and human approval before any high-impact response remain mandatory.
+> **Phase 6 closure rule:** readiness is not execution. No request without signed audit capability, no execution without human approval, no verified state without adapter evidence, and no rollback without durable verified rollback evidence.
 
 ## Sequencing principles
 

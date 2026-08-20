@@ -304,6 +304,34 @@ class WazuhActiveResponseContainmentAdapter:
         assert self._config.command_hmac_key is not None
         return hmac.new(self._config.command_hmac_key.encode("utf-8"), fingerprint.encode("ascii"), sha256).hexdigest()
 
+    def preflight(self, request: ContainmentRequest) -> dict[str, Any]:
+        """Validate Wazuh command scope and receipt prerequisites without calling the Wazuh API."""
+        base = {"provider": self.name, "verification_mode": "fresh_signed_endpoint_receipt_required", "external_calls": False, "automatic_enforcement": False}
+        if not self._config.enabled:
+            return {**base, "eligible": False, "rollback_available": False, "detail": "Wazuh Active Response containment adapter is disabled by default."}
+        if self._config.configuration_error:
+            return {**base, "eligible": False, "rollback_available": False, "detail": self._config.configuration_error}
+        try:
+            self._config.validate()
+        except ValueError as exc:
+            return {**base, "eligible": False, "rollback_available": False, "detail": f"Invalid Wazuh Active Response configuration: {exc}"}
+        if request.action not in {"isolate_endpoint", "release_endpoint"}:
+            return {**base, "eligible": False, "rollback_available": False, "detail": f"Unsupported Wazuh Active Response action: {request.action}."}
+        if not request.requires_approval or request.automatic_enforcement:
+            return {**base, "eligible": False, "rollback_available": False, "detail": "Wazuh Active Response requires a non-automatic approval-bound request."}
+        try:
+            spec = WazuhResponseSpec.model_validate(request.parameters)
+        except ValidationError as exc:
+            return {**base, "eligible": False, "rollback_available": False, "detail": f"Invalid Wazuh Active Response parameters: {exc.errors()[0]['msg']}"}
+        scope = {"agent_id": spec.wazuh_agent_id, "response_profile": spec.response_profile, "management_cidr": spec.management_cidr}
+        if request.asset_id != spec.wazuh_agent_id or request.target != spec.wazuh_agent_id:
+            return {**base, "eligible": False, "rollback_available": False, "detail": "Containment target and asset_id must both exactly equal the reviewed Wazuh agent ID.", "wazuh": scope}
+        if spec.wazuh_agent_id not in self._config.tenant_agent_allowlist.get(request.tenant_id, frozenset()):
+            return {**base, "eligible": False, "rollback_available": False, "detail": "Tenant is not allowlisted for the requested Wazuh agent.", "wazuh": scope}
+        if spec.response_profile not in self._config.allowed_profiles:
+            return {**base, "eligible": False, "rollback_available": False, "detail": "Wazuh response profile is not allowlisted.", "wazuh": scope}
+        return {**base, "eligible": True, "rollback_available": request.action == "isolate_endpoint", "detail": "Wazuh command scope is ready; execution still requires approval, exact dispatch acknowledgement, and a fresh signed endpoint receipt.", "wazuh": scope}
+
     async def execute(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]:
         spec, denial = self._parse_and_authorize(request, approval)
         if denial:

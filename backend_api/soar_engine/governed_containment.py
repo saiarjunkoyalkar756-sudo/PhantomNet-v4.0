@@ -35,6 +35,8 @@ SessionFactory = Callable[[], AsyncSession]
 class ContainmentAdapter(Protocol):
     name: str
 
+    def preflight(self, request: ContainmentRequest) -> dict[str, Any]: ...
+
     def execute(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]: ...
 
     def rollback(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]: ...
@@ -42,6 +44,17 @@ class ContainmentAdapter(Protocol):
 
 class DisabledContainmentAdapter:
     name = "disabled"
+
+    def preflight(self, request: ContainmentRequest) -> dict[str, Any]:
+        return {
+            "eligible": False,
+            "provider": self.name,
+            "detail": "No endpoint containment adapter is configured; no action can be executed.",
+            "rollback_available": False,
+            "verification_mode": "unavailable",
+            "external_calls": False,
+            "automatic_enforcement": False,
+        }
 
     def execute(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]:
         return {
@@ -174,7 +187,84 @@ class GovernedContainmentService:
         """Guard proposal creation so no high-impact request exists without HMAC audit capability."""
         self._require_signed_execution_audit()
 
+    async def preflight(self, tenant_id: str, request_id: str) -> dict[str, Any]:
+        """Return a side-effect-free execution and rollback readiness view for one tenant-owned request."""
+        audit_ready = bool(self._audit_signing_key and self._audit_key_id)
+        async with self._session_factory() as session:
+            request_row = await session.scalar(
+                select(ContainmentRequestRow).where(
+                    ContainmentRequestRow.tenant_id == UUID(tenant_id), ContainmentRequestRow.request_id == request_id
+                )
+            )
+            if request_row is None:
+                raise LookupError("Containment request was not found for the authenticated tenant.")
+            approval_row = await session.scalar(
+                select(ContainmentApprovalRow).where(
+                    ContainmentApprovalRow.tenant_id == UUID(tenant_id), ContainmentApprovalRow.request_id == request_id
+                )
+            )
+            execution_row = await session.scalar(
+                select(ContainmentExecutionRow).where(
+                    ContainmentExecutionRow.tenant_id == UUID(tenant_id), ContainmentExecutionRow.request_id == request_id
+                )
+            )
+            request = _request_contract(request_row)
+        adapter_preflight = getattr(self._adapter, "preflight", None)
+        if callable(adapter_preflight):
+            adapter_state = adapter_preflight(request)
+            if inspect.isawaitable(adapter_state):
+                adapter_state = await adapter_state
+        else:
+            adapter_state = {
+                "eligible": False,
+                "provider": getattr(self._adapter, "name", "unknown"),
+                "detail": "Configured containment adapter does not implement a side-effect-free preflight.",
+                "rollback_available": False,
+                "verification_mode": "unavailable",
+                "external_calls": False,
+                "automatic_enforcement": False,
+            }
+        approval_state = "pending" if approval_row is None else approval_row.decision
+        execution_state = "not_executed" if execution_row is None else execution_row.status
+        eligible_to_execute = bool(
+            audit_ready
+            and request_row.status == "approved"
+            and approval_state == "approved"
+            and adapter_state.get("eligible")
+            and execution_row is None
+        )
+        rollback_ready = bool(
+            execution_row is not None
+            and execution_row.status == "verified"
+            and execution_row.rollback_available
+            and not execution_row.rolled_back
+        )
+        blockers: list[str] = []
+        if not audit_ready:
+            blockers.append("missing_hmac_execution_audit")
+        if request_row.status != "approved" or approval_state != "approved":
+            blockers.append("request_not_approved")
+        if not adapter_state.get("eligible"):
+            blockers.append("adapter_preflight_not_eligible")
+        if execution_row is not None:
+            blockers.append("execution_already_recorded")
+        return {
+            "tenant_id": tenant_id,
+            "request_id": request_id,
+            "request_status": request_row.status,
+            "approval_status": approval_state,
+            "audit_ready": audit_ready,
+            "adapter": adapter_state,
+            "execution_status": execution_state,
+            "eligible_to_execute": eligible_to_execute,
+            "rollback_ready": rollback_ready,
+            "execution_blockers": blockers,
+            "external_calls": False,
+            "automatic_enforcement": False,
+        }
+
     async def request(self, request: ContainmentRequest) -> tuple[ContainmentRequest, bool]:
+        self._require_signed_execution_audit()
         if not request.requires_approval or request.automatic_enforcement:
             raise ValueError("High-impact containment requests must require approval and cannot be automatic.")
         async with self._session_factory() as session:

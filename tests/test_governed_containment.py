@@ -95,10 +95,8 @@ async def test_containment_execution_fails_closed_without_hmac_signing_configura
     unsigned_service, _sessions, unsigned_engine = await _isolated_service(signing_key=None)
     disabled_service, _disabled_sessions, disabled_engine = await _isolated_service(adapter=type("Unverified", (), {"name": "unverified", "execute": lambda self, *_: {"enforced": True, "verified": False, "detail": "No verification"}, "rollback": lambda self, *_: {"verified": False}})())
     try:
-        unsigned_request, _ = await unsigned_service.request(_request("containment-idempotency-002"))
-        await unsigned_service.approve(ContainmentApproval(request_id=unsigned_request.request_id, tenant_id=TENANT_ID, decision="approved", decided_by="admin-1", reason="Approved for test."))
         with pytest.raises(PermissionError, match="HMAC-signed"):
-            await unsigned_service.execute(TENANT_ID, unsigned_request.request_id, "admin-1")
+            await unsigned_service.request(_request("containment-idempotency-002"))
 
         disabled_request, _ = await disabled_service.request(_request("containment-idempotency-003"))
         await disabled_service.approve(ContainmentApproval(request_id=disabled_request.request_id, tenant_id=TENANT_ID, decision="approved", decided_by="admin-1", reason="Approved for test."))

@@ -36,6 +36,22 @@ class GovernedResponseAdapterRouter:
             return self._wazuh_active_response_adapter
         return self._endpoint_adapter
 
+    def preflight(self, request: ContainmentRequest) -> dict[str, Any]:
+        """Return adapter-local eligibility only; this method never calls an external provider or dispatches an action."""
+        adapter = self._adapter_for(request)
+        method = getattr(adapter, "preflight", None)
+        if not callable(method):
+            return {
+                "eligible": False,
+                "provider": getattr(adapter, "name", "unknown"),
+                "detail": "Selected containment adapter does not implement a side-effect-free preflight.",
+                "rollback_available": False,
+                "verification_mode": "unavailable",
+                "external_calls": False,
+                "automatic_enforcement": False,
+            }
+        return method(request)
+
     def execute(self, request: ContainmentRequest, approval: ContainmentApproval) -> dict[str, Any]:
         return self._adapter_for(request).execute(request, approval)
 
