@@ -10,10 +10,10 @@ This document is the project’s evidence-led response to legitimate questions a
 
 | Class | Meaning | Examples |
 |---|---|---|
-| **A — Implemented and regression-covered** | Source-controlled code with deterministic isolated regression evidence. | Canonical contracts, governed correlation, evidence integration, case and analyst workflow, signed containment lifecycle, audit-chain verification, Phase 7 Compose static contract. |
+| **A — Implemented and regression-covered** | Source-controlled code with deterministic isolated regression evidence. | Canonical contracts, governed correlation, evidence integration, evidence-grounded autonomous decision records, case and analyst workflow, signed containment lifecycle, audit-chain verification, Phase 7 Compose static contract. |
 | **B — Controlled harness evidence** | Mocked, SQLite, LocalStack-gated, disposable Docker, or simulated endpoint proof. | Wazuh governed-response dry run, AWS adapter unit coverage, recovery harness, source-contract CI. |
 | **C — Non-production external-lab proof required** | Requires a real but isolated dependency, account, host, device, manager, or operator. | Live Wazuh manager, AWS sandbox account, Docker-host topology, endpoint agent footprint, real proxy/TLS ingress, backup restore. |
-| **D — Roadmap or intentionally unsupported** | Not currently represented as an operational capability. | Autonomous containment, self-healing infrastructure, predictive threat forecasting, distributed blockchain, post-quantum audit, independently evaluated AI models. |
+| **D — Roadmap or intentionally unsupported** | Not currently represented as an operational capability. | Autonomous high-impact containment, self-healing infrastructure, predictive threat forecasting, distributed blockchain, post-quantum audit, independently evaluated AI models. |
 
 ## Claim ledger
 
@@ -24,7 +24,8 @@ This document is the project’s evidence-led response to legitimate questions a
 | Wazuh bridge | B/C | Read-only telemetry path, signed command envelope, signed endpoint receipt, isolated dry run, deployment runbook. | Describe as a staged integration; live Wazuh-manager and endpoint proof remains a lab gate. |
 | AWS Security Group adapter | B/C | Narrow reviewed-rule revoke/restore semantics, read-back checks, LocalStack-gated integration harness. | Do not claim a live AWS action until an isolated account, IAM policy, CloudTrail evidence, and rollback proof exist. |
 | Tamper-evident audit | A/B | Tenant-scoped HMAC-signed application hash chain and verification tests. | Use “tamper-evident audit chain”; do not call it a distributed blockchain, immutable ledger, proof of compliance, or post-quantum system. |
-| AI-native capability | D | Current implementation centers on deterministic rules and evidence-led analyst context. | Position AI-assisted triage and rule drafting as future advisory work subject to fixtures and review gates. |
+| Evidence-grounded autonomous defense decisions | A | Tenant-owned policy evaluation, durable immutable decisions, source evidence linkage, refusal thresholds, cooldown/rate limits, and approval-required containment proposals are regression-covered. | Describe as bounded policy automation: it can record observations/investigations or create an approval-bound proposal; it never executes an adapter or self-approves high-impact containment. |
+| AI model provider / evaluated model efficacy | D | The current decision scorer is deterministic and reproducible; no external model is enabled as an enforcement authority or independently evaluated for detection efficacy. | Do not imply model-driven containment, autonomous remediation, or validated AI performance. Any future model must remain evidence-cited, mockable, policy-gated, evaluated, and approval-bound. |
 | Performance and scale | B/C | Isolated benchmark and resilience evidence exists; Phase 7 deployment reference is static and tested. | Publish only measured workload, environment, and percentile results. Do not generalize to real-time or high-scale operational capacity. |
 | Self-hosted deployment | A/B/C | Reference Compose topology, internal networking, readiness, metrics, recovery runbook, static YAML tests. | Call it a self-hosted deployment reference; live host, persistence, backup, proxy, and upgrade proof remain required. |
 | Cross-platform agent | A/B/C | Cross-platform source contract compiles source and verifies required packaging inputs on hosted runners. | Do not equate source portability with native binaries, eBPF proof, Termux proof, or measured device resource use. |
@@ -47,6 +48,7 @@ The portal now follows these rules.
 | The concrete control, its evidence type, and its explicit boundary. | That a design goal, roadmap item, or simulated path is production proof. |
 | “HMAC-signed tamper-evident application audit chain.” | “Blockchain,” “immutable ledger,” “post-quantum audit,” or compliance certification. |
 | “Approval-bound containment with verification and rollback.” | “Autonomous containment,” “self-healing defense,” or instant remediation. |
+| “Evidence-grounded policy evaluation that records decisions or creates an approval-bound proposal.” | “AI automatically stops attacks,” “self-approved containment,” “autonomous remediation,” or independently validated model efficacy. |
 | “Deterministic correlation, fixtures, MITRE evidence, and analyst context.” | Generalized AI/ML, prediction, global-feed, zero-day, or universal detection claims. |
 | “Self-hosted deployment reference with a Docker-host lab gate.” | A production-ready or fully validated deployment claim. |
 
@@ -65,7 +67,7 @@ The credibility regression suite prevents known unsupported phrases from returni
 | P2 | Expand detection content through fixture-backed, MITRE-mapped rules. | Rule count and technique coverage published with fixtures, expected detections, and false-positive methodology. |
 | P2 | Establish benchmark discipline. | Versioned workload, host specification, event mix, dependency topology, p50/p95/p99, error rate, and retained artifacts. |
 | P2 | Validate agent packaging and footprint on supported lab devices. | Signed or checksummed artifacts, OS/device matrix, CPU/memory/battery measurements, and failure-mode documentation. |
-| P3 | Add advisory AI assistance only after an evaluation set and human-review gate exist. | Evidence-grounded suggestion fixtures, refusal tests, analyst acceptance metrics, and no-response-authority proof. |
+| P3 | Add advisory AI model assistance only after an evaluation set and human-review gate exist. | Evidence-grounded suggestion fixtures, refusal tests, analyst acceptance metrics, calibration evidence, and no-response-authority proof. |
 
 ## Controlled external-lab proof gates
 

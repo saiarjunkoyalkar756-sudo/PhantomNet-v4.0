@@ -81,6 +81,23 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_soar_playbook_execution_logs_id'), 'soar_playbook_execution_logs', ['id'], unique=False)
+    # Earlier deployments provisioned agents outside Alembic. A clean self-hosted bootstrap must
+    # create the historical base table before this migration applies its additive telemetry fields.
+    if 'agents' not in set(sa.inspect(op.get_bind()).get_table_names()):
+        op.create_table(
+            'agents',
+            sa.Column('id', sa.Integer(), primary_key=True, nullable=False),
+            sa.Column('public_key', sa.String(), nullable=False, unique=True),
+            sa.Column('public_key_fingerprint', sa.String(), nullable=False),
+            sa.Column('cert_serial', sa.String(), nullable=False),
+            sa.Column('role', sa.String(), nullable=False),
+            sa.Column('version', sa.String(), nullable=False),
+            sa.Column('location', sa.String(), nullable=False),
+            sa.Column('status', sa.String(), nullable=False),
+            sa.Column('last_seen', sa.DateTime(), nullable=True),
+            sa.Column('quarantined', sa.Boolean(), nullable=True),
+            sa.Column('configuration', sa.JSON(), nullable=True),
+        )
     op.add_column('agents', sa.Column('os', sa.String(), nullable=True))
     op.add_column('agents', sa.Column('capabilities', sa.JSON(), nullable=True))
     op.add_column('agents', sa.Column('last_reported_health', sa.JSON(), nullable=True))

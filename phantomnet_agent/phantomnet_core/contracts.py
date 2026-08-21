@@ -717,6 +717,142 @@ class ResponseAutomationPolicy(BaseModel):
         return value
 
 
+class AutonomousDefensePolicy(BaseModel):
+    """A tenant-owned authority policy for evidence-grounded autonomous defense decisions.
+
+    Policies can record investigation decisions or create an approval-required containment proposal.
+    They can never dispatch an adapter, bypass an approval, or mark enforcement as automatic.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    policy_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    name: str = Field(min_length=3, max_length=160)
+    enabled: bool = True
+    trigger_rule_ids: List[str] = Field(default_factory=list, max_length=32)
+    minimum_severity: Literal["informational", "low", "medium", "high", "critical"] = "high"
+    decision_mode: Literal["observe", "investigate", "propose_containment"] = "investigate"
+    minimum_confidence: float = Field(default=0.80, ge=0.0, le=1.0)
+    minimum_evidence_count: int = Field(default=1, ge=1, le=16)
+    required_evidence_kinds: List[Literal["asset", "endpoint", "wazuh", "identity", "intelligence", "graph"]] = Field(default_factory=list, max_length=6)
+    cooldown_seconds: int = Field(default=300, ge=60, le=86_400)
+    max_decisions_per_hour: int = Field(default=12, ge=1, le=120)
+    containment_action: Optional[Literal["isolate_endpoint", "block_indicator", "remediate_configuration"]] = None
+    target: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    asset_id: Optional[str] = Field(default=None, max_length=255)
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    requires_approval: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_autonomous_policy_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("requires_approval")
+    @classmethod
+    def require_autonomous_policy_approval(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("autonomous defense policies must retain human approval for containment.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_autonomous_policy_automatic_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("autonomous defense policies cannot enable automatic high-impact enforcement.")
+        return value
+
+    @field_validator("parameters")
+    @classmethod
+    def validate_autonomous_policy_parameters(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        if len(value) > 32:
+            raise ValueError("autonomous policy parameters are limited to 32 entries.")
+        if any(not isinstance(key, str) or len(key) > 128 for key in value):
+            raise ValueError("autonomous policy parameter keys must be bounded strings.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_autonomous_authority_scope(self) -> "AutonomousDefensePolicy":
+        has_containment_scope = self.containment_action is not None or self.target is not None or self.asset_id is not None
+        if self.decision_mode == "propose_containment":
+            if self.containment_action is None or self.target is None:
+                raise ValueError("containment proposals require an explicit containment_action and target.")
+        elif has_containment_scope:
+            raise ValueError("only propose_containment policies may define containment scope.")
+        if len(set(self.required_evidence_kinds)) != len(self.required_evidence_kinds):
+            raise ValueError("required_evidence_kinds must not contain duplicates.")
+        return self
+
+
+class AutonomousDefenseDecision(BaseModel):
+    """Immutable, evidence-grounded autonomous defense decision with no adapter authority."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    policy_id: str
+    detection_id: str
+    rule_id: str
+    severity: Literal["informational", "low", "medium", "high", "critical"]
+    confidence: float = Field(ge=0.0, le=1.0)
+    decision_mode: Literal["observe", "investigate", "propose_containment"]
+    outcome: Literal["decision_recorded", "containment_proposed", "refused", "rate_limited"]
+    evidence_ids: List[str] = Field(default_factory=list, max_length=16)
+    evidence_kinds: List[Literal["asset", "endpoint", "wazuh", "identity", "intelligence", "graph"]] = Field(default_factory=list, max_length=6)
+    reasons: List[str] = Field(default_factory=list, min_length=1, max_length=12)
+    containment_request_id: Optional[str] = None
+    decided_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    requires_human_approval: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_autonomous_decision_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("decided_at")
+    @classmethod
+    def require_timezone_aware_autonomous_decision_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    @field_validator("requires_human_approval")
+    @classmethod
+    def require_autonomous_decision_human_approval(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("autonomous decisions must retain human approval for containment.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_autonomous_decision_automatic_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("autonomous decisions cannot claim automatic high-impact enforcement.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_decision_outcome(self) -> "AutonomousDefenseDecision":
+        if self.outcome == "containment_proposed" and not self.containment_request_id:
+            raise ValueError("containment_proposed decisions require a containment_request_id.")
+        if self.outcome != "containment_proposed" and self.containment_request_id is not None:
+            raise ValueError("only containment_proposed decisions may reference a containment request.")
+        if self.decision_mode != "propose_containment" and self.outcome == "containment_proposed":
+            raise ValueError("only propose_containment decisions may create a containment proposal.")
+        return self
+
+
 class TelemetryReplicationTarget(BaseModel):
     """A tenant-owned telemetry replication destination; it cannot transport response or audit commands."""
 

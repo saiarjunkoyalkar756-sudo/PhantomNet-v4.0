@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
-from shared.logger_config import logger
+from backend_api.shared.logger_config import logger
 from .models import PlaybookRun, PlaybookStatus, PlaybookExecutionLog, PlaybookStep # Import relevant models
 
 logger = logger

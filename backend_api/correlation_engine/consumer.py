@@ -23,6 +23,12 @@ from .ingestion_reliability import (
     ReliableCanonicalIngestion,
 )
 from backend_api.core_config import SAFE_MODE
+from backend_api.evidence_vault.integration import EvidenceIntegrationService
+from backend_api.soar_engine.autonomous_defense import (
+    AutonomousDefenseDecisionService,
+    AutonomousDefenseObserver,
+    AutonomousDefenseRepository,
+)
 from backend_api.soar_engine.governed_containment import GovernedContainmentService
 from backend_api.soar_engine.response_automation import (
     GovernedResponseProposalService,
@@ -52,6 +58,13 @@ response_proposal_service = GovernedResponseProposalService(
     GovernedContainmentService(),
 )
 response_proposal_observer = ResponseProposalObserver(response_proposal_service)
+autonomous_defense_repository = AutonomousDefenseRepository()
+autonomous_defense_service = AutonomousDefenseDecisionService(
+    autonomous_defense_repository,
+    EvidenceIntegrationService(),
+    GovernedContainmentService(),
+)
+autonomous_defense_observer = AutonomousDefenseObserver(autonomous_defense_service)
 telemetry_replication_repository = TelemetryReplicationRepository()
 telemetry_replication_service = TelemetryReplicationService(
     telemetry_replication_repository,
@@ -62,7 +75,7 @@ broker_processor = CanonicalBrokerProcessor(
     DetectionRepository(),
     async_evaluators=(governed_correlation_engine.evaluate_event,),
     event_observers=(telemetry_replication_service.replicate_event,),
-    detection_observers=(response_proposal_observer.observe,),
+    detection_observers=(response_proposal_observer.observe, autonomous_defense_observer.observe),
     alert_workflow=AlertWorkflow(),
 )
 dead_letter_repository = IngestionDeadLetterRepository()

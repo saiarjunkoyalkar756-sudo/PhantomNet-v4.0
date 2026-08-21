@@ -92,6 +92,19 @@ class DetectionRepository:
             # expire_on_commit=False, no post-commit refresh round trip is required.
             return _to_contract(row), True
 
+    async def get_for_tenant(self, tenant_id: str, detection_id: str) -> DetectionRecord:
+        """Return one durable governed detection for its owning tenant only."""
+        async with self._session_factory() as session:
+            row = await session.scalar(
+                select(DetectionRecordRow).where(
+                    DetectionRecordRow.tenant_id == UUID(tenant_id),
+                    DetectionRecordRow.detection_id == detection_id,
+                )
+            )
+            if row is None:
+                raise LookupError("Detection was not found for the authenticated tenant.")
+            return _to_contract(row)
+
     async def list_for_tenant(self, tenant_id: str, limit: int = 100) -> list[DetectionRecord]:
         """Return newest durable detections for one tenant only."""
         safe_limit = max(1, min(limit, 500))

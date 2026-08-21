@@ -4,7 +4,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 
-from shared.logger_config import logger
+from backend_api.shared.logger_config import logger
 from .models import Playbook, PlaybookStep, RemediationAction # Import Playbook and PlaybookStep
 
 logger = logger

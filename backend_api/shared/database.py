@@ -873,6 +873,72 @@ class ResponseAutomationPolicyRow(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
 
+class AutonomousDefensePolicyRow(Base):
+    """Tenant-owned authority policy for evidence-grounded autonomous defense decisions."""
+
+    __tablename__ = "autonomous_defense_policies"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uq_autonomous_defense_policy_tenant_name"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    policy_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    trigger_rule_ids = Column(JSONB, nullable=False)
+    minimum_severity = Column(String, nullable=False)
+    decision_mode = Column(String, nullable=False, index=True)
+    minimum_confidence = Column(Float, nullable=False)
+    minimum_evidence_count = Column(Integer, nullable=False)
+    required_evidence_kinds = Column(JSONB, nullable=False)
+    cooldown_seconds = Column(Integer, nullable=False)
+    max_decisions_per_hour = Column(Integer, nullable=False)
+    containment_action = Column(String, nullable=True)
+    target = Column(String, nullable=True)
+    asset_id = Column(String, nullable=True)
+    parameters = Column(JSONB, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class AutonomousDefenseDecisionRow(Base):
+    """Immutable evidence-grounded decision record; no row represents adapter execution."""
+
+    __tablename__ = "autonomous_defense_decisions"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "policy_id", "detection_id", "decision_hash", name="uq_autonomous_defense_decision"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    decision_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    policy_id = Column(String, ForeignKey("autonomous_defense_policies.policy_id"), nullable=False, index=True)
+    detection_id = Column(String, nullable=False, index=True)
+    rule_id = Column(String, nullable=False, index=True)
+    severity = Column(String, nullable=False, index=True)
+    confidence = Column(Float, nullable=False)
+    decision_mode = Column(String, nullable=False, index=True)
+    outcome = Column(String, nullable=False, index=True)
+    evidence_ids = Column(JSONB, nullable=False)
+    evidence_kinds = Column(JSONB, nullable=False)
+    reasons = Column(JSONB, nullable=False)
+    containment_request_id = Column(String, nullable=True, index=True)
+    requires_human_approval = Column(Boolean, nullable=False, default=True)
+    decision_hash = Column(String, nullable=False, index=True)
+    decided_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
+@event.listens_for(AutonomousDefenseDecisionRow, "before_update")
+def _reject_autonomous_decision_update(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Autonomous defense decisions are immutable and cannot be updated through the application ORM.")
+
+
+@event.listens_for(AutonomousDefenseDecisionRow, "before_delete")
+def _reject_autonomous_decision_delete(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Autonomous defense decisions are immutable and cannot be deleted through the application ORM.")
+
+
 class TelemetryReplicationTargetRow(Base):
     """Configured telemetry-only regional stream target; no response channel metadata is stored."""
 

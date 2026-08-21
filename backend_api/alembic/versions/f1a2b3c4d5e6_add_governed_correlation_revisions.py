@@ -28,7 +28,10 @@ def upgrade() -> None:
                 "governed_correlation_rules",
                 sa.Column("suppression_window_seconds", sa.Integer(), nullable=False, server_default="900"),
             )
-            op.alter_column("governed_correlation_rules", "suppression_window_seconds", server_default=None)
+            # SQLite does not support ALTER COLUMN DROP DEFAULT. Retaining the backfill default
+            # there preserves the required value; production PostgreSQL removes it as intended.
+            if bind.dialect.name != "sqlite":
+                op.alter_column("governed_correlation_rules", "suppression_window_seconds", server_default=None)
     if "governed_correlation_rule_revisions" not in tables:
         op.create_table(
             "governed_correlation_rule_revisions",
