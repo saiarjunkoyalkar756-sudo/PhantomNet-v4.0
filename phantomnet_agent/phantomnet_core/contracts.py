@@ -853,6 +853,411 @@ class AutonomousDefenseDecision(BaseModel):
         return self
 
 
+class DefensiveDatasetSource(BaseModel):
+    """Operator-approved provenance for a sanitized defensive dataset source."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    name: str = Field(min_length=3, max_length=160)
+    source_type: Literal["controlled_bas", "operator_uploaded", "external_public", "tenant_sanitized"]
+    source_uri: Optional[str] = Field(default=None, max_length=1024)
+    source_fingerprint: str = Field(min_length=64, max_length=64)
+    license_reference: Optional[str] = Field(default=None, max_length=1024)
+    operator_approved: bool = False
+    license_reviewed: bool = False
+    contains_raw_telemetry: bool = False
+    sanitization_attested: bool = True
+    approved_by: Optional[str] = Field(default=None, min_length=3, max_length=160)
+    approved_at: Optional[datetime] = None
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_defensive_dataset_source_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("source_fingerprint")
+    @classmethod
+    def validate_defensive_dataset_source_fingerprint(cls, value: str) -> str:
+        normalized = value.lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", normalized):
+            raise ValueError("source_fingerprint must be a SHA-256 hexadecimal digest.")
+        return normalized
+
+    @field_validator("approved_at")
+    @classmethod
+    def normalize_defensive_dataset_source_approval_time(cls, value: Optional[datetime]) -> Optional[datetime]:
+        if value is None:
+            return None
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_defensive_dataset_source_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("defensive dataset sources cannot enable enforcement.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_defensive_dataset_source_governance(self) -> "DefensiveDatasetSource":
+        if self.contains_raw_telemetry:
+            raise ValueError("raw telemetry cannot enter the defensive dataset registry.")
+        if not self.sanitization_attested:
+            raise ValueError("defensive dataset sources require an explicit sanitization attestation.")
+        if self.source_type in {"external_public", "operator_uploaded", "tenant_sanitized"}:
+            if not self.operator_approved or not self.license_reviewed or not self.approved_by or self.approved_at is None:
+                raise ValueError("external, uploaded, and tenant-sanitized sources require recorded operator and license approval.")
+        if self.source_type == "external_public" and not self.source_uri:
+            raise ValueError("external public sources require a source_uri.")
+        return self
+
+
+class DefensiveDatasetVersion(BaseModel):
+    """Versioned, sanitized corpus metadata; it has no live telemetry or response authority."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dataset_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    source_id: str
+    name: str = Field(min_length=3, max_length=160)
+    version: str = Field(min_length=3, max_length=40)
+    dataset_fingerprint: str = Field(min_length=64, max_length=64)
+    intended_use: Literal["evaluation_only", "advisory_calibration"] = "evaluation_only"
+    sample_count: int = Field(ge=0, le=10_000_000)
+    attack_sample_count: int = Field(ge=0, le=10_000_000)
+    benign_sample_count: int = Field(ge=0, le=10_000_000)
+    training_split_count: int = Field(default=0, ge=0, le=10_000_000)
+    validation_split_count: int = Field(default=0, ge=0, le=10_000_000)
+    test_split_count: int = Field(default=0, ge=0, le=10_000_000)
+    contains_raw_telemetry: bool = False
+    sanitization_attested: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_defensive_dataset_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("version")
+    @classmethod
+    def validate_defensive_dataset_version(cls, value: str) -> str:
+        if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", value):
+            raise ValueError("dataset version must be a dotted numeric version.")
+        return value
+
+    @field_validator("dataset_fingerprint")
+    @classmethod
+    def validate_defensive_dataset_fingerprint(cls, value: str) -> str:
+        normalized = value.lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", normalized):
+            raise ValueError("dataset_fingerprint must be a SHA-256 hexadecimal digest.")
+        return normalized
+
+    @field_validator("created_at")
+    @classmethod
+    def normalize_defensive_dataset_created_at(cls, value: datetime) -> datetime:
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_defensive_dataset_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("defensive datasets cannot enable enforcement.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_defensive_dataset_counts(self) -> "DefensiveDatasetVersion":
+        if self.contains_raw_telemetry or not self.sanitization_attested:
+            raise ValueError("defensive datasets must be sanitized and must not retain raw telemetry.")
+        if self.attack_sample_count + self.benign_sample_count != self.sample_count:
+            raise ValueError("attack and benign counts must equal sample_count.")
+        if self.training_split_count + self.validation_split_count + self.test_split_count != self.sample_count:
+            raise ValueError("dataset split counts must equal sample_count.")
+        return self
+
+
+class DefensiveDatasetSample(BaseModel):
+    """A minimized labelled sample used only for evaluation or advisory calibration."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    sample_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    dataset_id: str
+    split: Literal["train", "validation", "test"]
+    label: Literal["benign", "attack"]
+    attack_family: Optional[str] = Field(default=None, min_length=2, max_length=100)
+    mitre_techniques: List[str] = Field(default_factory=list, max_length=16)
+    feature_payload: Dict[str, Any] = Field(default_factory=dict)
+    source_record_fingerprint: str = Field(min_length=64, max_length=64)
+    sanitized: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_defensive_sample_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("mitre_techniques")
+    @classmethod
+    def validate_defensive_sample_mitre(cls, values: List[str]) -> List[str]:
+        normalized = [value.upper() for value in values]
+        if any(not MITRE_TECHNIQUE_PATTERN.fullmatch(value) for value in normalized):
+            raise ValueError("MITRE techniques must use T#### or T####.### format.")
+        if len(set(normalized)) != len(normalized):
+            raise ValueError("MITRE techniques must not contain duplicates.")
+        return normalized
+
+    @field_validator("source_record_fingerprint")
+    @classmethod
+    def validate_defensive_sample_fingerprint(cls, value: str) -> str:
+        normalized = value.lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", normalized):
+            raise ValueError("source_record_fingerprint must be a SHA-256 hexadecimal digest.")
+        return normalized
+
+    @field_validator("feature_payload")
+    @classmethod
+    def validate_defensive_sample_features(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        if not value or len(value) > 64:
+            raise ValueError("feature_payload must contain between 1 and 64 sanitized fields.")
+        primitive = (str, int, float, bool)
+        for key, feature in value.items():
+            if not isinstance(key, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]{0,127}", key):
+                raise ValueError("feature_payload keys must be bounded canonical names.")
+            if not isinstance(feature, primitive):
+                raise ValueError("feature_payload may contain sanitized scalar values only.")
+            if isinstance(feature, str) and len(feature) > 512:
+                raise ValueError("string feature values are limited to 512 characters.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_defensive_sample_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("defensive dataset samples cannot enable enforcement.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_defensive_sample_label(self) -> "DefensiveDatasetSample":
+        if not self.sanitized:
+            raise ValueError("defensive dataset samples must be sanitized.")
+        if self.label == "benign" and (self.attack_family is not None or self.mitre_techniques):
+            raise ValueError("benign samples cannot claim an attack family or MITRE technique.")
+        if self.label == "attack" and not self.mitre_techniques:
+            raise ValueError("attack samples require at least one MITRE technique.")
+        return self
+
+
+class DefensiveEvaluationPolicy(BaseModel):
+    """Tenant-owned acceptance thresholds for advisory defensive model evaluation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    policy_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    name: str = Field(min_length=3, max_length=160)
+    enabled: bool = True
+    minimum_precision: float = Field(default=0.80, ge=0.50, le=1.0)
+    minimum_recall: float = Field(default=0.80, ge=0.50, le=1.0)
+    maximum_false_positive_rate: float = Field(default=0.10, ge=0.0, le=0.50)
+    minimum_attack_samples: int = Field(default=5, ge=1, le=1_000_000)
+    minimum_benign_samples: int = Field(default=5, ge=1, le=1_000_000)
+    require_test_split: bool = True
+    advisory_only: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_defensive_evaluation_policy_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("advisory_only")
+    @classmethod
+    def require_defensive_evaluation_advisory_only(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("defensive evaluation policies must remain advisory only.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_defensive_evaluation_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("defensive evaluation policies cannot enable enforcement.")
+        return value
+
+
+class DefensiveModelEvaluation(BaseModel):
+    """Immutable evaluation result for an advisory scorer or model against a labelled corpus."""
+
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    evaluation_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    policy_id: str
+    dataset_id: str
+    dataset_version: str
+    dataset_fingerprint: str = Field(min_length=64, max_length=64)
+    model_id: str = Field(min_length=3, max_length=160)
+    model_version: str = Field(min_length=1, max_length=80)
+    evaluated_split: Literal["validation", "test"]
+    true_positive: int = Field(ge=0)
+    false_positive: int = Field(ge=0)
+    true_negative: int = Field(ge=0)
+    false_negative: int = Field(ge=0)
+    precision: float = Field(ge=0.0, le=1.0)
+    recall: float = Field(ge=0.0, le=1.0)
+    false_positive_rate: float = Field(ge=0.0, le=1.0)
+    status: Literal["accepted", "rejected", "insufficient_data"]
+    rejection_reasons: List[str] = Field(default_factory=list, max_length=12)
+    evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    advisory_only: bool = True
+    requires_human_approval: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_defensive_evaluation_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("dataset_version")
+    @classmethod
+    def validate_defensive_evaluation_dataset_version(cls, value: str) -> str:
+        if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", value):
+            raise ValueError("dataset_version must be a dotted numeric version.")
+        return value
+
+    @field_validator("dataset_fingerprint")
+    @classmethod
+    def validate_defensive_evaluation_fingerprint(cls, value: str) -> str:
+        normalized = value.lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", normalized):
+            raise ValueError("dataset_fingerprint must be a SHA-256 hexadecimal digest.")
+        return normalized
+
+    @field_validator("evaluated_at")
+    @classmethod
+    def normalize_defensive_evaluation_timestamp(cls, value: datetime) -> datetime:
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+    @field_validator("advisory_only", "requires_human_approval")
+    @classmethod
+    def require_defensive_evaluation_human_controls(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("defensive model evaluations must remain advisory and approval-bound.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_defensive_model_evaluation_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("defensive model evaluations cannot enable enforcement.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_defensive_evaluation_metrics(self) -> "DefensiveModelEvaluation":
+        predicted_positive = self.true_positive + self.false_positive
+        actual_positive = self.true_positive + self.false_negative
+        actual_negative = self.true_negative + self.false_positive
+        expected_precision = self.true_positive / predicted_positive if predicted_positive else 0.0
+        expected_recall = self.true_positive / actual_positive if actual_positive else 0.0
+        expected_fpr = self.false_positive / actual_negative if actual_negative else 0.0
+        for provided, expected, name in (
+            (self.precision, expected_precision, "precision"),
+            (self.recall, expected_recall, "recall"),
+            (self.false_positive_rate, expected_fpr, "false_positive_rate"),
+        ):
+            if abs(provided - expected) > 0.000001:
+                raise ValueError(f"{name} must match its confusion-matrix value.")
+        if self.status == "accepted" and self.rejection_reasons:
+            raise ValueError("accepted evaluations cannot contain rejection_reasons.")
+        if self.status != "accepted" and not self.rejection_reasons:
+            raise ValueError("rejected or insufficient-data evaluations require rejection_reasons.")
+        return self
+
+
+class AdvisoryModelAssessment(BaseModel):
+    """Structured advisory model output; it can recommend investigation only and has no response authority."""
+
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    assessment_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    detection_id: str
+    model_id: str = Field(min_length=3, max_length=160)
+    model_version: str = Field(min_length=1, max_length=80)
+    evaluation_id: Optional[str] = None
+    classification: Literal["likely_benign", "suspicious", "insufficient_evidence"]
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence_ids: List[str] = Field(default_factory=list, max_length=16)
+    reasons: List[str] = Field(min_length=1, max_length=12)
+    recommended_mode: Literal["observe", "investigate"]
+    assessed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    advisory_only: bool = True
+    requires_human_approval: bool = True
+    automatic_enforcement: bool = False
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_advisory_assessment_tenant(cls, value: str) -> str:
+        try:
+            from uuid import UUID
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("assessed_at")
+    @classmethod
+    def normalize_advisory_assessment_time(cls, value: datetime) -> datetime:
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+    @field_validator("advisory_only", "requires_human_approval")
+    @classmethod
+    def require_advisory_assessment_controls(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("advisory model assessments must remain approval-bound and advisory only.")
+        return value
+
+    @field_validator("automatic_enforcement")
+    @classmethod
+    def reject_advisory_assessment_enforcement(cls, value: bool) -> bool:
+        if value:
+            raise ValueError("advisory model assessments cannot enable enforcement.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_advisory_assessment_evidence(self) -> "AdvisoryModelAssessment":
+        if self.classification in {"suspicious", "likely_benign"} and not self.evidence_ids:
+            raise ValueError("non-refusal advisory assessments require source evidence IDs.")
+        if self.classification == "insufficient_evidence" and self.recommended_mode != "observe":
+            raise ValueError("insufficient evidence assessments may only recommend observation.")
+        return self
+
+
 class TelemetryReplicationTarget(BaseModel):
     """A tenant-owned telemetry replication destination; it cannot transport response or audit commands."""
 

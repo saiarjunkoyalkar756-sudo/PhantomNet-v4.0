@@ -3,11 +3,24 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from backend_api.ai_behavioral_engine.advisory_model import (
+    AdvisoryModelAssessmentRepository,
+    AdvisoryModelAssessmentService,
+    DeterministicAdvisoryProvider,
+)
+from backend_api.ai_behavioral_engine.defensive_evaluation import (
+    DefensiveEvaluationRepository,
+    DefensiveModelEvaluationService,
+    RiskScoreThresholdClassifier,
+    build_dataset_version,
+)
 from backend_api.audit_log_collector.verification import ContainmentAuditVerifier
 from backend_api.correlation_engine.detection_store import DetectionRepository
 from backend_api.evidence_vault.integration import EvidenceIntegrationService
@@ -21,7 +34,14 @@ from backend_api.soar_engine.autonomous_defense import (
 from backend_api.soar_engine.governed_containment import GovernedContainmentService
 from backend_api.soar_engine.response_adapter_router import GovernedResponseAdapterRouter
 from backend_api.soar_engine.wazuh_response_receipts import WazuhResponseReceipt, WazuhResponseReceiptService
-from phantomnet_core.contracts import AutonomousDefensePolicy, ContainmentApproval, ContainmentRequest
+from phantomnet_core.contracts import (
+    AutonomousDefensePolicy,
+    ContainmentApproval,
+    ContainmentRequest,
+    DefensiveDatasetSample,
+    DefensiveDatasetSource,
+    DefensiveEvaluationPolicy,
+)
 
 
 router = APIRouter(prefix="/governed-containment", tags=["Governed Containment"])
@@ -35,6 +55,16 @@ autonomous_defense_service = AutonomousDefenseDecisionService(
     containment_service,
 )
 detection_repository = DetectionRepository()
+defensive_evaluation_repository = DefensiveEvaluationRepository()
+defensive_evaluation_service = DefensiveModelEvaluationService(defensive_evaluation_repository)
+advisory_assessment_repository = AdvisoryModelAssessmentRepository()
+deterministic_advisory_provider = DeterministicAdvisoryProvider()
+advisory_assessment_service = AdvisoryModelAssessmentService(
+    defensive_evaluation_repository,
+    advisory_assessment_repository,
+    deterministic_advisory_provider,
+)
+evidence_integration_service = EvidenceIntegrationService()
 
 
 class ContainmentRequestCreate(BaseModel):
@@ -55,6 +85,89 @@ class AutonomousDefenseEvaluationRequest(BaseModel):
     detection_id: str = Field(min_length=1, max_length=255)
 
 
+class DefensiveDatasetSourceCreate(BaseModel):
+    name: str = Field(min_length=3, max_length=160)
+    source_type: str
+    source_uri: Optional[str] = Field(default=None, max_length=1024)
+    source_fingerprint: str = Field(min_length=64, max_length=64)
+    license_reference: Optional[str] = Field(default=None, max_length=1024)
+    operator_approved: bool = False
+    license_reviewed: bool = False
+
+    def to_contract(self, tenant_id: str, approved_by: str) -> DefensiveDatasetSource:
+        approved_at = datetime.now(timezone.utc) if self.operator_approved else None
+        return DefensiveDatasetSource(
+            tenant_id=tenant_id,
+            name=self.name,
+            source_type=self.source_type,
+            source_uri=self.source_uri,
+            source_fingerprint=self.source_fingerprint,
+            license_reference=self.license_reference,
+            operator_approved=self.operator_approved,
+            license_reviewed=self.license_reviewed,
+            contains_raw_telemetry=False,
+            sanitization_attested=True,
+            approved_by=approved_by if self.operator_approved else None,
+            approved_at=approved_at,
+            automatic_enforcement=False,
+        )
+
+
+class DefensiveDatasetSampleCreate(BaseModel):
+    split: str
+    label: str
+    attack_family: Optional[str] = Field(default=None, min_length=2, max_length=100)
+    mitre_techniques: list[str] = Field(default_factory=list, max_length=16)
+    feature_payload: Dict[str, Any] = Field(default_factory=dict)
+    source_record_fingerprint: str = Field(min_length=64, max_length=64)
+
+    def to_contract(self, tenant_id: str, dataset_id: str) -> DefensiveDatasetSample:
+        return DefensiveDatasetSample(
+            tenant_id=tenant_id,
+            dataset_id=dataset_id,
+            split=self.split,
+            label=self.label,
+            attack_family=self.attack_family,
+            mitre_techniques=self.mitre_techniques,
+            feature_payload=self.feature_payload,
+            source_record_fingerprint=self.source_record_fingerprint,
+            sanitized=True,
+            automatic_enforcement=False,
+        )
+
+
+class DefensiveDatasetCreate(BaseModel):
+    source_id: str = Field(min_length=1, max_length=255)
+    name: str = Field(min_length=3, max_length=160)
+    version: str = Field(min_length=3, max_length=40)
+    intended_use: str = "evaluation_only"
+    samples: list[DefensiveDatasetSampleCreate] = Field(min_length=1, max_length=10_000)
+
+
+class DefensiveEvaluationPolicyCreate(BaseModel):
+    name: str = Field(min_length=3, max_length=160)
+    enabled: bool = True
+    minimum_precision: float = Field(default=0.80, ge=0.50, le=1.0)
+    minimum_recall: float = Field(default=0.80, ge=0.50, le=1.0)
+    maximum_false_positive_rate: float = Field(default=0.10, ge=0.0, le=0.50)
+    minimum_attack_samples: int = Field(default=5, ge=1, le=1_000_000)
+    minimum_benign_samples: int = Field(default=5, ge=1, le=1_000_000)
+    require_test_split: bool = True
+
+    def to_contract(self, tenant_id: str) -> DefensiveEvaluationPolicy:
+        return DefensiveEvaluationPolicy(tenant_id=tenant_id, **self.model_dump())
+
+
+class DefensiveEvaluationRunRequest(BaseModel):
+    policy_id: str = Field(min_length=1, max_length=255)
+    dataset_id: str = Field(min_length=1, max_length=255)
+
+
+class AdvisoryAssessmentRequest(BaseModel):
+    detection_id: str = Field(min_length=1, max_length=255)
+    evaluation_id: str = Field(min_length=1, max_length=255)
+
+
 class AutonomousDefensePolicyCreate(BaseModel):
     name: str = Field(min_length=3, max_length=160)
     enabled: bool = True
@@ -73,6 +186,150 @@ class AutonomousDefensePolicyCreate(BaseModel):
 
     def to_contract(self, tenant_id: str) -> AutonomousDefensePolicy:
         return AutonomousDefensePolicy(tenant_id=tenant_id, **self.model_dump())
+
+
+@router.post("/defensive-data/sources", status_code=201)
+async def register_defensive_dataset_source(
+    source: DefensiveDatasetSourceCreate,
+    current_user: User = Depends(require_capability("response:approve")),
+):
+    """Register only approved, sanitized source provenance; raw telemetry cannot enter this API."""
+    try:
+        stored, created = await defensive_evaluation_repository.register_source(
+            source.to_contract(str(current_user.tenant_id), current_user.username)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return success_response(data={"source": stored.model_dump(mode="json"), "created": created})
+
+
+@router.post("/defensive-data/datasets", status_code=201)
+async def register_defensive_dataset(
+    dataset: DefensiveDatasetCreate,
+    current_user: User = Depends(require_capability("response:approve")),
+):
+    """Register a versioned corpus of minimized labelled features; raw event uploads are unsupported."""
+    tenant_id = str(current_user.tenant_id)
+    dataset_id = str(uuid4())
+    try:
+        samples = [sample.to_contract(tenant_id, dataset_id) for sample in dataset.samples]
+        version = build_dataset_version(
+            tenant_id=tenant_id,
+            source_id=dataset.source_id,
+            name=dataset.name,
+            version=dataset.version,
+            intended_use=dataset.intended_use,
+            samples=samples,
+            dataset_id=dataset_id,
+        )
+        stored, created = await defensive_evaluation_repository.register_dataset(version, samples)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return success_response(data={"dataset": stored.model_dump(mode="json"), "created": created})
+
+
+@router.get("/defensive-data/datasets")
+async def list_defensive_datasets(
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: User = Depends(require_capability("audit:read")),
+):
+    datasets = await defensive_evaluation_repository.list_datasets(str(current_user.tenant_id), limit=limit)
+    return success_response(data=[dataset.model_dump(mode="json") for dataset in datasets])
+
+
+@router.post("/defensive-data/evaluation-policies", status_code=201)
+async def upsert_defensive_evaluation_policy(
+    policy: DefensiveEvaluationPolicyCreate,
+    current_user: User = Depends(require_capability("response:approve")),
+):
+    try:
+        stored = await defensive_evaluation_repository.upsert_policy(policy.to_contract(str(current_user.tenant_id)))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return success_response(data=stored.model_dump(mode="json"))
+
+
+@router.get("/defensive-data/evaluation-policies")
+async def list_defensive_evaluation_policies(
+    current_user: User = Depends(require_capability("audit:read")),
+):
+    policies = await defensive_evaluation_repository.list_policies(str(current_user.tenant_id))
+    return success_response(data=[policy.model_dump(mode="json") for policy in policies])
+
+
+@router.post("/defensive-data/evaluations", status_code=202)
+async def evaluate_defensive_baseline(
+    request: DefensiveEvaluationRunRequest,
+    current_user: User = Depends(require_capability("response:approve")),
+):
+    """Run only the transparent offline baseline; result has no inference or containment authority."""
+    try:
+        evaluation = await defensive_evaluation_service.evaluate(
+            tenant_id=str(current_user.tenant_id),
+            policy_id=request.policy_id,
+            dataset_id=request.dataset_id,
+            classifier=RiskScoreThresholdClassifier(),
+            split="test",
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return success_response(data=evaluation.model_dump(mode="json"))
+
+
+@router.get("/defensive-data/evaluations")
+async def list_defensive_evaluations(
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: User = Depends(require_capability("audit:read")),
+):
+    evaluations = await defensive_evaluation_repository.list_evaluations(str(current_user.tenant_id), limit=limit)
+    return success_response(data=[evaluation.model_dump(mode="json") for evaluation in evaluations])
+
+
+@router.post("/defensive-data/advisory-assessments", status_code=202)
+async def create_advisory_assessment(
+    request: AdvisoryAssessmentRequest,
+    current_user: User = Depends(require_capability("audit:read")),
+):
+    """Create an observation/investigation-only assessment for a stored same-tenant detection."""
+    tenant_id = str(current_user.tenant_id)
+    try:
+        detection = await detection_repository.get_for_tenant(tenant_id, request.detection_id)
+        candidate_ids = {detection.event_id}
+        reported_ids = detection.evidence.get("evidence_ids")
+        if isinstance(reported_ids, list):
+            candidate_ids.update(str(value) for value in reported_ids[:16])
+        records = await evidence_integration_service.list_for_tenant(tenant_id, limit=500)
+        evidence = [
+            record for record in records
+            if record.evidence_id in candidate_ids or record.source_record_id in candidate_ids
+        ][:16]
+        assessment = await advisory_assessment_service.assess(
+            detection=detection,
+            evidence=evidence,
+            evaluation_id=request.evaluation_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return success_response(data=assessment.model_dump(mode="json"))
+
+
+@router.get("/defensive-data/advisory-assessments")
+async def list_advisory_assessments(
+    limit: int = Query(default=100, ge=1, le=500),
+    current_user: User = Depends(require_capability("audit:read")),
+):
+    assessments = await advisory_assessment_repository.list_for_tenant(str(current_user.tenant_id), limit=limit)
+    return success_response(data=[assessment.model_dump(mode="json") for assessment in assessments])
 
 
 @router.get("/autonomous-defense/policies")

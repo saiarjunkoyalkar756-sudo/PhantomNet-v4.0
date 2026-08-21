@@ -939,6 +939,187 @@ def _reject_autonomous_decision_delete(_mapper, _connection, _target) -> None:
     raise RuntimeError("Autonomous defense decisions are immutable and cannot be deleted through the application ORM.")
 
 
+class DefensiveDatasetSourceRow(Base):
+    """Operator-approved provenance for a sanitized defensive dataset source."""
+
+    __tablename__ = "defensive_dataset_sources"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", "source_fingerprint", name="uq_defensive_dataset_source"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    source_type = Column(String, nullable=False, index=True)
+    source_uri = Column(String, nullable=True)
+    source_fingerprint = Column(String(64), nullable=False, index=True)
+    license_reference = Column(String, nullable=True)
+    operator_approved = Column(Boolean, nullable=False, default=False)
+    license_reviewed = Column(Boolean, nullable=False, default=False)
+    sanitization_attested = Column(Boolean, nullable=False, default=True)
+    approved_by = Column(String, nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class DefensiveDatasetVersionRow(Base):
+    """Versioned sanitized corpus metadata without raw telemetry retention."""
+
+    __tablename__ = "defensive_dataset_versions"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", "version", name="uq_defensive_dataset_version"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    dataset_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    source_id = Column(String, ForeignKey("defensive_dataset_sources.source_id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    version = Column(String, nullable=False)
+    dataset_fingerprint = Column(String(64), nullable=False, index=True)
+    intended_use = Column(String, nullable=False, index=True)
+    sample_count = Column(Integer, nullable=False)
+    attack_sample_count = Column(Integer, nullable=False)
+    benign_sample_count = Column(Integer, nullable=False)
+    training_split_count = Column(Integer, nullable=False)
+    validation_split_count = Column(Integer, nullable=False)
+    test_split_count = Column(Integer, nullable=False)
+    sanitization_attested = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class DefensiveDatasetSampleRow(Base):
+    """One minimized, labelled, sanitized sample in a versioned defensive corpus."""
+
+    __tablename__ = "defensive_dataset_samples"
+    __table_args__ = (
+        UniqueConstraint("dataset_id", "split", "source_record_fingerprint", name="uq_defensive_dataset_sample"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    sample_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    dataset_id = Column(String, ForeignKey("defensive_dataset_versions.dataset_id"), nullable=False, index=True)
+    split = Column(String, nullable=False, index=True)
+    label = Column(String, nullable=False, index=True)
+    attack_family = Column(String, nullable=True)
+    mitre_techniques = Column(JSONB, nullable=False)
+    feature_payload = Column(JSONB, nullable=False)
+    source_record_fingerprint = Column(String(64), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class DefensiveEvaluationPolicyRow(Base):
+    """Tenant-owned acceptance thresholds for advisory defensive model evaluation."""
+
+    __tablename__ = "defensive_evaluation_policies"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uq_defensive_evaluation_policy_tenant_name"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    policy_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    enabled = Column(Boolean, nullable=False, default=True, index=True)
+    minimum_precision = Column(Float, nullable=False)
+    minimum_recall = Column(Float, nullable=False)
+    maximum_false_positive_rate = Column(Float, nullable=False)
+    minimum_attack_samples = Column(Integer, nullable=False)
+    minimum_benign_samples = Column(Integer, nullable=False)
+    require_test_split = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class DefensiveModelEvaluationRow(Base):
+    """Immutable scored evaluation evidence for an advisory-only defensive model."""
+
+    __tablename__ = "defensive_model_evaluations"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "policy_id", "dataset_id", "model_id", "model_version", "evaluation_fingerprint",
+            name="uq_defensive_model_evaluation",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    evaluation_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    policy_id = Column(String, ForeignKey("defensive_evaluation_policies.policy_id"), nullable=False, index=True)
+    dataset_id = Column(String, ForeignKey("defensive_dataset_versions.dataset_id"), nullable=False, index=True)
+    dataset_version = Column(String, nullable=False)
+    dataset_fingerprint = Column(String(64), nullable=False, index=True)
+    model_id = Column(String, nullable=False, index=True)
+    model_version = Column(String, nullable=False)
+    evaluated_split = Column(String, nullable=False, index=True)
+    true_positive = Column(Integer, nullable=False)
+    false_positive = Column(Integer, nullable=False)
+    true_negative = Column(Integer, nullable=False)
+    false_negative = Column(Integer, nullable=False)
+    precision = Column(Float, nullable=False)
+    recall = Column(Float, nullable=False)
+    false_positive_rate = Column(Float, nullable=False)
+    status = Column(String, nullable=False, index=True)
+    rejection_reasons = Column(JSONB, nullable=False)
+    evaluation_fingerprint = Column(String(64), nullable=False, index=True)
+    evaluated_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    advisory_only = Column(Boolean, nullable=False, default=True)
+    requires_human_approval = Column(Boolean, nullable=False, default=True)
+    automatic_enforcement = Column(Boolean, nullable=False, default=False)
+
+
+@event.listens_for(DefensiveModelEvaluationRow, "before_update")
+def _reject_defensive_model_evaluation_update(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Defensive model evaluations are immutable and cannot be updated through the application ORM.")
+
+
+@event.listens_for(DefensiveModelEvaluationRow, "before_delete")
+def _reject_defensive_model_evaluation_delete(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Defensive model evaluations are immutable and cannot be deleted through the application ORM.")
+
+
+class AdvisoryModelAssessmentRow(Base):
+    """Immutable advisory model output; no row can represent a response or enforcement command."""
+
+    __tablename__ = "advisory_model_assessments"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "detection_id", "model_id", "model_version", "assessment_fingerprint",
+            name="uq_advisory_model_assessment",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    assessment_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    detection_id = Column(String, nullable=False, index=True)
+    model_id = Column(String, nullable=False, index=True)
+    model_version = Column(String, nullable=False)
+    evaluation_id = Column(String, ForeignKey("defensive_model_evaluations.evaluation_id"), nullable=False, index=True)
+    classification = Column(String, nullable=False, index=True)
+    confidence = Column(Float, nullable=False)
+    evidence_ids = Column(JSONB, nullable=False)
+    reasons = Column(JSONB, nullable=False)
+    recommended_mode = Column(String, nullable=False, index=True)
+    assessment_fingerprint = Column(String(64), nullable=False, index=True)
+    assessed_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    advisory_only = Column(Boolean, nullable=False, default=True)
+    requires_human_approval = Column(Boolean, nullable=False, default=True)
+    automatic_enforcement = Column(Boolean, nullable=False, default=False)
+
+
+@event.listens_for(AdvisoryModelAssessmentRow, "before_update")
+def _reject_advisory_model_assessment_update(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Advisory model assessments are immutable and cannot be updated through the application ORM.")
+
+
+@event.listens_for(AdvisoryModelAssessmentRow, "before_delete")
+def _reject_advisory_model_assessment_delete(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Advisory model assessments are immutable and cannot be deleted through the application ORM.")
+
+
 class TelemetryReplicationTargetRow(Base):
     """Configured telemetry-only regional stream target; no response channel metadata is stored."""
 

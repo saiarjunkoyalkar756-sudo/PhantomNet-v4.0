@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_ROOT = PROJECT_ROOT / "backend_api"
-MIGRATION_HEAD = "a6b7c8d9e0f1"
+MIGRATION_HEAD = "c8d9e0f1a2b3"
 
 
 def _config(database_path: Path) -> Config:
@@ -30,8 +30,17 @@ def test_autonomous_defense_migration_upgrades_clean_database_to_head(tmp_path):
         inspector = inspect(engine)
         assert "autonomous_defense_policies" in inspector.get_table_names()
         assert "autonomous_defense_decisions" in inspector.get_table_names()
+        assert "defensive_dataset_sources" in inspector.get_table_names()
+        assert "defensive_dataset_versions" in inspector.get_table_names()
+        assert "defensive_dataset_samples" in inspector.get_table_names()
+        assert "defensive_evaluation_policies" in inspector.get_table_names()
+        assert "defensive_model_evaluations" in inspector.get_table_names()
+        assert "advisory_model_assessments" in inspector.get_table_names()
         policy_columns = {column["name"] for column in inspector.get_columns("autonomous_defense_policies")}
         decision_columns = {column["name"] for column in inspector.get_columns("autonomous_defense_decisions")}
+        dataset_columns = {column["name"] for column in inspector.get_columns("defensive_dataset_versions")}
+        evaluation_columns = {column["name"] for column in inspector.get_columns("defensive_model_evaluations")}
+        assessment_columns = {column["name"] for column in inspector.get_columns("advisory_model_assessments")}
         assert {"policy_id", "tenant_id", "decision_mode", "minimum_confidence"} <= policy_columns
         assert {
             "decision_id",
@@ -41,6 +50,26 @@ def test_autonomous_defense_migration_upgrades_clean_database_to_head(tmp_path):
             "requires_human_approval",
             "decision_hash",
         } <= decision_columns
+        assert {"dataset_id", "source_id", "dataset_fingerprint", "intended_use", "sanitization_attested"} <= dataset_columns
+        assert {
+            "evaluation_id",
+            "dataset_id",
+            "model_id",
+            "evaluation_fingerprint",
+            "advisory_only",
+            "requires_human_approval",
+            "automatic_enforcement",
+        } <= evaluation_columns
+        assert {
+            "assessment_id",
+            "detection_id",
+            "evaluation_id",
+            "evidence_ids",
+            "recommended_mode",
+            "advisory_only",
+            "requires_human_approval",
+            "automatic_enforcement",
+        } <= assessment_columns
         with engine.connect() as connection:
             revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         assert revision == MIGRATION_HEAD

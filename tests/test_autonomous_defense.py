@@ -252,4 +252,10 @@ def test_autonomous_defense_routes_are_wired_without_an_execution_endpoint():
     assert "/api/soar/governed-containment/autonomous-defense/decisions" in paths
     assert "/api/soar/governed-containment/autonomous-defense/evaluate" in paths
     assert "/api/soar/governed-containment/autonomous-defense/detections/{detection_id}/evaluate" in paths
+    assert "/api/soar/governed-containment/defensive-data/sources" in paths
+    assert "/api/soar/governed-containment/defensive-data/datasets" in paths
+    assert "/api/soar/governed-containment/defensive-data/evaluation-policies" in paths
+    assert "/api/soar/governed-containment/defensive-data/evaluations" in paths
+    assert "/api/soar/governed-containment/defensive-data/advisory-assessments" in paths
     assert not any("autonomous-defense" in path and "execute" in path for path in paths)
+    assert not any("defensive-data" in path and any(term in path for term in ("execute", "enforce", "raw-telemetry", "train")) for path in paths)
