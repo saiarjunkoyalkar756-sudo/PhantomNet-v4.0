@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard attack-graph truthfulness boundary
+
+The dashboard attack-graph page no longer presents fixture lateral-movement topology, compromise/risk assertions, segmentation findings, blast-radius estimates, or local simulated node isolation as live capability. It now states that governed attack-path and containment integration is pending. The separately protected attack-path analysis and governed containment control planes remain the only supported boundaries. Any future dashboard integration must use tenant-scoped, provenance-linked results; distinguish graph hypotheses from verified evidence; and retain request, human approval, HMAC-signed audit, controlled execution, verification, and rollback without automatic high-impact containment. Regression coverage prevents fixture graph state and simulated containment from returning while preserving governed attack-path and containment contract tests.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-analysis integration, attack-path discovery, relationship accuracy, risk scoring, segmentation assessment, containment execution, approval identity, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
