@@ -328,6 +328,12 @@ The active self-hosted gateway no longer exposes its legacy global blockchain re
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed audit-evidence replacement or validate tenant isolation, provenance, HMAC audit-chain integrity, cryptographic notarization, immutable-ledger semantics, blockchain correctness, administrator authorization, database durability, Docker-host operation, or compliance/security efficacy.
 
+## Completed bounded increment: IAM self-registration and simulated-reset boundary
+
+The mounted IAM router now treats public self-registration as a standard-user path only. The request schema no longer accepts a caller-supplied role, the handler assigns the `user` role explicitly, and its issued session token now uses the registered username as the subject expected by the session-validation dependency. The former password-reset request/confirmation endpoints were retired with `410 LEGACY_SIMULATED_PASSWORD_RESET_RETIRED`: they previously returned a reset credential directly to the caller while claiming simulated delivery and did not match the persisted reset-token record contract. Dashboard registration no longer offers privileged-role selection; the reset views now state that a verified, durable recovery workflow is required and make no calls to retired routes.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide tenant provisioning, administrator provisioning, identity proofing, verified email or other out-of-band delivery, password-reset recovery, MFA/WebAuthn assurance, session revocation under real Redis/PostgreSQL failure, rate-limit effectiveness, user-directory privacy, Docker-host operation, or production authentication security proof.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

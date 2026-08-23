@@ -18,7 +18,6 @@ from backend_api.shared.database import (
     get_db, 
     User, 
     SessionToken, 
-    PasswordResetToken, 
     RecoveryCode
 )
 from backend_api.shared.schemas import (
@@ -26,8 +25,6 @@ from backend_api.shared.schemas import (
     UserInDB, 
     Token, 
     TokenData,
-    PasswordResetRequest, 
-    PasswordResetConfirm, 
     RecoveryCodeResponse, 
     TwoFACode, 
     TwoFAChallenge, 
@@ -81,7 +78,7 @@ async def register_user(
     new_user = User(
         username=user_data.username,
         hashed_password=hashed_password,
-        role=user_data.role or "user",
+        role="user",
         tenant_id=DEFAULT_TENANT_ID
     )
     db.add(new_user)
@@ -92,7 +89,7 @@ async def register_user(
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     jwt_data = {
-        "sub": str(new_user.id),
+        "sub": new_user.username,
         "username": new_user.username,
         "role": new_user.role,
         "twofa_enabled": False,
@@ -196,69 +193,27 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
         "tenant_id": str(current_user.tenant_id)
     })
 
-@router.post("/request-password-reset")
-async def request_password_reset(
-    request: Request,
-    reset_request: PasswordResetRequest,
-    db: AsyncSession = Depends(get_db),
-):
-    """Generates a password reset token and 'sends' an email."""
-    user = await get_user(db, username=reset_request.username)
-    if not user:
-        return error_response(code="NOT_FOUND", message="User not found", status_code=404)
-
-    # Clean old tokens
-    await db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
-    
-    token = await create_access_token(
-        db,
-        user_id=user.id,
-        data={"sub": user.username, "type": "password_reset"},
-        expires_delta=timedelta(hours=1),
-        request=request,
+def _retired_simulated_password_reset():
+    return error_response(
+        code="LEGACY_SIMULATED_PASSWORD_RESET_RETIRED",
+        message=(
+            "The simulated password-reset workflow is retired because it cannot provide "
+            "verified out-of-band delivery or a durable token lifecycle."
+        ),
+        status_code=410,
     )
-    
-    new_token_db = PasswordResetToken(user_id=user.id, token=token)
-    db.add(new_token_db)
-    await db.commit()
 
-    pn_logger.info(f"Password reset token generated for {user.username}.")
-    return success_response(message="Password reset email sent (simulated).", data={"token": token})
 
-@router.post("/confirm-password-reset")
-async def confirm_password_reset(
-    confirm_request: PasswordResetConfirm, 
-    db: AsyncSession = Depends(get_db)
-):
-    """Uses a reset token to update the user's password."""
-    try:
-        payload = jwt.decode(confirm_request.token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if not username:
-            raise Exception("Invalid payload")
-    except Exception:
-        return error_response(code="INVALID_TOKEN", message="Invalid or expired token", status_code=401)
+@router.post("/request-password-reset", include_in_schema=False)
+async def request_password_reset():
+    """Fail closed instead of creating and returning a reset credential to the caller."""
+    return _retired_simulated_password_reset()
 
-    user = await get_user(db, username=username)
-    if not user:
-        return error_response(code="INVALID_TOKEN", message="Invalid or expired token", status_code=401)
 
-    stmt = select(PasswordResetToken).where(
-        PasswordResetToken.user_id == user.id,
-        PasswordResetToken.token == confirm_request.token
-    )
-    result = await db.execute(stmt)
-    token_obj = result.scalar_one_or_none()
-    
-    if not token_obj or token_obj.expires_at < datetime.utcnow():
-        return error_response(code="INVALID_TOKEN", message="Invalid or expired token", status_code=401)
-
-    user.hashed_password = get_password_hash(confirm_request.new_password)
-    await db.delete(token_obj)
-    await db.commit()
-
-    pn_logger.info("Password reset successfully via token.")
-    return success_response(message="Password has been reset successfully")
+@router.post("/confirm-password-reset", include_in_schema=False)
+async def confirm_password_reset():
+    """Fail closed until a verified, durable reset delivery and redemption flow exists."""
+    return _retired_simulated_password_reset()
 
 @router.post("/enable-2fa")
 async def enable_2fa(

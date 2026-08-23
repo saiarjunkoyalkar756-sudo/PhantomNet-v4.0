@@ -8,15 +8,13 @@ import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import api from '@/services/api';
 
 const MotionDiv = motion.div;
 
 const registerSchema = z.object({
-  username: z.string().email({ message: 'Invalid email address.' }), // Using email as username
+  username: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
-  role: z.enum(['admin', 'user']),
 });
 
 const RegisterPage = () => {
@@ -28,7 +26,6 @@ const RegisterPage = () => {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(registerSchema),
@@ -38,7 +35,7 @@ const RegisterPage = () => {
   const onSubmit = async (data) => {
     setApiError(null);
     try {
-      await api.post('/api/auth/register', { username: data.username, password: data.password, role: data.role });
+      await api.post('/api/auth/register', { username: data.username, password: data.password });
       setRegistrationSuccess(true);
       // Optionally, automatically log in or redirect after a short delay
       setTimeout(() => navigate('/login'), 2000);
@@ -104,18 +101,9 @@ const RegisterPage = () => {
             </button>
             {errors.password && <p className="text-destructive text-sm mt-1">{errors.password.message}</p>}
           </div>
-          <div>
-            <Label htmlFor="role">Role</Label>
-            <Select onValueChange={(value) => control.setValue('role', value)} defaultValue="user">
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Self-registration creates a standard user account. Privileged access must be provisioned through a governed administrator workflow.
+          </p>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Register'}
           </Button>

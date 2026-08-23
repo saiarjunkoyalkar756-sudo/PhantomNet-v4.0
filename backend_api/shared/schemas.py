@@ -16,7 +16,6 @@ class UserBase(StrictBaseModel):
 
 class UserCreate(UserBase):
     password: str
-    role: Optional[str] = "user"
 
 
 class UserInDB(UserBase):

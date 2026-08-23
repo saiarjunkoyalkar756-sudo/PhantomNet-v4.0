@@ -99,23 +99,43 @@ def register_test_admin(client, test_admin_data):
     return admin_user
 
 
-def test_register_user(client, test_user_data):
+def test_register_user_creates_only_a_standard_user_and_returns_a_session_backed_token(client, test_user_data):
     response = client.post(
         "/api/auth/register",
-        json={"username": test_user_data["username"], "password": test_user_data["password"], "role": test_user_data["role"]},
+        json={"username": test_user_data["username"], "password": test_user_data["password"]},
     )
     assert response.status_code == 200
     data = response.json()["data"]
     assert data["user"]["username"] == test_user_data["username"]
     assert "access_token" in data
     assert data["token_type"] == "bearer"
-    assert data["user"]["role"] == test_user_data["role"]
+    assert data["user"]["role"] == "user"
+
+    authenticated = client.get(
+        "/api/auth/users/me",
+        headers={"Authorization": f"Bearer {data['access_token']}"},
+    )
+    assert authenticated.status_code == 200
+    assert authenticated.json()["data"]["username"] == test_user_data["username"]
+
+
+def test_register_user_rejects_caller_supplied_privileged_role(client, test_user_data):
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": test_user_data["username"],
+            "password": test_user_data["password"],
+            "role": "admin",
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_register_existing_user(client, register_test_user, test_user_data):
     response = client.post(
         "/api/auth/register",
-        json={"username": test_user_data["username"], "password": test_user_data["password"], "role": test_user_data["role"]},
+        json={"username": test_user_data["username"], "password": test_user_data["password"]},
     )
     assert response.status_code == 400
     assert response.json()["error"]["message"] == "Username already registered"
