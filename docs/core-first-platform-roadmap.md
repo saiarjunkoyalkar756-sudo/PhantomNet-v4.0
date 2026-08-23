@@ -128,6 +128,12 @@ The legacy honeypot service exposed unauthenticated routes that could create and
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not implement a governed replacement honeypot deployment, validate safe listener isolation, capture real attacker interaction, forward telemetry, or establish any external-lab honeypot proof.
 
+## Completed bounded increment: legacy microsegmentation retirement
+
+The legacy microsegmentation service exposed unauthenticated fixture network segments, violations, threats, graph topology, and a non-governed segment-creation route. It now declares no mandatory upstream dependency and returns `410 LEGACY_MICROSEGMENTATION_API_RETIRED` for its former `/api/v1` surface. The entry point no longer initializes a Kafka consumer or in-memory topology graph.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not implement a governed tenant-safe microsegmentation replacement, validate live broker ingestion, prove topology accuracy, execute a network policy, or provide Docker-host or external enforcement evidence.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

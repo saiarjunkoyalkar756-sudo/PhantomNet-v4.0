@@ -1,51 +1,32 @@
+import json
+
+import httpx
 import pytest
 
 from backend_api.microsegmentation_service import main as microsegmentation
 
 
 @pytest.mark.asyncio
-async def test_get_network_segments_uses_standard_success_envelope():
-    response = await microsegmentation.get_network_segments()
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        ("get", "/api/v1/network/segmentation"),
+        ("post", "/api/v1/network/segmentation"),
+        ("get", "/api/v1/network/topology"),
+        ("get", "/api/v1/network/violations"),
+        ("get", "/api/v1/network/threats"),
+    ],
+)
+async def test_legacy_microsegmentation_routes_are_explicitly_retired(method: str, path: str):
+    transport = httpx.ASGITransport(app=microsegmentation.app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://legacy-microsegmentation.test") as client:
+        response = await client.request(method.upper(), path, json={})
 
-    assert response["success"] is True
-    assert response["error"] is None
-    assert response["data"] == [
-        {"id": "1", "name": "HR", "subnets": ["10.0.1.0/24"]},
-        {"id": "2", "name": "Finance", "subnets": ["10.0.2.0/24"]},
-        {"id": "3", "name": "Engineering", "subnets": ["10.0.3.0/24"]},
-    ]
-
-
-@pytest.mark.asyncio
-async def test_create_network_segment_returns_validated_segment_in_envelope():
-    segment = microsegmentation.NetworkSegment(
-        id="4", name="Marketing", subnets=["10.0.4.0/24"]
-    )
-
-    response = await microsegmentation.create_network_segment(segment)
-
-    assert response["success"] is True
-    assert response["data"] == segment
+    assert response.status_code == 410
+    assert json.loads(response.content)["error"]["code"] == "LEGACY_MICROSEGMENTATION_API_RETIRED"
 
 
-@pytest.mark.asyncio
-async def test_network_topology_reflects_in_memory_graph_without_broker_access():
-    microsegmentation.network_graph.clear()
-    microsegmentation.network_graph.add_edge("10.0.1.10", "10.0.2.15")
-
-    response = await microsegmentation.get_network_topology()
-
-    assert response["success"] is True
-    assert {node["id"] for node in response["data"]["nodes"]} == {"10.0.1.10", "10.0.2.15"}
-    assert response["data"]["links"] == [{"source": "10.0.1.10", "target": "10.0.2.15"}]
-
-
-@pytest.mark.asyncio
-async def test_network_threats_and_violations_are_enveloped():
-    violations = await microsegmentation.get_segmentation_violations()
-    threats = await microsegmentation.get_network_threats()
-
-    assert violations["success"] is True
-    assert violations["data"][0]["source_ip"] == "10.0.1.10"
-    assert threats["success"] is True
-    assert threats["data"][0]["type"] == "Port Scan"
+def test_legacy_microsegmentation_has_no_live_graph_or_broker_state():
+    assert microsegmentation.app.state.required_dependencies == ()
+    assert not hasattr(microsegmentation, "network_graph")
+    assert not hasattr(microsegmentation, "kafka_consumer_thread")
