@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from backend_api.core.response import success_response
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
+from phantomnet_core.command_signing import COMMAND_SIGNATURE_ALGORITHM, sign_command
 
 
 router = APIRouter(prefix="/api/v1/agents", tags=["Agent Commands"])
@@ -28,6 +29,7 @@ KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "redpanda:29
 AGENT_COMMANDS_TOPIC = "agent-commands"
 AUDIT_EVENTS_TOPIC = "audit-events"
 AUDIT_PUBLISH_TIMEOUT_SECONDS = 5
+COMMAND_SIGNING_PRIVATE_KEY_ENV = "PHANTOMNET_AGENT_COMMAND_SIGNING_PRIVATE_KEY"
 
 producer: KafkaProducer | None = None
 
@@ -78,6 +80,19 @@ def _command_data(
     }
 
 
+def _command_signing_private_key() -> str:
+    """Return deployment-managed signing material or fail closed before audit/dispatch."""
+    private_key_pem = os.environ.get(COMMAND_SIGNING_PRIVATE_KEY_ENV)
+    if not private_key_pem:
+        raise RuntimeError("Agent command signing key is not configured.")
+    return private_key_pem.replace("\\n", "\n")
+
+
+def _sign_command_envelope(command_data: Dict[str, Any]) -> None:
+    command_data["signature_algorithm"] = COMMAND_SIGNATURE_ALGORITHM
+    command_data["signature"] = sign_command(command_data, _command_signing_private_key())
+
+
 def _audit_event(command_data: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "event_type": "agent.command.requested",
@@ -104,6 +119,7 @@ def _publish_command(producer_client: KafkaProducer, command_data: Dict[str, Any
 
 async def _dispatch_authorized_command(command_data: Dict[str, Any]) -> None:
     try:
+        _sign_command_envelope(command_data)
         producer_client = get_kafka_producer()
         _publish_required_audit(producer_client, command_data)
         _publish_command(producer_client, command_data)
@@ -112,7 +128,7 @@ async def _dispatch_authorized_command(command_data: Dict[str, Any]) -> None:
             "Command dispatch failed; the command was not accepted",
             task_id=command_data["task_id"],
             target_agent_id=command_data["target_agent_id"],
-            error=str(exc),
+            error_type=type(exc).__name__,
         )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

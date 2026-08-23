@@ -96,6 +96,16 @@ The approved control surface remains the existing tenant-scoped governed contain
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not migrate legacy playbook records, prove real containment execution, validate a Docker-host deployment, or validate an external Wazuh manager, endpoint, cloud account, or response adapter. The retirement does not alter the separate governed containment approval protocol.
 
+## Completed bounded increment: fail-closed endpoint command signing
+
+The governed agent-command producer now signs the complete canonical `phantomnet.agent-command.v1` envelope with **RSA-PSS/SHA-256** using deployment-managed `PHANTOMNET_AGENT_COMMAND_SIGNING_PRIVATE_KEY` material. Signing occurs before the established audit-first broker dispatch. Missing or invalid signing material rejects the request before either audit acceptance or command publication.
+
+The endpoint agent now preserves the complete broker envelope and requires a matching trusted public key or X.509 certificate at `PHANTOMNET_AGENT_COMMAND_TRUSTED_CERT_PATH`. It rejects missing, malformed, unsupported, altered, untrusted, or unverifiable signatures before any command executor handler is selected. The older optional signature enforcement and missing-certificate bypasses were removed. Previously tracked generated certificates and all private keys were removed from source control and must be replaced with a fresh operator-provisioned trust chain.
+
+The source-controlled protocol and controlled-device evidence requirements are detailed in `docs/ENDPOINT_COMMAND_SIGNING_PROVISIONING.md`. Focused regressions prove canonical signature validation, tamper rejection, missing-key non-publication, audit-before-dispatch for a valid signed command, and removal of the unsigned fallback.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove agent packaging, runtime secret injection, OS trust-store behavior, broker ACLs, certificate rotation, command delivery, live device execution, or containment effectiveness. Those claims require the controlled-device validation gate with fresh non-repository credentials.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

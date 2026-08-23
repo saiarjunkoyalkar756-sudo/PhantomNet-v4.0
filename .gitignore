@@ -47,7 +47,11 @@ dashboard_frontend/node_modules/
 
 # Agent certificates (generated at runtime - never commit private keys)
 phantomnet_agent/certs/*.pem
+phantomnet_agent/certs/*.crt
 phantomnet_agent/certs/*.key
+!phantomnet_agent/certs/
+!phantomnet_agent/certs/README.md
+!phantomnet_agent/certs/generate_certs.py
 
 # snapshot_recovery module runtime artifacts
 snapshots/

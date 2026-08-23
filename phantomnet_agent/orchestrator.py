@@ -6,6 +6,7 @@ import httpx # For fan-out to backend API
 import os # For Kafka config
 from kafka import KafkaConsumer # Import KafkaConsumer
 from datetime import datetime # For NormalizedEvent timestamp
+from pathlib import Path
 from phantomnet_agent.networking.network_sensor import NetworkSensor # Import the new NetworkSensor
 
 # Corrected imports based on local file structure
@@ -17,6 +18,7 @@ from phantomnet_agent.api.log_streaming_api import manager as log_streaming_mana
 from phantomnet_agent.bus.base import Transport # Assuming a transport mechanism to send to backend
 from phantomnet_agent.bus.http_bus import HttpTransport # Required for type checking in _fan_out_event
 from phantomnet_agent.agent import AgentExecutor # Import AgentExecutor
+from phantomnet_core.command_signing import COMMAND_SIGNATURE_ALGORITHM, verify_command
 from pydantic import BaseModel, Field # For NormalizedEvent model
 
 logger = logging.getLogger("phantomnet_agent.orchestrator")
@@ -65,6 +67,9 @@ class Orchestrator:
         self.AGENT_COMMANDS_TOPIC = 'agent-commands'
         self.COMMAND_CONSUMER_GROUP = f'agent-{get_agent_state().agent_id}-commands'
         self._kafka_command_consumer: Optional[KafkaConsumer] = None # Will be initialized in start_consumer
+        self.command_signing_certificate_path = os.environ.get(
+            "PHANTOMNET_AGENT_COMMAND_TRUSTED_CERT_PATH"
+        )
 
         self.logger.info("PhantomNet Orchestrator Initialized as Event Processing Graph.")
 
@@ -123,6 +128,9 @@ class Orchestrator:
                     "payload": command_data.get("arguments", {}),
                     "issued_by": command_data.get("issued_by"),
                     "issued_at": command_data.get("issued_at"),
+                    "signature": command_data.get("signature"),
+                    "signature_algorithm": command_data.get("signature_algorithm"),
+                    "command_envelope": command_data,
                     "source": "kafka_command_bus"
                 })
             else:
@@ -159,48 +167,30 @@ class Orchestrator:
                     command_payload = normalized_event.payload.get("payload", {})
                     command_id = normalized_event.payload.get("command_id")
 
-                    # Command signature verification & tamper detection (Phase 5, point 8)
+                    # Every endpoint command is signed over its complete canonical broker envelope.
                     signature = normalized_event.payload.get("signature")
-                    from pathlib import Path
-                    ca_cert_path = Path(__file__).parent / "certs" / "ca.crt"
-                    
-                    if not signature:
-                        if os.getenv("PHANTOMNET_ENFORCE_SIGNATURES", "false").lower() == "true":
-                            self.logger.error(f"Command {command_id} rejected: Missing cryptographic signature.")
-                            await self.agent_executor._stream_response_to_ui(command_id, "failed", "Tampered or unsigned command rejected.")
-                            continue
-                        else:
-                            self.logger.warning(f"Command {command_id} is missing signature. Proceeding as PHANTOMNET_ENFORCE_SIGNATURES is false.")
-                    else:
-                        from cryptography.hazmat.primitives.asymmetric import padding
-                        from cryptography.hazmat.primitives import hashes
-                        from cryptography.exceptions import InvalidSignature
-                        from cryptography import x509
-                        
-                        try:
-                            if ca_cert_path.exists():
-                                with open(ca_cert_path, "rb") as f:
-                                    ca_cert_data = f.read()
-                                cert = x509.load_pem_x509_certificate(ca_cert_data)
-                                public_key = cert.public_key()
-                                
-                                verify_payload = f"{command_type}:{command_id}:{json.dumps(command_payload, sort_keys=True)}"
-                                
-                                public_key.verify(
-                                    bytes.fromhex(signature),
-                                    verify_payload.encode('utf-8'),
-                                    padding.PKCS1v15(),
-                                    hashes.SHA256()
-                                )
-                                self.logger.info(f"Command {command_id} signature verified successfully.")
-                            else:
-                                self.logger.warning(f"CA certificate not found at {ca_cert_path}. Skipping signature verification fallback.")
-                        except InvalidSignature:
-                            self.logger.critical(f"TAMPER DETECTION TRIGGERED! Command {command_id} signature verification failed!")
-                            await self.agent_executor._stream_response_to_ui(command_id, "failed", "Command validation failed: Signature mismatch (Tampered).")
-                            continue
-                        except Exception as e:
-                            self.logger.warning(f"Command signature check warning: {e}")
+                    signature_algorithm = normalized_event.payload.get("signature_algorithm")
+                    command_envelope = normalized_event.payload.get("command_envelope")
+                    try:
+                        if signature_algorithm != COMMAND_SIGNATURE_ALGORITHM:
+                            raise ValueError("Unsupported or missing command signature algorithm.")
+                        if not self.command_signing_certificate_path:
+                            raise FileNotFoundError("Trusted command-signing certificate path is not configured.")
+                        certificate_path = Path(self.command_signing_certificate_path)
+                        if not certificate_path.is_file():
+                            raise FileNotFoundError("Trusted command-signing certificate is unavailable.")
+                        if not isinstance(command_envelope, dict):
+                            raise ValueError("Command envelope is unavailable.")
+                        verify_command(command_envelope, signature, certificate_path.read_bytes())
+                        self.logger.info(f"Command {command_id} signature verified successfully.")
+                    except Exception as exc:
+                        self.logger.error(
+                            f"Command {command_id} rejected: signature validation failed ({type(exc).__name__})."
+                        )
+                        await self.agent_executor._stream_response_to_ui(
+                            command_id, "failed", "Command validation failed; command rejected."
+                        )
+                        continue
 
                     if command_type == "execute_os_command":
                         await self.agent_executor.execute_os_command(command_id, cmd=command_payload.get("cmd"), shell=command_payload.get("shell", False))
