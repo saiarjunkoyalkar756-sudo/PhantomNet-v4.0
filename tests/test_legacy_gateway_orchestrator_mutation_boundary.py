@@ -12,6 +12,7 @@ from backend_api.gateway_service.main import app
 ROOT = Path(__file__).resolve().parents[1]
 ORCHESTRATOR_SOURCE = ROOT / "backend_api/gateway_service/orchestrator_api.py"
 RETIRED_CODE = "LEGACY_GATEWAY_ORCHESTRATOR_MUTATION_RETIRED"
+BLOCKCHAIN_RETIRED_CODE = "LEGACY_GATEWAY_BLOCKCHAIN_API_RETIRED"
 
 
 def _client_with_gateway_middleware_bypassed() -> TestClient:
@@ -29,13 +30,20 @@ def _client_with_gateway_middleware_bypassed() -> TestClient:
     return client
 
 
-def test_orchestrator_source_does_not_retain_legacy_mutation_components():
+def test_orchestrator_source_does_not_retain_legacy_mutation_or_blockchain_components():
     source = ORCHESTRATOR_SOURCE.read_text(encoding="utf-8")
 
-    assert "CommandDispatcher" not in source
-    assert "httpx.AsyncClient" not in source
-    assert "TELEMETRY_INGESTOR_URL" not in source
-    assert ".mine_block(" not in source
+    for unsafe_component in (
+        "CommandDispatcher",
+        "httpx.AsyncClient",
+        "TELEMETRY_INGESTOR_URL",
+        ".mine_block(",
+        "from backend_api.blockchain_service.blockchain import Blockchain",
+        "from backend_api.shared.database import get_db, Block, Transaction, User",
+        "is_chain_valid()",
+        "block.to_dict()",
+    ):
+        assert unsafe_component not in source
     ast.parse(source, filename=str(ORCHESTRATOR_SOURCE))
 
 
@@ -53,3 +61,18 @@ def test_legacy_gateway_orchestrator_mutations_fail_closed_at_the_asgi_boundary(
 
     assert [response.status_code for response in responses] == [410, 410, 410]
     assert all(response.json()["error"]["code"] == RETIRED_CODE for response in responses)
+
+
+def test_legacy_gateway_blockchain_routes_fail_closed_at_the_asgi_boundary():
+    client = _client_with_gateway_middleware_bypassed()
+    try:
+        responses = [
+            client.get("/orchestrator/blockchain"),
+            client.post("/orchestrator/blockchain/verify"),
+        ]
+    finally:
+        client._phantomnet_rate_limit_patch.stop()  # type: ignore[attr-defined]
+        client._phantomnet_session_patch.stop()  # type: ignore[attr-defined]
+
+    assert [response.status_code for response in responses] == [410, 410]
+    assert all(response.json()["error"]["code"] == BLOCKCHAIN_RETIRED_CODE for response in responses)

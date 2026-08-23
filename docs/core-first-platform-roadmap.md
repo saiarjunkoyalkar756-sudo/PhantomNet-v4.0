@@ -322,6 +322,12 @@ The active self-hosted gateway no longer exposes its legacy `/admin` control sur
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed administrative or network-control replacement, validate tenant isolation, administrator identity, capability policy, approval/audit durability, enforcement, verification, rollback, user-directory privacy, database durability, Docker-host operation, or containment efficacy.
 
+## Completed bounded increment: legacy gateway blockchain read/verify retirement
+
+The active self-hosted gateway no longer exposes its legacy global blockchain read or conceptual verification routes. The former chain endpoint returned every persisted block and transaction without a tenant boundary, while the administrative verification endpoint treated a process-local, simplified link check as an audit-integrity result. Both now return `410 LEGACY_GATEWAY_BLOCKCHAIN_API_RETIRED`; the router no longer imports blockchain, block, transaction, database, user, authentication, or success-response components for these paths. Existing gateway mutation-retirement routes retain their distinct contract, and the unrelated threat-analysis compatibility endpoint remains explicitly disabled.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed audit-evidence replacement or validate tenant isolation, provenance, HMAC audit-chain integrity, cryptographic notarization, immutable-ledger semantics, blockchain correctness, administrator authorization, database durability, Docker-host operation, or compliance/security efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

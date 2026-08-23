@@ -1,8 +1,6 @@
-from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from fastapi.responses import JSONResponse
 
 import pytest
-from fastapi.responses import JSONResponse
 
 from backend_api.gateway_service.orchestrator_api import (
     ThreatData,
@@ -22,28 +20,18 @@ async def test_threat_analysis_endpoint_is_explicitly_disabled():
 
 
 @pytest.mark.asyncio
-async def test_blockchain_data_returns_current_orm_blocks_in_success_envelope():
-    block = SimpleNamespace(to_dict=lambda: {"index": 1, "block_hash": "genesis"})
-    db = SimpleNamespace(
-        execute=AsyncMock(
-            return_value=SimpleNamespace(
-                scalars=lambda: SimpleNamespace(all=lambda: [block])
-            )
-        )
-    )
-    user = SimpleNamespace(username="auditor")
+async def test_legacy_blockchain_data_route_is_explicitly_retired():
+    response = await get_blockchain_data()
 
-    response = await get_blockchain_data(current_user=user, db=db)
-
-    assert response["success"] is True
-    assert response["data"] == {"chain": [{"index": 1, "block_hash": "genesis"}]}
+    assert isinstance(response, JSONResponse)
+    assert response.status_code == 410
+    assert b"LEGACY_GATEWAY_BLOCKCHAIN_API_RETIRED" in response.body
 
 
 @pytest.mark.asyncio
-async def test_blockchain_integrity_endpoint_returns_verified_status():
-    blockchain = SimpleNamespace(is_chain_valid=AsyncMock(return_value=True))
+async def test_legacy_blockchain_verification_route_is_explicitly_retired():
+    response = await verify_blockchain_integrity()
 
-    response = await verify_blockchain_integrity(blockchain=blockchain)
-
-    assert response["success"] is True
-    assert response["data"]["message"] == "Blockchain integrity verified: All blocks are valid."
+    assert isinstance(response, JSONResponse)
+    assert response.status_code == 410
+    assert b"LEGACY_GATEWAY_BLOCKCHAIN_API_RETIRED" in response.body
