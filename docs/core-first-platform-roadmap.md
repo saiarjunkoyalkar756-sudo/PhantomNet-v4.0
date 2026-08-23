@@ -382,6 +382,12 @@ The dashboard marketplace no longer presents fixture XDR, honeypot, AI, or block
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide extension sourcing, signature verification, authorization, tenant isolation, permission review, activation, runtime isolation, rollback, marketplace provider authorization, Docker-host operation, or extension-security efficacy.
 
+## Completed bounded increment: dashboard compliance-reporting truthfulness boundary
+
+The dashboard compliance-reporting page no longer generates, lists, inspects, scores, or downloads retired report artifacts, and it no longer presents control findings or compliance semantics as live evidence. It now states that the legacy reporting control is retired pending a governed compliance-evidence integration. A future workflow must establish tenant-scoped evidence, policy-controlled report generation, durable audit records, authorized artifact access, retention controls, and independently validated control mappings before it is exposed as operational capability. Regression coverage prevents retired reporting APIs, audit scores/findings, and PDF-download controls from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide compliance report generation, report authorization, tenant isolation, evidence provenance, control-evaluation completeness, artifact retention, audit durability, PDF integrity, independent attestation, Docker-host operation, or compliance efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

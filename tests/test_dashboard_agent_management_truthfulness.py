@@ -14,6 +14,7 @@ VULNERABILITY_SCANNER_PAGE = ROOT / "dashboard_frontend/src/pages/VulnerabilityS
 VULNERABILITY_MANAGEMENT_PAGE = ROOT / "dashboard_frontend/src/pages/VulnerabilityManagementPage.jsx"
 MARKETPLACE_PAGE = ROOT / "dashboard_frontend/src/pages/Marketplace.jsx"
 MARKETPLACE_GRID = ROOT / "dashboard_frontend/src/features/marketplace/components/MarketplaceGrid.jsx"
+COMPLIANCE_REPORTING_PAGE = ROOT / "dashboard_frontend/src/pages/ComplianceReportingPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -179,3 +180,24 @@ def test_marketplace_does_not_retain_fixture_plugins_or_simulated_extension_life
 
     assert "Governed Extension Lifecycle Pending" in grid_source
     assert "trusted provenance, tenant-scoped configuration" in grid_source
+
+
+def test_compliance_reporting_page_does_not_retain_retired_artifact_or_audit_controls():
+    source = COMPLIANCE_REPORTING_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "/compliance-reporting/reports",
+        "fetchReports",
+        "handleGenerateReport",
+        "handleViewReportDetails",
+        "handleDownloadPDF",
+        "Generate PDF Report",
+        "Recent Reports",
+        "Download PDF Artifact",
+        "Compliance Score",
+        "Security Controls Verified",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Compliance Evidence Integration Pending" in source
+    assert "tenant-scoped evidence provenance, report authorization" in source
