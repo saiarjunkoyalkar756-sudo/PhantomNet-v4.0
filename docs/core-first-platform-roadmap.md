@@ -268,6 +268,12 @@ The legacy AI agent orchestrator accepted unauthenticated natural-language task 
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed advisory replacement through this service, validate model behavior, prompt handling, tenant isolation, evidence provenance, policy evaluation, provider authorization, analyst oversight, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
 
+## Completed bounded increment: legacy chatbot retirement
+
+The legacy chatbot accepted sensitive attack payloads and queries, generated signature, attribution, score, and countermeasure output, and logged the free-text query despite lacking evidence linkage, tenancy-aware data selection, policy gating, or a non-execution guarantee. It now declares no mandatory dependency and returns `410 LEGACY_CHATBOT_API_RETIRED` for its former chat route. The entry point no longer imports the legacy role-auth, database, prompt, signature, attribution, scoring, or countermeasure components.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed advisory replacement through this service, validate prompt handling, privacy, tenant isolation, evidence provenance, signature or attribution correctness, scoring quality, policy evaluation, provider authorization, analyst oversight, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
