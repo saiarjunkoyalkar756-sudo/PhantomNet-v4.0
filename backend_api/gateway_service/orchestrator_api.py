@@ -1,8 +1,6 @@
 # backend_api/gateway_service/orchestrator_api.py
-import os
 import json
 import hashlib
-import httpx
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -14,15 +12,10 @@ from sqlalchemy import select
 from backend_api.shared.database import get_db, Block, Transaction, User
 from backend_api.blockchain_service.blockchain import Blockchain
 from backend_api.iam_service.auth_methods import UserRole, has_role, get_current_user
-from backend_api.shared.schemas import TransactionData, HoneypotControl, SimulateAttack
-from backend_api.shared.command_dispatcher import CommandDispatcher
 from backend_api.core.logging import logger as pn_logger
 from backend_api.core.response import success_response, error_response
 
 router = APIRouter(prefix="/orchestrator", tags=["Orchestrator"])
-
-# Initialize the CommandDispatcher
-command_dispatcher = CommandDispatcher()
 
 async def get_blockchain(db: AsyncSession = Depends(get_db)) -> Blockchain:
     return Blockchain(db)
@@ -62,87 +55,42 @@ async def verify_blockchain_integrity(blockchain: Blockchain = Depends(get_block
         pn_logger.warning("Blockchain integrity compromised: Tampering detected.")
         return error_response(code="INTEGRITY_COMPROMISED", message="Blockchain integrity compromised: Tampering detected.", status_code=400)
 
-@router.post("/blockchain/add_transaction", dependencies=[Depends(has_role([UserRole.ADMIN]))])
-async def add_blockchain_transaction(
-    transaction: TransactionData,
-    blockchain: Blockchain = Depends(get_blockchain),
-    db: AsyncSession = Depends(get_db)
-):
-    """Adds a transaction and mines a new block asynchronously."""
-    try:
-        # Add a new transaction to the blockchain (now async)
-        await blockchain.new_transaction(
-            sender="honeypot",
-            recipient=transaction.ip,
-            amount=1.0,
-            data={"raw_data": transaction.data}
-        )
+def _retired_legacy_orchestrator_mutation():
+    return error_response(
+        code="LEGACY_GATEWAY_ORCHESTRATOR_MUTATION_RETIRED",
+        message=(
+            "This legacy gateway orchestrator mutation route is retired. Use governed, "
+            "tenant-scoped workflows with required approval and auditable evidence."
+        ),
+        status_code=410,
+    )
 
-        # Mine a new block (now async and handles persistence internally)
-        # We simulate a proof-of-work increment based on the last block
-        last_block = await blockchain.last_block
-        proof = (last_block.proof + 1) if last_block else 100
-        
-        new_block_obj = await blockchain.mine_block(proof)
-        
-        # mine_block calls db.add() and db.flush(), but we need to commit
-        await db.commit()
-        await db.refresh(new_block_obj)
 
-        pn_logger.info(f"Transaction added and block mined asynchronously: {new_block_obj.index}")
-        return success_response(data={
-            "message": "Transaction added and block mined (Async)",
-            "block_index": new_block_obj.index
-        })
-    except Exception as e:
-        await db.rollback()
-        pn_logger.error(f"Error in add_blockchain_transaction: {str(e)}", exc_info=True)
-        return error_response(code="INTERNAL_ERROR", message=f"Failed to process transaction: {str(e)}", status_code=500)
+@router.api_route(
+    "/blockchain/add_transaction",
+    methods=["POST"],
+    include_in_schema=False,
+)
+async def retired_blockchain_transaction_mutation():
+    """Fail closed instead of mining caller-supplied transactions through the gateway."""
+    return _retired_legacy_orchestrator_mutation()
 
-@router.post("/honeypot/control", dependencies=[Depends(has_role([UserRole.ADMIN]))])
-async def honeypot_control(
-    control: HoneypotControl, 
-    current_user: User = Depends(get_current_user)
-):
-    """Controls the honeypot status."""
-    if control.action not in ["start", "stop"]:
-        return error_response(code="INVALID_ACTION", message="Action must be 'start' or 'stop'.", status_code=400)
 
-    pn_logger.info(f"User {current_user.username} {control.action}ing honeypot on port {control.port}")
-    return success_response(data={"message": f"Honeypot {control.action}ed on port {control.port}"})
+@router.api_route(
+    "/honeypot/control",
+    methods=["POST"],
+    include_in_schema=False,
+)
+async def retired_honeypot_control_mutation():
+    """Fail closed instead of exposing gateway-controlled honeypot lifecycle actions."""
+    return _retired_legacy_orchestrator_mutation()
 
-@router.post("/honeypot/simulate_attack", dependencies=[Depends(has_role([UserRole.ADMIN, UserRole.ANALYST]))])
-async def simulate_attack(
-    attack: SimulateAttack, 
-    current_user: User = Depends(get_current_user)
-):
-    """Simulates an attack against the honeypot for testing."""
-    pn_logger.info(f"User {current_user.username} simulating attack from {attack.ip}:{attack.port}")
-    
-    # In a real scenario, this would send data to the collector service
-    try:
-        async with httpx.AsyncClient() as client:
-            # We point to the local ingestor for this simulation
-            ingest_url = os.getenv("TELEMETRY_INGESTOR_URL", "http://telemetry-ingestor:8000/ingest")
-            response = await client.post(
-                ingest_url,
-                json={
-                    "source": "honeypot_simulation",
-                    "type": "malicious_scan",
-                    "data": {
-                        "ip": attack.ip,
-                        "port": attack.port,
-                        "raw_data": attack.data
-                    }
-                },
-                timeout=5.0
-            )
-            response.raise_for_status()
-            pn_logger.info(f"Simulated attack data sent to ingestor by {current_user.username}")
-            return success_response(data={
-                "message": "Simulated attack data sent to ingestor",
-                "ingestor_response": response.json()
-            })
-    except Exception as e:
-        pn_logger.error(f"Failed to send simulated attack: {str(e)}")
-        return error_response(code="INGESTION_FAILED", message=f"Failed to send simulated attack: {str(e)}", status_code=500)
+
+@router.api_route(
+    "/honeypot/simulate_attack",
+    methods=["POST"],
+    include_in_schema=False,
+)
+async def retired_honeypot_attack_simulation_mutation():
+    """Fail closed instead of forwarding caller-defined simulated attacks to ingestion."""
+    return _retired_legacy_orchestrator_mutation()

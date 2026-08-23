@@ -298,6 +298,12 @@ The legacy SOAR engine exposed unscoped playbook listing and loading, direct pla
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate governed containment execution, approval identity, HMAC key custody, audit durability, adapter verification, rollback behavior, Wazuh receipt authentication, database recovery, Docker-host operation, or containment efficacy. The retained governed path remains approval-bound and cannot justify claims of automatic high-impact enforcement.
 
+## Completed bounded increment: legacy gateway orchestrator-mutation retirement
+
+The active self-hosted gateway’s mounted orchestrator router no longer accepts caller-supplied blockchain transaction mining, honeypot lifecycle control, or simulated attack forwarding to the telemetry ingestor. These routes now return `410 LEGACY_GATEWAY_ORCHESTRATOR_MUTATION_RETIRED`; the router no longer imports the command dispatcher or schemas for these operations, initializes an HTTP client, reads a telemetry-ingestor URL, or invokes block mining. Authenticated blockchain read and verification behavior was deliberately left for separate, narrower audit rather than being represented as a containment mechanism.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate blockchain integrity, audit notarization, honeypot isolation, authorized simulation, telemetry ingestion, tenant isolation, control-plane authorization, Docker-host operation, or production gateway security efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
