@@ -4,16 +4,25 @@ from fastapi import APIRouter, FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
-from .database import get_db
+from .database import get_db, initialize_database
 from . import crud
 import datetime
+from loguru import logger
 
 router = APIRouter()
+
+
+async def audit_log_collector_startup(app: FastAPI) -> None:
+    """Initialize the collector-owned audit schema before accepting persisted audit records."""
+    initialize_database()
+
 
 app = create_phantom_service(
     name="Audit Log Collector",
     description="Centralized audit log collection and indexing service.",
-    version="1.0.0"
+    version="1.0.0",
+    custom_startup=audit_log_collector_startup,
+    required_dependencies=("database",),
 )
 app.include_router(router)
 
@@ -38,21 +47,32 @@ class AuditLogResponse(AuditLogBase):
     id: int
     ingested_at: datetime.datetime
 
+async def _mirror_alert_to_optional_ledger(audit_log: AuditLogCreate) -> None:
+    """Mirror an already-persisted alert audit record only when the optional ledger is available."""
+    if "alert" not in audit_log.action.lower():
+        return
+    try:
+        from blockchain_layer.blockchain_client import submit_alert_to_ledger
+    except ModuleNotFoundError:
+        logger.info("Optional audit ledger mirror is not configured; persisted audit ingestion continues.")
+        return
+
+    metadata = audit_log.metadata or {}
+    try:
+        await submit_alert_to_ledger(
+            alert_id=audit_log.event_id or "UNSPECIFIED-AUDIT-EVENT",
+            alert_name=audit_log.raw_log_data,
+            severity=metadata.get("severity", "high"),
+            event_data=metadata,
+        )
+    except Exception:
+        logger.exception("Optional audit ledger mirror failed after durable audit persistence.")
+
+
 @router.post("/ingest/", status_code=status.HTTP_201_CREATED)
 async def ingest_single_audit_log(audit_log: AuditLogCreate, db: Session = Depends(get_db)):
     db_audit = crud.create_audit_log(db=db, **audit_log.model_dump())
-    try:
-        from blockchain_layer.blockchain_client import submit_alert_to_ledger
-        metadata = audit_log.metadata or {}
-        if "alert" in audit_log.action.lower():
-            await submit_alert_to_ledger(
-                alert_id=audit_log.event_id or "MOCK-ALERT-ID",
-                alert_name=audit_log.raw_log_data,
-                severity=metadata.get("severity", "high"),
-                event_data=metadata
-            )
-    except Exception as e:
-        pass
+    await _mirror_alert_to_optional_ledger(audit_log)
     return success_response(data=db_audit)
 
 @router.post("/ingest/batch", status_code=status.HTTP_201_CREATED)
@@ -61,18 +81,7 @@ async def ingest_batch_audit_logs(audit_logs: List[AuditLogCreate], db: Session 
     for audit_log in audit_logs:
         db_audit = crud.create_audit_log(db=db, **audit_log.model_dump())
         created_logs.append(db_audit)
-        try:
-            from blockchain_layer.blockchain_client import submit_alert_to_ledger
-            metadata = audit_log.metadata or {}
-            if "alert" in audit_log.action.lower():
-                await submit_alert_to_ledger(
-                    alert_id=audit_log.event_id or "MOCK-ALERT-ID",
-                    alert_name=audit_log.raw_log_data,
-                    severity=metadata.get("severity", "high"),
-                    event_data=metadata
-                )
-        except Exception as e:
-            pass
+        await _mirror_alert_to_optional_ledger(audit_log)
     return success_response(data=created_logs)
 
 @router.get("/logs/")

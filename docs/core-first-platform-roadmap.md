@@ -48,6 +48,14 @@ The next production-readiness implementation is a source-controlled inventory of
 
 The first extension beyond the Phase 7 control plane now covers the **core telemetry-to-alert path**. Telemetry ingestion, event normalization, command dispatch, and behavioral analysis declare Kafka as their only readiness dependency; alert storage declares PostgreSQL and Kafka. These explicit contracts replace the generic database/Kafka/Redis default for those services, so `/ready` fails closed only when an actual upstream dependency is unavailable. Full service-by-service coverage remains open.
 
+## Completed bounded increment: audit-log collector persistence and observability boundary
+
+The audit-log collector now declares **PostgreSQL/database only** as its readiness dependency and uses a complete synchronous session dependency rather than an incomplete local helper. In a configured deployment, the collector resolves `AUDIT_DATABASE_URL` or `DATABASE_URL`, or derives a PostgreSQL URL from the injected database environment. The collector-owned audit table is initialized through the explicit service startup hook; isolated SQLite remains a local fallback only when no database configuration is supplied.
+
+The legacy broad development Compose service now has a bounded `/ready` healthcheck, and regression coverage verifies its dependency declaration, startup initialization call, and probe configuration. Its optional legacy ledger mirror remains non-authoritative: after the collector’s durable write returns, a missing module is logged as informational and a mirror exception is emitted through exception logging without blocking ingestion. This removes silent suppression while preserving the durable audit write path.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence only. It does not prove a live Docker healthcheck, PostgreSQL persistence, an external ledger mirror, cryptographic audit immutability, or production-operable deployment. The root Compose file remains a legacy development topology; the hardened six-service Phase 7 reference and controlled external-lab gates remain the authoritative paths for deployment proof.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
