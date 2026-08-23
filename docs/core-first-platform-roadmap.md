@@ -224,6 +224,14 @@ The legacy BAS engine accepted unauthenticated arbitrary targets and directly in
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed BAS replacement, target ownership authorization, scenario safety, isolation, accurate simulation behavior, result integrity, tenant-safe evidence storage, Docker-host operation, real-target validation, or detection/response efficacy. Controlled baseline scenarios remain no-live-target evaluation infrastructure, not a public attack surface.
 
+## Completed bounded increment: legacy playbook-flow builder retirement
+
+The legacy playbook-flow builder accepted unauthenticated workflow definitions and converted them into playbook step sequences without tenant binding, capability checks, evidence linkage, human approval, audit, verification, or rollback controls. It now declares no mandatory dependency and returns `410 LEGACY_PLAYBOOK_FLOW_BUILDER_API_RETIRED` for its former conversion route. The entry point no longer imports the flow schema or converter.
+
+The supported containment surface remains the separate governed workflow, in which high-impact action is requested, human-approved, HMAC-audited, executed through a controlled adapter, verified, and rollback-capable. This retirement does not permit automatic enforcement.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed response-workflow builder replacement, validate tenant-scoped authoring, policy enforcement, approval identity, audit-chain integrity, execution verification, rollback, Docker-host operation, or containment efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
