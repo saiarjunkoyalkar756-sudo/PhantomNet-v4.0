@@ -238,6 +238,12 @@ The legacy analyzer service exposed an unauthenticated conversational AI endpoin
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed advisory replacement through this service, validate model behavior, conversation privacy, tenant isolation, provider authorization, evaluation quality, broker behavior, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
 
+## Completed bounded increment: legacy event-stream processor retirement
+
+The legacy event-stream processor started an ungated Kafka consumer and exposed a direct database log-query API without authentication or tenant scoping. It now declares no mandatory dependency and returns `410 LEGACY_EVENT_STREAM_PROCESSOR_API_RETIRED` for its former log route. The entry point no longer imports or starts the consumer, database connection, or direct SQL query path.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed analytical-query replacement through this service, validate broker authorization, event durability, database query correctness or performance, tenant isolation in historic data, Docker-host operation, or detection efficacy. Governed canonical ingestion and tenant-scoped workflows remain separate supported paths.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

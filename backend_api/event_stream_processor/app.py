@@ -1,80 +1,29 @@
+from __future__ import annotations
+
+from backend_api.core.response import error_response
 from backend_api.shared.service_factory import create_phantom_service
-from .consumer import start_kafka_consumer
-from .database import get_db_connection
-from loguru import logger
-import asyncio
-from datetime import datetime
-from typing import Optional
-import psycopg2.extras
-from backend_api.core.response import success_response, error_response
-from fastapi import Request, FastAPI
 
-async def stream_startup(app: FastAPI):
-    # Start the Kafka consumer as a background task
-    app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
-    logger.info("Kafka consumer for Event Stream Processor started.")
-
-async def stream_shutdown(app: FastAPI):
-    if hasattr(app.state, "consumer_task"):
-        app.state.consumer_task.cancel()
-        await asyncio.gather(app.state.consumer_task, return_exceptions=True)
-        logger.info("Kafka consumer task stopped.")
 
 app = create_phantom_service(
-    name="Event Stream Processor",
-    description="Real-time event processing and archiving.",
+    name="Legacy Event Stream Processor",
+    description="Retired untenant-scoped log-query and consumer boundary; no event-data surface is exposed.",
     version="1.0.0",
-    custom_startup=stream_startup,
-    custom_shutdown=stream_shutdown
+    required_dependencies=(),
 )
 
-@app.get("/logs")
-async def get_logs(request: Request, start_time: Optional[datetime] = None, end_time: Optional[datetime] = None):
-    """
-    Retrieves logs from the database, with filtering.
-    """
-    conn = get_db_connection()
-    if conn is None:
-        return error_response(code="DATABASE_ERROR", message="Could not connect to the database.", status_code=500)
 
-    # Build WHERE clause from query parameters with strict whitelist validation
-    query_params = request.query_params
-    where_clauses = []
-    values = []
-    allowed_columns = {"id", "timestamp", "source", "event_type", "raw_event", "source_ip", "destination_ip", "protocol", "details"}
-    for key, value in query_params.items():
-        if key not in ["start_time", "end_time"]:
-            clean_key = key[:-10] if key.endswith("__contains") else key
-            if clean_key not in allowed_columns:
-                return error_response(code="VALIDATION_ERROR", message=f"Invalid query parameter: {key}", status_code=400)
-            
-            if key.endswith("__contains"):
-                where_clauses.append(f"{clean_key} LIKE %s")
-                values.append(f"%{value}%")
-            else:
-                where_clauses.append(f"{clean_key} = %s")
-                values.append(value)
-
-    if start_time:
-        where_clauses.append("timestamp >= %s")
-        values.append(start_time)
-    if end_time:
-        where_clauses.append("timestamp <= %s")
-        values.append(end_time)
-
-    where_sql = ""
-    if where_clauses:
-        where_sql = "WHERE " + " AND ".join(where_clauses)
-
-    query = f"SELECT * FROM events {where_sql} ORDER BY timestamp DESC LIMIT 100;"
-
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(query, tuple(values))
-            logs = cur.fetchall()
-            return success_response(data={"logs": logs})
-    except Exception as e:
-        logger.error(f"Error querying logs: {e}")
-        return error_response(code="QUERY_ERROR", message="Error querying logs.", status_code=500)
-    finally:
-        conn.close()
+@app.api_route(
+    "/{legacy_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    include_in_schema=False,
+)
+async def retired_legacy_event_stream_processor_api(legacy_path: str = ""):
+    """Fail closed instead of exposing direct cross-tenant event queries or starting legacy consumers."""
+    return error_response(
+        code="LEGACY_EVENT_STREAM_PROCESSOR_API_RETIRED",
+        message=(
+            "The legacy event stream processor API is retired. Use governed tenant-scoped "
+            "telemetry ingestion and analyst-query services."
+        ),
+        status_code=410,
+    )
