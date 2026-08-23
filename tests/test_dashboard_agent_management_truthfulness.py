@@ -43,6 +43,7 @@ DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/Dashboard.jsx"
 ADMIN_DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/AdminDashboard.jsx"
 TERMINAL_CHAT = ROOT / "dashboard_frontend/src/features/ai-console/components/TerminalChat.jsx"
 LEGACY_AGENT_MODAL = ROOT / "dashboard_frontend/src/features/agents/components/AgentModal.jsx"
+EVENT_STREAM_VIEWER = ROOT / "dashboard_frontend/src/pages/EventStreamViewer.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -648,3 +649,24 @@ def test_terminal_chat_retires_unsupported_copilot_and_action_claims():
 
 def test_unreferenced_legacy_agent_detail_component_remains_removed():
     assert not LEGACY_AGENT_MODAL.exists()
+
+
+def test_event_stream_viewer_retires_unscoped_live_event_client():
+    source = EVENT_STREAM_VIEWER.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "socket.io-client",
+        "VITE_WS_BASE_URL",
+        "/ws/events",
+        "useStore",
+        "LiveFeedList",
+        "EventDetailDrawer",
+        "FilterToolbar",
+        "LIVE",
+        "Real-time security event feed",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Event-Evidence Integration Pending" in source
+    assert "authorization-checked, provenance-linked, validated and minimized observations" in source
+    assert "read-only and non-enforcing" in source

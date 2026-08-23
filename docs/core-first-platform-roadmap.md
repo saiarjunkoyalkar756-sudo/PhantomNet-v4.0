@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard event-evidence truthfulness boundary
+
+The event-stream dashboard no longer connects to an unscoped event WebSocket, retains events in browser state, filters endpoint data, or exposes raw event details. It now states that governed event-evidence integration is pending. Any future event view must use a protected tenant-scoped analyst workflow with authorization-checked, provenance-linked, validated and minimized observations; constrain filters and returned fields; retain deterministic auditability; and distinguish collected telemetry from verified detections. It must remain read-only and non-enforcing, with no containment or response authority. Regression coverage prevents the unscoped stream client and raw evidence interface from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide live event collection, source authorization, tenant isolation, event integrity or completeness, query or filter authorization, evidence provenance, analyst authorization, containment, response execution, Docker-host operation, or detection efficacy.
+
 ## Completed bounded increment: unused agent-detail component retirement
 
 The unreferenced legacy agent-detail component has been removed. It previously rendered raw agent identity, status, heartbeat, address, load, certificate, and metadata values without an active tenant-scoped governed agent-lifecycle dashboard integration. Regression coverage requires the deleted component to remain absent. Any future detail view must use tenant-scoped, authorization-checked, provenance-linked, minimized observations and must not imply direct lifecycle or containment authority.
