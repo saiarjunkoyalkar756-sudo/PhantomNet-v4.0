@@ -10,6 +10,7 @@ ACTION_MENU = ROOT / "dashboard_frontend/src/features/agents/components/ActionMe
 SELF_HEALING_CONSOLE = ROOT / "dashboard_frontend/src/pages/SelfHealingConsolePage.jsx"
 SANDBOX_PAGE = ROOT / "dashboard_frontend/src/pages/SandboxPage.jsx"
 SIEM_INTEGRATION_PAGE = ROOT / "dashboard_frontend/src/pages/SiemIntegrationPage.jsx"
+VULNERABILITY_SCANNER_PAGE = ROOT / "dashboard_frontend/src/pages/VulnerabilityScannerPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -108,3 +109,25 @@ def test_siem_integration_page_does_not_retain_retired_connection_or_event_contr
 
     assert "Governed SIEM Integration Pending" in source
     assert "tenant-scoped configuration custody, provider authorization" in source
+
+
+def test_vulnerability_scanner_page_does_not_retain_retired_target_or_finding_controls():
+    source = VULNERABILITY_SCANNER_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "/api/vulnerability-scanner/",
+        "handlePortScan",
+        "handleCveScan",
+        "handleConfigCheck",
+        "Port Scan",
+        "CVE Scan",
+        "Check Configuration",
+        "portScanResults",
+        "cveResults",
+        "configAlerts",
+        "Target (IP or Hostname)",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Vulnerability Assessment Integration Pending" in source
+    assert "target authorization, tenant-scoped evidence handling" in source

@@ -364,6 +364,12 @@ The dashboard SIEM-integration page no longer creates, lists, configures, or exp
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide provider authorization, credential custody, tenant isolation, connection management, event routing, delivery guarantees, SIEM ingestion, raw-data privacy, audit durability, Docker-host operation, or telemetry/detection efficacy.
 
+## Completed bounded increment: dashboard vulnerability-scanner truthfulness boundary
+
+The dashboard vulnerability-scanner page no longer accepts targets or configuration data, invokes the retired scanner API, or presents port, CVE, configuration-alert, or vulnerability-finding data as operational result. It now states that target-scanning and configuration-analysis controls are retired pending an authorized, governed assessment integration. A future workflow must require authorized targets, tenant-scoped scope and evidence, policy-bound execution, auditable lifecycle records, rate-limit control, and independently validated results before it is exposed as operational capability. Regression coverage prevents direct scanner requests and unsupported finding views from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide target authorization, scan execution, CVE coverage, asset discovery, configuration assessment, tenant isolation, evidence retention, rate-limit control, provider authorization, result accuracy, Docker-host operation, or vulnerability-detection efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
