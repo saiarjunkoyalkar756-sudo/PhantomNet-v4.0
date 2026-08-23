@@ -190,6 +190,14 @@ The legacy DFIR toolkit accepted unauthenticated server filesystem paths for YAR
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-scoped evidence intake or forensic-analysis replacement, validate file provenance, retention, malware isolation, YARA or memory/PCAP correctness, analyst authorization, Docker-host operation, or investigative efficacy.
 
+## Completed bounded increment: legacy cloud-security retirement
+
+The legacy cloud-security service accepted AWS access keys and secrets in unauthenticated request bodies, enumerated S3 configuration from caller-supplied credentials, and emitted a fixture-style IAM-abuse finding. It now declares no mandatory dependency and returns `410 LEGACY_CLOUD_SECURITY_API_RETIRED` for its former cloud posture routes. The entry point no longer imports boto3 or accepts, logs, or processes caller-supplied cloud credentials.
+
+The separate governed AWS Security Group containment adapter remains deployment-managed, approval-bound, HMAC-audited, verified, and rollback-capable. This retirement does not add automatic cloud enforcement.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed cloud-posture replacement through this service, validate cloud credential injection or authorization, enumerate real cloud resources, prove S3/IAM detection accuracy, establish AWS account isolation, or provide controlled-cloud/Docker-host evidence.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
