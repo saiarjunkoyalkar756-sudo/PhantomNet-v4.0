@@ -204,6 +204,12 @@ The legacy compliance-reporting service generated unauthenticated fixture compli
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-scoped compliance-reporting replacement, validate evidence collection, control mapping, report accuracy, generation integrity, secure storage or download authorization, retention, Docker-host operation, or audit/compliance efficacy.
 
+## Completed bounded increment: legacy malware sandbox retirement
+
+The legacy malware sandbox exposed unauthenticated file upload and sandbox execution, disclosed whether its Docker connection was real or mocked, wrote user-controlled files and generated scripts into temporary directories, and returned fixture-like findings. It now declares no mandatory dependency and returns `410 LEGACY_SANDBOX_API_RETIRED` for its former analysis and detailed-health routes. The entry point no longer imports or initializes the sandbox runner, upload handler, or temporary execution components.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed evidence-intake or malware-analysis replacement, validate tenant-bound sample ownership, upload malware isolation, sandbox escape resistance, analysis accuracy, artifact retention, analyst authorization, Docker-host operation, or malware-detection efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
