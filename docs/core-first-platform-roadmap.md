@@ -346,6 +346,12 @@ The dashboard’s agent-management view no longer presents fixture agents, simul
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a governed endpoint integration, endpoint identity, inventory accuracy, telemetry delivery, certificate lifecycle, lifecycle authorization, approval/audit durability, command execution, verification, rollback, device packaging, Docker-host operation, or endpoint-security efficacy.
 
+## Completed bounded increment: dashboard self-healing truthfulness boundary
+
+The dashboard self-healing console no longer polls a retired legacy agent API, renders unauthenticated endpoint health/error/certificate data, or presents placeholder repair, patch, recovery, safe-mode, or self-healing controls as usable actions. It now states that autonomous endpoint status and remediation controls are retired pending a governed response integration. Any future capability must be tenant-scoped and evidence-bound, with human approval for high-impact action plus audit, verification, and rollback before it can appear as an operational control. Regression coverage prevents the stale polling path and simulated action language from being restored.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide endpoint telemetry, a self-healing or remediation adapter, policy evaluation, endpoint identity, approval/audit durability, execution, verification, rollback, device packaging, Docker-host operation, or remediation/containment efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
