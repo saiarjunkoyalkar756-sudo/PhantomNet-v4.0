@@ -394,6 +394,12 @@ The dashboard forensics page no longer presents fixture acquisition jobs, eviden
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide forensic collection, endpoint acquisition, evidence custody, cryptographic integrity, artifact access, timeline reconstruction, authorization, tenant isolation, task execution, retention, verification, rollback, Docker-host operation, or investigative efficacy.
 
+## Completed bounded increment: dashboard cloud-security truthfulness boundary
+
+The dashboard cloud-security page no longer accepts caller-supplied cloud credentials, queries cloud resources, enumerates buckets, checks IAM abuse or cloud misconfiguration, or presents fixture cloud-security findings as operational result. It now states that the legacy cloud control is retired pending governed cloud integration. A future integration must use authorized credentials held outside the client, tenant-scoped provider authorization, policy-bound scope, auditable read-only collection, rate-limit controls, validated finding provenance, and approved change control for remediation before it is exposed as operational capability. Regression coverage prevents caller credential handling, retired cloud requests, and finding controls from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide cloud-account authorization, credential custody, resource discovery, bucket enumeration, IAM analysis, configuration assessment, tenant isolation, provider rate-limit behavior, evidence provenance, remediation, Docker-host operation, or cloud-security efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

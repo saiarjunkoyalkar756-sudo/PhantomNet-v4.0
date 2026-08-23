@@ -16,6 +16,7 @@ MARKETPLACE_PAGE = ROOT / "dashboard_frontend/src/pages/Marketplace.jsx"
 MARKETPLACE_GRID = ROOT / "dashboard_frontend/src/features/marketplace/components/MarketplaceGrid.jsx"
 COMPLIANCE_REPORTING_PAGE = ROOT / "dashboard_frontend/src/pages/ComplianceReportingPage.jsx"
 FORENSICS_PAGE = ROOT / "dashboard_frontend/src/pages/ForensicsPage.jsx"
+CLOUD_SECURITY_PAGE = ROOT / "dashboard_frontend/src/pages/CloudSecurityPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -222,3 +223,26 @@ def test_forensics_page_does_not_retain_fixture_acquisition_or_evidence_controls
 
     assert "Governed Forensics Integration Pending" in source
     assert "authorized collection targets, tenant-scoped evidence" in source
+
+
+def test_cloud_security_page_does_not_retain_caller_credentials_or_retired_cloud_checks():
+    source = CLOUD_SECURITY_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "aws_access_key_id",
+        "aws_secret_access_key",
+        "/api/cloud-security/",
+        "handleAwsMisconfiguration",
+        "handleIamAbuseDetection",
+        "handleS3ExposureAlerts",
+        "Check Misconfigurations",
+        "Detect IAM Abuse",
+        "S3 Exposure Alerts",
+        "setMisconfigurations",
+        "setIamAlerts",
+        "setS3Exposure",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Cloud Security Integration Pending" in source
+    assert "authorized credentials held outside the client" in source
