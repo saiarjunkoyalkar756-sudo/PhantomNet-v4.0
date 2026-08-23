@@ -184,6 +184,12 @@ The secondary legacy asset-inventory service authenticated callers but initializ
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-safe relationship-inventory replacement, validate source provenance, asset or topology accuracy, authorization behavior, data durability, Docker-host operation, or graph-analysis efficacy.
 
+## Completed bounded increment: legacy DFIR toolkit retirement
+
+The legacy DFIR toolkit accepted unauthenticated server filesystem paths for YARA, memory, PCAP, and timeline analysis, and accepted arbitrary file uploads to a shared temporary directory. It now declares no mandatory dependency and returns `410 LEGACY_DFIR_API_RETIRED` for its former analysis and upload routes. The entry point no longer imports forensic tools or initializes an upload directory.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-scoped evidence intake or forensic-analysis replacement, validate file provenance, retention, malware isolation, YARA or memory/PCAP correctness, analyst authorization, Docker-host operation, or investigative efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
