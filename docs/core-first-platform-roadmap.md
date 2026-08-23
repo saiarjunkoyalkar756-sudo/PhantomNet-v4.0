@@ -178,6 +178,12 @@ The legacy asset-inventory service accepted arbitrary scan targets through an un
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-safe inventory or authorized-discovery replacement, validate target ownership, perform a real scan, prove source authentication, establish asset accuracy or durability, or provide Docker-host or external assessment evidence.
 
+## Completed bounded increment: legacy asset relationship retirement
+
+The secondary legacy asset-inventory service authenticated callers but initialized a shared fixture graph and returned organizational assets, dependency topology, and blast-radius relationships without tenant binding or durable source provenance. It now declares no mandatory dependency and returns `410 LEGACY_ASSET_RELATIONSHIP_API_RETIRED` for its former asset relationship routes. The entry point no longer imports or initializes fixture graph data.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-safe relationship-inventory replacement, validate source provenance, asset or topology accuracy, authorization behavior, data durability, Docker-host operation, or graph-analysis efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
