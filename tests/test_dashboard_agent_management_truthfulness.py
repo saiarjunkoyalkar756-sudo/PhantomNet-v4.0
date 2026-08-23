@@ -11,6 +11,7 @@ SELF_HEALING_CONSOLE = ROOT / "dashboard_frontend/src/pages/SelfHealingConsolePa
 SANDBOX_PAGE = ROOT / "dashboard_frontend/src/pages/SandboxPage.jsx"
 SIEM_INTEGRATION_PAGE = ROOT / "dashboard_frontend/src/pages/SiemIntegrationPage.jsx"
 VULNERABILITY_SCANNER_PAGE = ROOT / "dashboard_frontend/src/pages/VulnerabilityScannerPage.jsx"
+VULNERABILITY_MANAGEMENT_PAGE = ROOT / "dashboard_frontend/src/pages/VulnerabilityManagementPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -131,3 +132,24 @@ def test_vulnerability_scanner_page_does_not_retain_retired_target_or_finding_co
 
     assert "Governed Vulnerability Assessment Integration Pending" in source
     assert "target authorization, tenant-scoped evidence handling" in source
+
+
+def test_vulnerability_management_page_does_not_retain_fixture_findings_or_remote_patch_controls():
+    source = VULNERABILITY_MANAGEMENT_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "FALLBACK_ASSETS",
+        "FALLBACK_VULNERABILITIES",
+        "triggerScanner",
+        "LAUNCH RAPID SCAN",
+        "EXECUTE REMOTE PATCH",
+        "AI Remediation Plan",
+        "CVE-2024-3094",
+        "risk_score",
+        "vulnerabilityService",
+        "scanProgress",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Vulnerability Management Integration Pending" in source
+    assert "human-approved change control for remediation" in source

@@ -370,6 +370,12 @@ The dashboard vulnerability-scanner page no longer accepts targets or configurat
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide target authorization, scan execution, CVE coverage, asset discovery, configuration assessment, tenant isolation, evidence retention, rate-limit control, provider authorization, result accuracy, Docker-host operation, or vulnerability-detection efficacy.
 
+## Completed bounded increment: dashboard vulnerability-management truthfulness boundary
+
+The dashboard vulnerability-management page no longer presents fixture asset inventory, fabricated scan progress, CVE exposure, risk scores, patch posture, AI remediation rationale, or remote patch actions as live security operations. It now states that these controls are retired pending governed assessment and change-management integration. A future workflow must establish authorized asset ownership, tenant-scoped inventory and evidence, validated finding provenance, advisory-only recommendations, human-approved change control for remediation, audit, verification, and rollback before it is exposed as operational capability. Regression coverage prevents fixture content, simulated assessment behavior, AI remediation claims, and remote patch controls from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide asset inventory, scan execution, CVE coverage, risk scoring, AI recommendation efficacy, patch/change execution, approval identity, audit durability, verification, rollback, provider authorization, Docker-host operation, or vulnerability/remediation efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
