@@ -12,6 +12,8 @@ SANDBOX_PAGE = ROOT / "dashboard_frontend/src/pages/SandboxPage.jsx"
 SIEM_INTEGRATION_PAGE = ROOT / "dashboard_frontend/src/pages/SiemIntegrationPage.jsx"
 VULNERABILITY_SCANNER_PAGE = ROOT / "dashboard_frontend/src/pages/VulnerabilityScannerPage.jsx"
 VULNERABILITY_MANAGEMENT_PAGE = ROOT / "dashboard_frontend/src/pages/VulnerabilityManagementPage.jsx"
+MARKETPLACE_PAGE = ROOT / "dashboard_frontend/src/pages/Marketplace.jsx"
+MARKETPLACE_GRID = ROOT / "dashboard_frontend/src/features/marketplace/components/MarketplaceGrid.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -153,3 +155,27 @@ def test_vulnerability_management_page_does_not_retain_fixture_findings_or_remot
 
     assert "Governed Vulnerability Management Integration Pending" in source
     assert "human-approved change control for remediation" in source
+
+
+def test_marketplace_does_not_retain_fixture_plugins_or_simulated_extension_lifecycle_controls():
+    page_source = MARKETPLACE_PAGE.read_text(encoding="utf-8")
+    grid_source = MARKETPLACE_GRID.read_text(encoding="utf-8")
+
+    assert "BROWSE CATEGORIES" not in page_source
+    assert "Fixture extension catalogues and simulated enablement controls are retired" in page_source
+
+    for unsafe_component in (
+        "initialPlugins",
+        "Advanced XDR Integration",
+        "Decoy Honeypot Network",
+        "AI Threat Hunter",
+        "Blockchain Traceability Module",
+        "signatureValid",
+        "handleToggleEnable",
+        "PluginCard",
+        "ModalInspector",
+    ):
+        assert unsafe_component not in grid_source
+
+    assert "Governed Extension Lifecycle Pending" in grid_source
+    assert "trusted provenance, tenant-scoped configuration" in grid_source

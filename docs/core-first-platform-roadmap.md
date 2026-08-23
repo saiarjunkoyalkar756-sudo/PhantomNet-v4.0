@@ -376,6 +376,12 @@ The dashboard vulnerability-management page no longer presents fixture asset inv
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide asset inventory, scan execution, CVE coverage, risk scoring, AI recommendation efficacy, patch/change execution, approval identity, audit durability, verification, rollback, provider authorization, Docker-host operation, or vulnerability/remediation efficacy.
 
+## Completed bounded increment: dashboard marketplace truthfulness boundary
+
+The dashboard marketplace no longer presents fixture XDR, honeypot, AI, or blockchain plugins, simulated signature validity, simulated enablement state, or browsing/inspection controls as live extension capability. It now states that the fixture extension catalogue and controls are retired pending a governed extension lifecycle. A future lifecycle must establish trusted provenance, tenant-scoped configuration, reviewable permissions, approval-bound activation, durable audit evidence, rollback, and validated runtime isolation before it is exposed as operational capability. Regression coverage prevents fixture records, signature/enablement state, and extension controls from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide extension sourcing, signature verification, authorization, tenant isolation, permission review, activation, runtime isolation, rollback, marketplace provider authorization, Docker-host operation, or extension-security efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
