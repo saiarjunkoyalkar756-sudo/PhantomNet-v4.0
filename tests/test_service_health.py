@@ -57,6 +57,16 @@ async def test_active_mode_reports_degraded_without_exposing_dependency_exceptio
 
 
 @pytest.mark.asyncio
+async def test_explicit_empty_dependency_set_remains_empty_in_readiness_evaluation(monkeypatch):
+    monkeypatch.setattr(health, "SAFE_MODE", False)
+
+    result = await health.run_standard_health_check(required_dependencies=())
+
+    assert result["required_dependencies"] == []
+    assert result["components"] == {}
+
+
+@pytest.mark.asyncio
 async def test_standard_service_exposes_liveness_and_failing_readiness_in_safe_mode(monkeypatch):
     monkeypatch.setattr(health, "SAFE_MODE", True)
     app = create_phantom_service("Health Test Service", "Test service", version="9.9.9")

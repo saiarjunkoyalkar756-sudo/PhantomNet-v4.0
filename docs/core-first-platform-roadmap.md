@@ -72,6 +72,14 @@ The service treats Redis caching and external providers as optional advisory dep
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove API-key validity, provider authorization, live external enrichment accuracy, Redis durability, rate-limit behavior, cache isolation under real load, live Docker startup, or any detection/containment efficacy. The enrichment path is advisory-only and must not be represented as an enforcement or autonomous-response capability.
 
+## Completed bounded increment: graph-intelligence raw-query boundary
+
+The graph-intelligence service now declares **Neo4j only** as its readiness dependency, verifies the graph store on startup, closes the process-owned driver on shutdown, invokes the correct `main:app` container entrypoint, and has a bounded legacy Compose `/ready` healthcheck. The former `/graph` endpoint accepted arbitrary Cypher without an authorization or tenant boundary. It now returns `410 RAW_GRAPH_API_RETIRED`; tenant-scoped investigation must use the governed graph APIs instead.
+
+The shared readiness runner now preserves an explicitly empty dependency set, matching the earlier factory correction for advisory services. Regression coverage verifies the real ASGI retirement response, Neo4j startup/shutdown ownership, static Compose healthcheck, container entrypoint, and empty-set behavior without connecting to a graph database.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove a live Neo4j authentication/authorization policy, graph data migration, tenant isolation inside a legacy graph projection, Docker-host startup, backup/recovery, query performance, or graph-analysis efficacy. The incomplete internal consumer remains outside this release’s production claim boundary.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

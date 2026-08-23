@@ -141,7 +141,7 @@ async def run_standard_health_check(required_dependencies: Iterable[str] | None 
     A service can be healthy as a process while not ready to enforce protections. In safe
     mode, dependency checks are reported as disabled and readiness is intentionally false.
     """
-    dependency_names = tuple(required_dependencies or DEFAULT_DEPENDENCIES)
+    dependency_names = tuple(DEFAULT_DEPENDENCIES if required_dependencies is None else required_dependencies)
     unknown_dependencies = sorted(set(dependency_names).difference(HEALTH_CHECKS))
     if unknown_dependencies:
         raise ValueError(f"Unknown health dependencies: {', '.join(unknown_dependencies)}")

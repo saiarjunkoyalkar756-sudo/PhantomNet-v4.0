@@ -52,6 +52,7 @@ py-solc-x
 # Network Analysis
 scapy
 networkx==3.3
+neo4j>=5.19,<6
 docker>=7.0,<8
 psutil>=5.9,<7
 
