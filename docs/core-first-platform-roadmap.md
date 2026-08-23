@@ -570,3 +570,10 @@ The dashboard source no longer contains unreferenced direct clients for legacy S
 The dashboard’s unreferenced WebSocket simulator has been removed. It hard-coded a localhost endpoint, generated randomized event types, severities, endpoint names, source addresses, timestamps, and AI-insight statements, then injected them into client state on a timer. It had no import path from any mounted dashboard route and could not support a defensible product claim. The retained dashboard summary and threat-hunting workflows continue to use their separately governed API clients; this retirement removes only a fabricated local-event pathway.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not establish a live event-stream integration, event integrity or completeness, source authorization, tenant isolation, evidence provenance, dashboard freshness, detection efficacy, containment, response execution, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: unmounted dashboard MFA-setup retirement
+
+The unmounted dashboard MFA-setup page has been removed. It was not registered in the router, used API paths and response-envelope handling inconsistent with the active dashboard client, and displayed the TOTP seed and recovery codes in a client flow with no reachable product boundary. The removal does not retire the server-side authenticated MFA enrollment and verification routes, and it does not change the active server-authoritative login-to-MFA challenge. Any future account-security settings page must be deliberately routed behind an authenticated account boundary, use the normalized client contract, minimize secret display, and have dedicated enrollment, recovery-code, and cancellation-lifecycle tests.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate the retained MFA enrollment API, TOTP correctness, recovery-code lifecycle, identity proofing, user authorization, secret handling in a browser, session integrity, rate-limit behavior, tenant isolation, production deployment, or account-security efficacy.

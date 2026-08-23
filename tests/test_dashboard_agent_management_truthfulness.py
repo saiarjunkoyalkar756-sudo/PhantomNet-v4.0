@@ -61,6 +61,7 @@ LEGACY_ASSET_COMPONENT = ROOT / "dashboard_frontend/src/components/AssetList.jsx
 LEGACY_RED_TEAM_PLAYBOOK_COMPONENT = ROOT / "dashboard_frontend/src/features/red-team/components/PlaybookList.jsx"
 THREAT_HUNTING_SERVICE = ROOT / "dashboard_frontend/src/services/threatHunting.service.js"
 LEGACY_WEBSOCKET_SIMULATOR = ROOT / "dashboard_frontend/src/lib/websocketSimulator.js"
+LEGACY_MFA_SETUP_PAGE = ROOT / "dashboard_frontend/src/pages/MFASetupPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -792,6 +793,10 @@ def test_mfa_challenge_uses_memory_only_handoff_and_active_server_contract():
     assert "let pendingCredentials = null" in handoff_source
     assert "sessionStorage" not in handoff_source
     assert "localStorage" not in handoff_source
+
+
+def test_unmounted_mfa_setup_page_remains_removed():
+    assert not LEGACY_MFA_SETUP_PAGE.exists()
 
 
 def test_unreferenced_websocket_simulator_remains_removed():
