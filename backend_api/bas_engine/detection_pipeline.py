@@ -76,6 +76,42 @@ BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
         mitre_tactics=["impact"],
         expected_outcome={"detection": True, "automatic_enforcement": False},
     ),
+    "BAS-SCHED-001": DetectionRule(
+        rule_id="bas.execution.controlled-scheduled-task",
+        version="1.0.0",
+        name="BAS controlled scheduled-task metadata",
+        description="Detects only the named documentation-only scheduled-task telemetry fixture.",
+        event_types=["scheduled_task_event"],
+        severity="medium",
+        conditions={"task_name": "phantomnet-lab-maintenance", "command_reference": "documentation-only"},
+        mitre_techniques=["T1053.005"],
+        mitre_tactics=["execution"],
+        expected_outcome={"detection": True, "automatic_enforcement": False},
+    ),
+    "BAS-RDP-001": DetectionRule(
+        rule_id="bas.lateral-movement.controlled-rdp-failures",
+        version="1.0.0",
+        name="BAS repeated controlled RDP authentication failures",
+        description="Detects only the documentation-range controlled RDP failure fixture.",
+        event_types=["remote_service_auth"],
+        severity="high",
+        conditions={"protocol": "RDP", "failed_attempts_gte": 3, "source_ip": "198.51.100.43"},
+        mitre_techniques=["T1021.001"],
+        mitre_tactics=["lateral-movement"],
+        expected_outcome={"detection": True, "automatic_enforcement": False},
+    ),
+    "BAS-DISC-001": DetectionRule(
+        rule_id="bas.discovery.controlled-lab-tree",
+        version="1.0.0",
+        name="BAS controlled lab-tree discovery volume",
+        description="Detects only the bounded lab-tree inventory telemetry fixture.",
+        event_types=["file_inventory_event"],
+        severity="medium",
+        conditions={"root": "/tmp/phantomnet-lab-tree", "discovered_entries_gte": 100},
+        mitre_techniques=["T1083"],
+        mitre_tactics=["discovery"],
+        expected_outcome={"detection": True, "automatic_enforcement": False},
+    ),
 }
 
 
@@ -107,12 +143,38 @@ def _file_matches(payload: Mapping[str, Any]) -> bool:
     return payload.get("path") == "/tmp/phantomnet-lab-sensitive.txt" and payload.get("operation") == "write"
 
 
+def _scheduled_task_matches(payload: Mapping[str, Any]) -> bool:
+    return (
+        payload.get("task_name") == "phantomnet-lab-maintenance"
+        and payload.get("command_reference") == "documentation-only"
+    )
+
+
+def _rdp_matches(payload: Mapping[str, Any]) -> bool:
+    return (
+        payload.get("protocol") == "RDP"
+        and payload.get("source_ip") == "198.51.100.43"
+        and int(payload.get("failed_attempts", 0)) >= 3
+    )
+
+
+def _discovery_matches(payload: Mapping[str, Any]) -> bool:
+    return (
+        payload.get("root") == "/tmp/phantomnet-lab-tree"
+        and payload.get("collection_mode") == "telemetry-fixture"
+        and int(payload.get("discovered_entries", 0)) >= 100
+    )
+
+
 SCENARIO_MATCHERS: Dict[str, Callable[[Mapping[str, Any]], bool]] = {
     "BAS-AUTH-001": _auth_matches,
     "BAS-PROC-001": _process_matches,
     "BAS-DNS-001": _dns_matches,
     "BAS-NET-001": _network_matches,
     "BAS-FILE-001": _file_matches,
+    "BAS-SCHED-001": _scheduled_task_matches,
+    "BAS-RDP-001": _rdp_matches,
+    "BAS-DISC-001": _discovery_matches,
 }
 
 

@@ -24,7 +24,6 @@ app = create_phantom_service(
     name="PhantomNet API Gateway",
     description="Secure entry point for the PhantomNet Microservice Grid.",
     version="3.0.0",
-    cors_origins=["*"] # Tighten in production
 )
 
 app.state.limiter = limiter

@@ -85,15 +85,15 @@ Prove the canonical analyst workflow without running an uncontrolled attack.
 ### Procedure
 
 1. Use the repository’s BAS fixtures, synthetic telemetry, or a lab honeypot owned by the operator. Do not use real malware, credential theft, credential spraying against unapproved services, exploit frameworks, persistence techniques, or lateral movement.
-2. Submit a named fixture through the canonical ingestion path.
-3. Record its normalized event identifier, detection evidence, MITRE mapping, alert, and case identifiers.
+2. Select one or more named fixtures from the controlled BAS corpus and complete `docs/lab-evidence/GATE3_BAS_EVIDENCE_TEMPLATE.md` before submitting them through the canonical ingestion path. The template records the eight current fixture/rule/MITRE expectations and explicitly excludes command execution.
+3. Record each normalized event identifier, detection evidence, MITRE mapping, alert, and case identifiers.
 4. Use the analyst workflow to inspect evidence, decision trace, and priority factors.
 5. If response is part of the gate, create a containment request and record the required human approval. Use a mock adapter or an isolated endpoint only.
 6. Verify the expected audit-chain entry, adapter verification state, and governed rollback receipt.
 
 ### Pass criteria
 
-The run shows fixture → canonical event → detection → alert → case → analyst trace → explicit approval → verified action or safe simulation → rollback. A detection miss or false positive must be reported, not filtered from the evidence.
+The run shows fixture → canonical event → detection → alert → case → analyst trace → explicit approval → verified action or safe simulation → rollback. The evidence bundle uses the Gate 3 template, includes the selected fixture digest and expected MITRE mappings, and records any detection miss or false positive rather than filtering it from the evidence.
 
 ## Gate 4: Wazuh manager and endpoint bridge
 

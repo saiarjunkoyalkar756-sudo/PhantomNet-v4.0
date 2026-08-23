@@ -73,7 +73,8 @@ app = create_phantom_service(
     description="Consumes agent commands from Kafka and manages their lifecycle.",
     version="1.0.0",
     custom_startup=command_dispatcher_startup,
-    custom_shutdown=command_dispatcher_shutdown
+    custom_shutdown=command_dispatcher_shutdown,
+    required_dependencies=("kafka",),
 )
 
 @app.get("/health_detailed")

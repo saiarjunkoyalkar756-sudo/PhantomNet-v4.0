@@ -60,7 +60,8 @@ app = create_phantom_service(
     description="Receives telemetry data from PhantomNet agents and publishes it to the event bus.",
     version="1.0.0",
     custom_startup=telemetry_ingestor_startup,
-    custom_shutdown=telemetry_ingestor_shutdown
+    custom_shutdown=telemetry_ingestor_shutdown,
+    required_dependencies=("kafka",),
 )
 
 @app.post("/ingest")

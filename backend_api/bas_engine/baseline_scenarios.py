@@ -47,6 +47,42 @@ BASELINE_SCENARIOS: List[Dict[str, Any]] = [
         "severity": "high",
         "payload": {"host": "lab-endpoint-01", "path": "/tmp/phantomnet-lab-sensitive.txt", "operation": "write"},
     },
+    {
+        "scenario_id": "BAS-SCHED-001",
+        "name": "Controlled scheduled-task metadata",
+        "event_type": "scheduled_task_event",
+        "severity": "medium",
+        "payload": {
+            "host": "lab-endpoint-01",
+            "task_name": "phantomnet-lab-maintenance",
+            "created_by": "lab-user",
+            "command_reference": "documentation-only",
+        },
+    },
+    {
+        "scenario_id": "BAS-RDP-001",
+        "name": "Repeated controlled RDP authentication failures",
+        "event_type": "remote_service_auth",
+        "severity": "high",
+        "payload": {
+            "host": "lab-endpoint-01",
+            "protocol": "RDP",
+            "source_ip": "198.51.100.43",
+            "failed_attempts": 3,
+        },
+    },
+    {
+        "scenario_id": "BAS-DISC-001",
+        "name": "Controlled lab-tree discovery volume",
+        "event_type": "file_inventory_event",
+        "severity": "medium",
+        "payload": {
+            "host": "lab-endpoint-01",
+            "root": "/tmp/phantomnet-lab-tree",
+            "discovered_entries": 100,
+            "collection_mode": "telemetry-fixture",
+        },
+    },
 ]
 
 

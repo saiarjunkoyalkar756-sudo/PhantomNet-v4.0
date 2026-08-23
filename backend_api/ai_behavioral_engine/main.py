@@ -143,7 +143,8 @@ app = create_phantom_service(
     description="Analyzes events for anomalies and predicts threats.",
     version="1.1.0",
     custom_startup=ai_behavioral_startup,
-    custom_shutdown=ai_behavioral_shutdown
+    custom_shutdown=ai_behavioral_shutdown,
+    required_dependencies=("kafka",),
 )
 
 @app.get("/health_detailed")

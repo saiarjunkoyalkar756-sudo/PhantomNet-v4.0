@@ -11,13 +11,30 @@ CORRELATION_ID = "corr-baseline-pipeline-001"
 def test_all_safe_baseline_scenarios_normalize_into_detections():
     detections = run_baseline_detection(TENANT_ID, CORRELATION_ID)
 
-    assert len(detections) == 5
+    assert len(detections) == 8
     assert {detection.evidence["scenario_id"] for detection in detections} == {
         "BAS-AUTH-001",
         "BAS-PROC-001",
         "BAS-DNS-001",
         "BAS-NET-001",
         "BAS-FILE-001",
+        "BAS-SCHED-001",
+        "BAS-RDP-001",
+        "BAS-DISC-001",
+    }
+    technique_by_scenario = {
+        detection.evidence["scenario_id"]: detection.mitre_evidence[0].technique_id
+        for detection in detections
+    }
+    assert technique_by_scenario == {
+        "BAS-AUTH-001": "T1110",
+        "BAS-PROC-001": "T1059",
+        "BAS-DNS-001": "T1071.004",
+        "BAS-NET-001": "T1071.001",
+        "BAS-FILE-001": "T1565.001",
+        "BAS-SCHED-001": "T1053.005",
+        "BAS-RDP-001": "T1021.001",
+        "BAS-DISC-001": "T1083",
     }
     for detection in detections:
         assert detection.schema_version == CONTRACT_VERSION
@@ -49,3 +66,17 @@ def test_bas_adapter_rejects_events_without_required_safety_metadata_or_conditio
 
     altered_copy = {**normalized, "payload": {**normalized["payload"], "failed_attempts": 4}}
     assert evaluate_normalized_baseline_event(altered_copy) is None
+
+
+def test_new_bas_scenarios_refuse_altered_non_destructive_fixture_conditions():
+    events = {event.payload["scenario_id"]: event for event in emit_baseline_events(TENANT_ID, CORRELATION_ID)}
+    expected_rejections = {
+        "BAS-SCHED-001": {"task_name": "unapproved-task"},
+        "BAS-RDP-001": {"failed_attempts": 2},
+        "BAS-DISC-001": {"discovered_entries": 99},
+    }
+
+    for scenario_id, altered_fields in expected_rejections.items():
+        normalized = normalize_event(events[scenario_id].model_dump(mode="json"))
+        altered = {**normalized, "payload": {**normalized["payload"], **altered_fields}}
+        assert evaluate_normalized_baseline_event(altered) is None

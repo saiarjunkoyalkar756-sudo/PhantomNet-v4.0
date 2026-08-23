@@ -112,7 +112,8 @@ app = create_phantom_service(
     description="Normalized raw telemetry against PhantomNet schemas.",
     version="1.0.0",
     custom_startup=event_normalizer_startup,
-    custom_shutdown=event_normalizer_shutdown
+    custom_shutdown=event_normalizer_shutdown,
+    required_dependencies=("kafka",),
 )
 
 @app.get("/health_detailed")

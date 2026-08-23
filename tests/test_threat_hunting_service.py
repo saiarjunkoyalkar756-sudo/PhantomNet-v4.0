@@ -102,11 +102,11 @@ async def test_dashboard_summary_aggregates_real_tenant_owned_soc_records():
     try:
         summary = await service.dashboard_summary(TENANT_ID)
 
-        assert summary["metrics"]["detections"] == 5
-        assert summary["metrics"]["active_alerts"] == 5
+        assert summary["metrics"]["detections"] == 8
+        assert summary["metrics"]["active_alerts"] == 8
         assert summary["metrics"]["open_cases"] == 1
         assert {item["technique_id"] for item in summary["top_mitre_techniques"]} == {
-            "T1110", "T1059", "T1071.004", "T1071.001", "T1565.001"
+            "T1110", "T1059", "T1071.004", "T1071.001", "T1565.001", "T1053.005", "T1021.001", "T1083"
         }
     finally:
         await engine.dispose()

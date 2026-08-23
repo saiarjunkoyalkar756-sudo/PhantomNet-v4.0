@@ -122,7 +122,8 @@ app = create_phantom_service(
     description="Consumes alerts from Kafka and stores them in PostgreSQL.",
     version="1.0.0",
     custom_startup=alert_storage_startup,
-    custom_shutdown=alert_storage_shutdown
+    custom_shutdown=alert_storage_shutdown,
+    required_dependencies=("database", "kafka"),
 )
 
 app.include_router(alerts_router)
