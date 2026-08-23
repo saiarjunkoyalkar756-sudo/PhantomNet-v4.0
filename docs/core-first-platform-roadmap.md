@@ -134,6 +134,12 @@ The legacy microsegmentation service exposed unauthenticated fixture network seg
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not implement a governed tenant-safe microsegmentation replacement, validate live broker ingestion, prove topology accuracy, execute a network policy, or provide Docker-host or external enforcement evidence.
 
+## Completed bounded increment: legacy plugin marketplace retirement
+
+The legacy plugin marketplace accepted unauthenticated upload files, registered JSON manifests, and enabled or disabled plugin state without tenant context, signature verification, provenance, or controlled execution assurance. It now declares no mandatory dependency and returns `410 LEGACY_PLUGIN_MARKETPLACE_API_RETIRED` for all former plugin routes. The entry point no longer initializes a plugin manager or filesystem artifact directory.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed signed-artifact replacement, malware scanning, provenance validation, compatibility testing, sandboxed execution, tenant-owned extension lifecycle, Docker-host proof, or plugin efficacy evidence.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
