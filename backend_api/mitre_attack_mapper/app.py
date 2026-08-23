@@ -1,38 +1,29 @@
+from __future__ import annotations
+
+from backend_api.core.response import error_response
 from backend_api.shared.service_factory import create_phantom_service
-from .mapper import load_mitre_data, map_event_to_techniques
-from loguru import logger
-import asyncio
-import os
-import json
-from backend_api.core.response import success_response, error_response
-from fastapi import FastAPI, HTTPException, Request
 
-MITRE_DATA_FILE = os.path.join(os.path.dirname(__file__), "mitre_data.json")
-
-async def mapper_startup(app: FastAPI):
-    # Startup tasks
-    if os.path.exists(MITRE_DATA_FILE):
-        load_mitre_data(MITRE_DATA_FILE)
-        logger.info("MITRE ATT&CK Mapper: Data loaded successfully.")
-    else:
-        logger.warning(f"MITRE ATT&CK Mapper: Data file {MITRE_DATA_FILE} not found.")
 
 app = create_phantom_service(
-    name="MITRE ATT&CK Mapper",
-    description="Maps security events to MITRE ATT&CK techniques.",
+    name="Legacy MITRE ATT&CK Mapper",
+    description="Retired ungoverned ATT&CK dataset and event-mapping boundary; no direct mapping surface is exposed.",
     version="1.0.0",
-    custom_startup=mapper_startup
+    required_dependencies=(),
 )
 
-@app.get("/techniques")
-async def get_techniques():
-    if not os.path.exists(MITRE_DATA_FILE):
-        return error_response(code="NOT_FOUND", message="MITRE data file missing", status_code=404)
-    with open(MITRE_DATA_FILE, "r") as f:
-        mitre_data = json.load(f)
-    return success_response(data={"techniques": mitre_data.get("techniques", [])})
 
-@app.post("/map_event")
-async def map_event(event: dict):
-    mapped_techniques = map_event_to_techniques(event, MITRE_DATA_FILE)
-    return success_response(data={"event": event, "mapped_techniques": mapped_techniques})
+@app.api_route(
+    "/{legacy_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    include_in_schema=False,
+)
+async def retired_legacy_mitre_mapper_api(legacy_path: str = ""):
+    """Fail closed instead of exposing ungoverned ATT&CK mapping and dataset access."""
+    return error_response(
+        code="LEGACY_MITRE_MAPPER_API_RETIRED",
+        message=(
+            "The legacy MITRE mapper API is retired. Use governed tenant-scoped "
+            "detection content and analyst investigation workflows."
+        ),
+        status_code=410,
+    )
