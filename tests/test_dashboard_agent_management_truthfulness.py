@@ -33,6 +33,10 @@ NETWORK_GRAPH = ROOT / "dashboard_frontend/src/components/network/NetworkGraph.j
 WORLD_ATTACK_MAP = ROOT / "dashboard_frontend/src/features/dashboard/WorldAttackMap.jsx"
 CASE_MANAGEMENT_PAGE = ROOT / "dashboard_frontend/src/pages/CaseManagementPage.jsx"
 GRAPH_INVESTIGATION_PAGE = ROOT / "dashboard_frontend/src/pages/GraphInvestigationPage.jsx"
+LOG_VIEWER_PAGE = ROOT / "dashboard_frontend/src/pages/LogViewer.jsx"
+LEGACY_LOG_FORMAT_SWITCH = ROOT / "dashboard_frontend/src/features/log-viewer/components/FormatSwitch.jsx"
+LEGACY_LOG_ACTION_BAR = ROOT / "dashboard_frontend/src/features/log-viewer/components/ActionBar.jsx"
+LEGACY_LOG_STREAM_VIEWER = ROOT / "dashboard_frontend/src/features/log-viewer/components/LogStreamViewer.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -498,3 +502,31 @@ def test_graph_investigation_page_retires_arbitrary_raw_graph_query_controls():
     assert "Governed Graph-Investigation Integration Pending" in source
     assert "tenant-scoped, authorization-checked, provenance-linked results" in source
     assert "remain non-enforcing with no containment or response authority" in source
+
+
+def test_log_viewer_page_retires_fixture_stream_and_local_disclosure_controls():
+    source = LOG_VIEWER_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "mockLogs",
+        "setInterval(",
+        "logIndexRef",
+        "User login successful",
+        "Agent heartbeat received",
+        "Malicious payload detected and quarantined.",
+        "handleCopy",
+        "handleExport",
+        "handleClear",
+        "FormatSwitch",
+        "ActionBar",
+        "LogStreamViewer",
+        "ADVANCED SEARCH",
+    ):
+        assert unsafe_component not in source
+
+    assert not LEGACY_LOG_FORMAT_SWITCH.exists()
+    assert not LEGACY_LOG_ACTION_BAR.exists()
+    assert not LEGACY_LOG_STREAM_VIEWER.exists()
+    assert "Governed Log-Evidence Integration Pending" in source
+    assert "authorization-checked, provenance-linked, minimized results" in source
+    assert "must not imply live ingestion" in source
