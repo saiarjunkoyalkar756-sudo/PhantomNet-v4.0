@@ -88,6 +88,14 @@ The governed API retains structured deterministic rule definitions, tenant-misma
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not demonstrate live Kafka consumer startup, PostgreSQL durability, topic authorization, replay performance, external enrichment provider behavior, Docker-host startup, or detection efficacy. Controlled broker/database-host and recovery evidence remains required before operational claims.
 
+## Completed bounded increment: legacy SOAR playbook retirement
+
+The legacy SOAR playbook engine exposed unauthenticated, untenant-scoped playbook creation, run updates, and approval records. It is now an explicit fail-closed compatibility boundary: all former `/playbooks`, `/playbook_runs`, and `/playbook_approvals` paths return `410 LEGACY_SOAR_PLAYBOOK_API_RETIRED`, the legacy service no longer imports its CRUD/session layer, and the development Compose entry has a bounded `/ready` healthcheck.
+
+The approved control surface remains the existing tenant-scoped governed containment API. High-impact containment continues to require a request, human approval, HMAC-signed audit, adapter execution, verification, and rollback. Regression coverage exercises all retired route families through ASGI and reruns governed containment, preflight, tenant-isolation, and Wazuh response-bridge boundaries.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not migrate legacy playbook records, prove real containment execution, validate a Docker-host deployment, or validate an external Wazuh manager, endpoint, cloud account, or response adapter. The retirement does not alter the separate governed containment approval protocol.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
