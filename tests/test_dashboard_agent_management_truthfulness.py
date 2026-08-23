@@ -21,6 +21,9 @@ SOAR_PAGE = ROOT / "dashboard_frontend/src/pages/SOARPage.jsx"
 GRAPH_CANVAS = ROOT / "dashboard_frontend/src/features/threat-graph/components/GraphCanvas.jsx"
 AI_DECISION_LOG_PAGE = ROOT / "dashboard_frontend/src/pages/AIDecisionLogPage.jsx"
 ATTACK_GRAPH_PAGE = ROOT / "dashboard_frontend/src/pages/AttackGraphPage.jsx"
+SIEM_PAGE = ROOT / "dashboard_frontend/src/pages/SIEMPage.jsx"
+LEGACY_LOG_SEARCH = ROOT / "dashboard_frontend/src/components/LogSearch.jsx"
+LEGACY_SIEM_SERVICE = ROOT / "dashboard_frontend/src/services/siem.service.js"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -332,3 +335,22 @@ def test_attack_graph_page_does_not_retain_fixture_topology_or_simulated_contain
     assert "Governed Attack-Path and Containment Integration Pending" in source
     assert "HMAC-signed audit" in source
     assert "without automatic high-impact containment" in source
+
+
+def test_siem_page_retires_direct_legacy_phantomql_search_client():
+    source = SIEM_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "LogSearch",
+        "phantomql-engine",
+        "localhost:8001",
+        "query_string",
+        "<table",
+    ):
+        assert unsafe_component not in source
+
+    assert not LEGACY_LOG_SEARCH.exists()
+    assert not LEGACY_SIEM_SERVICE.exists()
+    assert "Governed Log-Search Integration Pending" in source
+    assert "tenant scope and analyst authorization" in source
+    assert "deterministic auditability" in source
