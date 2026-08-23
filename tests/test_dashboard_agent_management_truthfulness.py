@@ -30,6 +30,7 @@ SIMULATED_OSINT_CARDS = ROOT / "dashboard_frontend/src/features/threat-intel/com
 NETWORK_THREATS_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkThreatsPage.jsx"
 NETWORK_SEGMENTATION_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkSegmentationPage.jsx"
 NETWORK_GRAPH = ROOT / "dashboard_frontend/src/components/network/NetworkGraph.jsx"
+WORLD_ATTACK_MAP = ROOT / "dashboard_frontend/src/features/dashboard/WorldAttackMap.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -428,3 +429,26 @@ def test_network_segmentation_page_retires_unsupported_topology_and_violation_vi
     assert "Governed Segmentation-Evidence Integration Pending" in source
     assert "tenant-scoped, provenance-linked evidence" in source
     assert "must not imply live topology accuracy" in source
+
+
+def test_world_attack_map_retires_mock_global_attack_visualization():
+    source = WORLD_ATTACK_MAP.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "const hotspots",
+        "const attacks",
+        "const backgroundDots",
+        "LIVE GLOBAL THREAT MAP",
+        "North America",
+        "East Asia",
+        "LATENCY:",
+        "ACTIVE THREATS:",
+        "1,204",
+        "42MS",
+        "MotionPath",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Global-Evidence Visualization Integration Pending" in source
+    assert "tenant-scoped, provenance-linked and minimized evidence" in source
+    assert "remain read-only, advisory, and non-enforcing" in source
