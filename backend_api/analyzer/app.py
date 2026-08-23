@@ -1,30 +1,29 @@
-from backend_api.shared.service_factory import create_phantom_service
-import threading
-import asyncio
-from fastapi import Body
-from . import consumer
-from .neural_threat_brain import brain
-from backend_api.core.response import success_response
+from __future__ import annotations
 
-async def analyzer_startup(app: FastAPI):
-    # Start consumer in a separate thread as per legacy requirement, but managed via lifespan
-    app.state.consumer_thread = threading.Thread(target=consumer.main, daemon=True)
-    app.state.consumer_thread.start()
+from backend_api.core.response import error_response
+from backend_api.shared.service_factory import create_phantom_service
+
 
 app = create_phantom_service(
-    name="Analyzer Service",
-    description="Neural threat brain and log analysis service.",
+    name="Legacy Analyzer Service",
+    description="Retired ungoverned analyzer chat and consumer boundary; no AI analysis surface is exposed.",
     version="1.0.0",
-    custom_startup=analyzer_startup
+    required_dependencies=(),
 )
 
-@app.post("/chat")
-async def chat_with_ai(
-    message: str = Body(..., embed=True),
-    conversation_history: list = Body([], embed=True),
-):
-    """
-    Engage in a conversation with the AI.
-    """
-    response = brain.chat(message, conversation_history)
-    return success_response(data={"response": response})
+
+@app.api_route(
+    "/{legacy_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    include_in_schema=False,
+)
+async def retired_legacy_analyzer_api(legacy_path: str = ""):
+    """Fail closed instead of serving an unauthenticated analyzer or starting legacy consumers."""
+    return error_response(
+        code="LEGACY_ANALYZER_API_RETIRED",
+        message=(
+            "The legacy analyzer API is retired. Use governed tenant-scoped advisory "
+            "workflows with evidence, policy, and analyst controls."
+        ),
+        status_code=410,
+    )

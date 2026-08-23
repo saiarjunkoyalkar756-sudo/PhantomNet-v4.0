@@ -232,6 +232,12 @@ The supported containment surface remains the separate governed workflow, in whi
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed response-workflow builder replacement, validate tenant-scoped authoring, policy enforcement, approval identity, audit-chain integrity, execution verification, rollback, Docker-host operation, or containment efficacy.
 
+## Completed bounded increment: legacy analyzer retirement
+
+The legacy analyzer service exposed an unauthenticated conversational AI endpoint backed by the neural threat brain and started a separate unmanaged consumer thread at service startup. It now declares no mandatory dependency and returns `410 LEGACY_ANALYZER_API_RETIRED` for its former chat route. The entry point no longer imports the neural threat brain or starts the legacy consumer.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed advisory replacement through this service, validate model behavior, conversation privacy, tenant isolation, provider authorization, evaluation quality, broker behavior, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
