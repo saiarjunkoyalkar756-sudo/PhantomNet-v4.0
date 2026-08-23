@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,18 +10,38 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import useAuthStore from '@/store/authStore';
 import api from '@/services/api';
+import {
+  clearMfaPendingCredentials,
+  getMfaPendingCredentials,
+} from '@/services/mfaChallenge';
 
 const MotionDiv = motion.div;
 
 const mfaSchema = z.object({
-  code: z.string().min(6, { message: 'Code must be 6 digits.' }).max(6, { message: 'Code must be 6 digits.' }).regex(/^\d+$/, { message: 'Code must be numeric.' }),
+  code: z.string().trim(),
   type: z.enum(['totp', 'recovery']).default('totp'),
+}).superRefine(({ code, type }, context) => {
+  const valid = type === 'totp'
+    ? /^\d{6}$/.test(code)
+    : /^[A-Z0-9]{10}$/.test(code.toUpperCase());
+
+  if (!valid) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['code'],
+      message: type === 'totp'
+        ? 'Enter a six-digit authenticator code.'
+        : 'Enter a ten-character recovery code.',
+    });
+  }
 });
 
 const MFAChallengePage = () => {
   const [apiError, setApiError] = useState(null);
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+
+  useEffect(() => () => clearMfaPendingCredentials(), []);
 
   const {
     register,
@@ -41,11 +61,10 @@ const MFAChallengePage = () => {
 
   const onSubmit = async (data) => {
     setApiError(null);
-    const username = sessionStorage.getItem('mfa_username');
-    const password = sessionStorage.getItem('mfa_password');
+    const credentials = getMfaPendingCredentials();
 
-    if (!username || !password) {
-      setApiError('Authentication session expired. Please log in again.');
+    if (!credentials) {
+      setApiError('Authentication session expired. Please sign in again.');
       navigate('/login');
       return;
     }
@@ -55,20 +74,20 @@ const MFAChallengePage = () => {
       if (data.type === 'totp') {
         headers['X-2FA-Code'] = data.code;
       } else {
-        headers['X-Recovery-Code'] = data.code;
+        headers['X-Recovery-Code'] = data.code.toUpperCase();
       }
 
-      const response = await api.post(
-        '/api/auth/token',
-        { username, password },
-        { headers }
-      );
+      const params = new URLSearchParams();
+      params.append('username', credentials.username);
+      params.append('password', credentials.password);
+      const response = await api.post('/auth/token', params, {
+        headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
 
-      sessionStorage.removeItem('mfa_username');
-      sessionStorage.removeItem('mfa_password');
-      login(response.data);
+      clearMfaPendingCredentials();
+      login(response);
 
-      if (response.data.user.role === 'admin') {
+      if (response.user?.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
         navigate('/dashboard');
@@ -108,7 +127,14 @@ const MFAChallengePage = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <Label htmlFor="code">{challengeType === 'totp' ? '2FA Code' : 'Recovery Code'}</Label>
-            <Input id="code" type="text" inputMode="numeric" {...register('code')} placeholder="XXXXXX" />
+            <Input
+              id="code"
+              type="text"
+              inputMode={challengeType === 'totp' ? 'numeric' : 'text'}
+              autoComplete="one-time-code"
+              {...register('code')}
+              placeholder={challengeType === 'totp' ? 'XXXXXX' : 'XXXXXXXXXX'}
+            />
             {errors.code && <p className="text-destructive text-sm mt-1">{errors.code.message}</p>}
           </div>
 

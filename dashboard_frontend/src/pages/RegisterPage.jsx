@@ -35,7 +35,7 @@ const RegisterPage = () => {
   const onSubmit = async (data) => {
     setApiError(null);
     try {
-      await api.post('/api/auth/register', { username: data.username, password: data.password });
+      await api.post('/auth/register', { username: data.username, password: data.password });
       setRegistrationSuccess(true);
       // Optionally, automatically log in or redirect after a short delay
       setTimeout(() => navigate('/login'), 2000);

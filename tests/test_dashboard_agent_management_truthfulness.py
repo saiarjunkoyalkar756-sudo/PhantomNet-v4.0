@@ -48,6 +48,11 @@ SETTINGS_FORM = ROOT / "dashboard_frontend/src/features/settings/components/Sett
 COMPLIANCE_PAGE = ROOT / "dashboard_frontend/src/pages/CompliancePage.jsx"
 RED_TEAM_PLAYBOOK_PAGE = ROOT / "dashboard_frontend/src/pages/RedTeamPlaybookUI.jsx"
 LOGIN_PAGE = ROOT / "dashboard_frontend/src/pages/Login.jsx"
+REGISTER_PAGE = ROOT / "dashboard_frontend/src/pages/RegisterPage.jsx"
+MFA_CHALLENGE_PAGE = ROOT / "dashboard_frontend/src/pages/MFAChallengePage.jsx"
+MFA_CHALLENGE_SERVICE = ROOT / "dashboard_frontend/src/services/mfaChallenge.js"
+DASHBOARD_ROUTER = ROOT / "dashboard_frontend/src/router/index.jsx"
+AUTH_STORE = ROOT / "dashboard_frontend/src/store/authStore.js"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -752,3 +757,48 @@ def test_login_page_preserves_server_authoritative_auth_without_fixture_operatio
     assert "roles are assigned by server-side policy" in source
     assert "'/auth/token'" in source
     assert "'2FA_REQUIRED'" in source
+    assert "setMfaPendingCredentials" in source
+    assert "sessionStorage" not in source
+
+
+def test_mfa_challenge_uses_memory_only_handoff_and_active_server_contract():
+    source = MFA_CHALLENGE_PAGE.read_text(encoding="utf-8")
+    handoff_source = MFA_CHALLENGE_SERVICE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "sessionStorage",
+        "localStorage",
+        "response.data",
+        "'/api/auth/token'",
+    ):
+        assert unsafe_component not in source
+
+    assert "getMfaPendingCredentials" in source
+    assert "clearMfaPendingCredentials" in source
+    assert "application/x-www-form-urlencoded" in source
+    assert "'/auth/token'" in source
+    assert "X-2FA-Code" in source
+    assert "X-Recovery-Code" in source
+    assert "Enter a six-digit authenticator code." in source
+    assert "Enter a ten-character recovery code." in source
+    assert "let pendingCredentials = null" in handoff_source
+    assert "sessionStorage" not in handoff_source
+    assert "localStorage" not in handoff_source
+
+
+def test_authentication_routes_and_hydration_follow_active_server_contracts():
+    router_source = DASHBOARD_ROUTER.read_text(encoding="utf-8")
+    auth_store_source = AUTH_STORE.read_text(encoding="utf-8")
+    register_source = REGISTER_PAGE.read_text(encoding="utf-8")
+
+    for route in ("'/login'", "'/register'", "'/mfa-challenge'", "'/forgot-password'"):
+        assert route in router_source
+
+    for page in ("RegisterPage", "MFAChallengePage", "ForgotPasswordPage"):
+        assert page in router_source
+
+    assert "api.get('/auth/users/me')" in auth_store_source
+    assert "const { data: user }" not in auth_store_source
+    assert "api.get('/auth/me')" not in auth_store_source
+    assert "api.post('/auth/register'" in register_source
+    assert "api.post('/api/auth/register'" not in register_source

@@ -48,12 +48,12 @@ const useAuthStore = create((set, get) => ({
         return;
     }
     try {
-        // Use the /auth/me endpoint to get user data from the token
-        const { data: user } = await api.get('/auth/me');
+        // The API client already unwraps the standard success envelope.
+        const user = await api.get('/auth/users/me');
         set({
             user,
             role: user.role,
-            permissions: user.permissions,
+            permissions: user.permissions || [],
             loading: false,
         });
     } catch (error) {

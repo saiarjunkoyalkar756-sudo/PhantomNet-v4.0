@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import useAuthStore from '@/store/authStore';
 import api from '@/services/api';
+import { setMfaPendingCredentials } from '@/services/mfaChallenge';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Enter a valid email address.' }),
@@ -37,8 +38,7 @@ const LoginPage = () => {
       navigate(response.user?.role === 'admin' ? '/admin/dashboard' : '/dashboard');
     } catch (err) {
       if (err.code === '2FA_REQUIRED' || err.message === '2FA required') {
-        sessionStorage.setItem('mfa_username', data.email);
-        sessionStorage.setItem('mfa_password', data.password);
+        setMfaPendingCredentials({ username: data.email, password: data.password });
         navigate('/mfa-challenge');
         return;
       }

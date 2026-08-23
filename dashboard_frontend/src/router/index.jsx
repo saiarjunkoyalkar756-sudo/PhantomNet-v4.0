@@ -7,6 +7,9 @@ import Layout from '../components/shared/Layout';
 
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const LoginPage = lazy(() => import('../pages/Login'));
+const RegisterPage = lazy(() => import('../pages/RegisterPage'));
+const MFAChallengePage = lazy(() => import('../pages/MFAChallengePage'));
+const ForgotPasswordPage = lazy(() => import('../pages/ForgotPasswordPage'));
 const CaseManagementPage = lazy(() => import('../pages/CaseManagementPage'));
 const ComplianceReportingPage = lazy(() => import('../pages/ComplianceReportingPage'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
@@ -36,6 +39,18 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
+  },
+  {
+    path: '/mfa-challenge',
+    element: <MFAChallengePage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
   },
   {
     path: '/',
