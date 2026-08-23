@@ -64,6 +64,14 @@ The retained `/governed-cases` lifecycle remains tenant-bound and capability-pro
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not migrate or delete historic rows in the legacy `cases` table, prove a live PostgreSQL/Docker-host deployment, or prove real external response execution. An operator-approved data migration or retention decision, controlled-host health evidence, and governed response evidence remain separate work.
 
+## Completed bounded increment: threat-intelligence advisory boundary
+
+The threat-intelligence service now registers its guarded routes after declaration, so its `/api/threat-intel/lookup` and bounded `/bulk` APIs are actually reachable. Both require the existing `alerts:read` capability. Indicator types and lengths are constrained, bulk requests are limited to 50 indicators, and provider failures are returned as generic advisory availability results rather than serialized exceptions. Provider payloads are withheld from API responses; the response retains only a per-provider availability summary.
+
+The service treats Redis caching and external providers as optional advisory dependencies. Its explicit empty readiness contract avoids inheriting unrelated database, broker, and Redis checks; cache availability is logged during startup without blocking process startup. The shared factory now preserves an explicit empty dependency set. The container now invokes the actual `main:app` entrypoint and the legacy development Compose service has a bounded `/ready` healthcheck.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove API-key validity, provider authorization, live external enrichment accuracy, Redis durability, rate-limit behavior, cache isolation under real load, live Docker startup, or any detection/containment efficacy. The enrichment path is advisory-only and must not be represented as an enforcement or autonomous-response capability.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

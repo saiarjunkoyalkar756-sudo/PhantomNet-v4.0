@@ -79,7 +79,9 @@ def create_phantom_service(
         
         logger.info(f"Service '{name}' shutdown complete.")
 
-    declared_required_dependencies = tuple(required_dependencies or ("database", "kafka", "redis"))
+    declared_required_dependencies = tuple(
+        ("database", "kafka", "redis") if required_dependencies is None else required_dependencies
+    )
     app = FastAPI(
         title=name,
         description=description,
