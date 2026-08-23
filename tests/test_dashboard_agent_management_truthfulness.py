@@ -47,6 +47,7 @@ EVENT_STREAM_VIEWER = ROOT / "dashboard_frontend/src/pages/EventStreamViewer.jsx
 SETTINGS_FORM = ROOT / "dashboard_frontend/src/features/settings/components/SettingsForm.jsx"
 COMPLIANCE_PAGE = ROOT / "dashboard_frontend/src/pages/CompliancePage.jsx"
 RED_TEAM_PLAYBOOK_PAGE = ROOT / "dashboard_frontend/src/pages/RedTeamPlaybookUI.jsx"
+LOGIN_PAGE = ROOT / "dashboard_frontend/src/pages/Login.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -731,3 +732,23 @@ def test_red_team_playbook_page_retires_simulated_validation_controls():
     assert "Authorized Security-Validation Integration Pending" in source
     assert "explicit authorization, tenant and target scope" in source
     assert "immutable audit records" in source
+
+
+def test_login_page_preserves_server_authoritative_auth_without_fixture_operations():
+    source = LOGIN_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "authPanelLogs",
+        "Math.random",
+        "Kyber-1024 operational tunnel",
+        "dispatches automated containment blocks globally",
+        "Root Admin",
+        "Access Authority Role",
+        "role: z.enum",
+    ):
+        assert unsafe_component not in source
+
+    assert "Authentication is evaluated by the server" in source
+    assert "roles are assigned by server-side policy" in source
+    assert "'/auth/token'" in source
+    assert "'2FA_REQUIRED'" in source

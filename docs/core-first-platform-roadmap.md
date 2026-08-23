@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: login truthfulness and server-authority boundary
+
+The login page no longer displays randomized operational telemetry, presents client-selected administrative roles, claims global containment capability, or makes unsupported cryptographic assurances. It retains the server-authoritative authentication request and MFA-required transition. Access roles are assigned by server-side policy, not the form. Regression coverage preserves authentication and MFA paths while preventing fixture operations and client role framing from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not prove live identity-provider availability, credential security, MFA delivery, session integrity, role enforcement, tenant isolation, cryptographic handshakes, production deployment, or defensive efficacy.
+
 ## Completed bounded increment: dashboard security-validation truthfulness boundary
 
 The security-validation dashboard no longer simulates attack playbook execution, report viewing, or new simulations. It now states that authorized security-validation integration is pending. Any future workflow must require explicit authorization, tenant and target scope, bounded execution in an approved environment, evidence-linked results, independent safety controls, and immutable audit records. It must not create autonomous containment or production-impacting response authority. Regression coverage prevents simulated playbook and report controls from returning.
