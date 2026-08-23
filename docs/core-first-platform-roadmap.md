@@ -577,3 +577,10 @@ The dashboard’s unreferenced WebSocket simulator has been removed. It hard-cod
 The unmounted dashboard MFA-setup page has been removed. It was not registered in the router, used API paths and response-envelope handling inconsistent with the active dashboard client, and displayed the TOTP seed and recovery codes in a client flow with no reachable product boundary. The removal does not retire the server-side authenticated MFA enrollment and verification routes, and it does not change the active server-authoritative login-to-MFA challenge. Any future account-security settings page must be deliberately routed behind an authenticated account boundary, use the normalized client contract, minimize secret display, and have dedicated enrollment, recovery-code, and cancellation-lifecycle tests.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate the retained MFA enrollment API, TOTP correctness, recovery-code lifecycle, identity proofing, user authorization, secret handling in a browser, session integrity, rate-limit behavior, tenant isolation, production deployment, or account-security efficacy.
+
+
+## Completed bounded increment: unmounted dashboard AI-console retirement
+
+The unmounted dashboard AI-console page has been removed. Although its embedded advisory component now accurately states that integration is pending, the page itself still claimed an interactive AI security analyst was online. No router registered the page and no source imported it. Removing the stale availability framing preserves the separate governed advisory-integration notice, which remains policy-gated and non-executing, while preventing an unreachable component from being mistaken for a live conversational defensive capability.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide advisory AI availability, model behavior, prompt handling, evidence authorization, tenant isolation, recommendation quality, provider authorization, analyst workflow integration, containment authority, Docker-host operation, or defensive efficacy.
