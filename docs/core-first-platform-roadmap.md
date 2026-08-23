@@ -262,6 +262,12 @@ The legacy forensics engine accepted unauthenticated forensic-job requests, ran 
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed forensic replacement through this service, validate evidence collection, chain of custody, source provenance, tenant isolation, forensic analysis correctness, secure retention, analyst authorization, Docker-host operation, or investigative efficacy. Governed tenant-scoped evidence intake and analyst-authorized investigation remain separate supported work.
 
+## Completed bounded increment: legacy AI agent orchestrator retirement
+
+The legacy AI agent orchestrator accepted unauthenticated natural-language task requests and returned AI-generated reasoning and proposed actions without tenant binding, evidence provenance, policy gating, analyst oversight, or a non-execution guarantee. It now declares no mandatory dependency and returns `410 LEGACY_AI_AGENT_ORCHESTRATOR_API_RETIRED` for its former task route. The entry point no longer imports or initializes the agent brain or any task-planning model.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed advisory replacement through this service, validate model behavior, prompt handling, tenant isolation, evidence provenance, policy evaluation, provider authorization, analyst oversight, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
