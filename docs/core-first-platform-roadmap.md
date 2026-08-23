@@ -358,6 +358,12 @@ The dashboard malware-sandbox page no longer uploads suspicious files to the ret
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide file submission, malware execution, sandbox isolation, authorization, tenant isolation, evidence retention, result provenance, verdict accuracy, external-analysis provider authorization, Docker-host operation, or malware-detection efficacy.
 
+## Completed bounded increment: dashboard SIEM-integration truthfulness boundary
+
+The dashboard SIEM-integration page no longer creates, lists, configures, or exposes connection data for the retired SIEM integration API, and it no longer submits test events to external platforms. It now states that the legacy connection and forwarding controls are retired pending a governed telemetry integration. A future integration must keep provider credentials outside the client, maintain tenant-scoped configuration, enforce policy-bound routing, produce auditable delivery records, and independently validate provider behavior before it is presented as operational capability. Regression coverage prevents the stale connection-management, configuration-disclosure, and event-forwarding code from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide provider authorization, credential custody, tenant isolation, connection management, event routing, delivery guarantees, SIEM ingestion, raw-data privacy, audit durability, Docker-host operation, or telemetry/detection efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

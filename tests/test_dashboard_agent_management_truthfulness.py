@@ -9,6 +9,7 @@ AGENTS_TABLE = ROOT / "dashboard_frontend/src/features/agents/components/AgentsT
 ACTION_MENU = ROOT / "dashboard_frontend/src/features/agents/components/ActionMenu.jsx"
 SELF_HEALING_CONSOLE = ROOT / "dashboard_frontend/src/pages/SelfHealingConsolePage.jsx"
 SANDBOX_PAGE = ROOT / "dashboard_frontend/src/pages/SandboxPage.jsx"
+SIEM_INTEGRATION_PAGE = ROOT / "dashboard_frontend/src/pages/SiemIntegrationPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -87,3 +88,23 @@ def test_sandbox_page_does_not_retain_retired_upload_or_analysis_result_controls
 
     assert "Governed Malware Analysis Integration Pending" in source
     assert "isolated execution, authorization, evidence, retention" in source
+
+
+def test_siem_integration_page_does_not_retain_retired_connection_or_event_controls():
+    source = SIEM_INTEGRATION_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "/api/siem-integration/",
+        "fetchConnections",
+        "handleAddConnection",
+        "handleSendTestEvent",
+        "Add Connection",
+        "Send Test Event",
+        "Existing SIEM Connections",
+        "configJson",
+        "testEventData",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed SIEM Integration Pending" in source
+    assert "tenant-scoped configuration custody, provider authorization" in source
