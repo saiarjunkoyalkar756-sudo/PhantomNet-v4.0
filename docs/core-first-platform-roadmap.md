@@ -352,6 +352,12 @@ The dashboard self-healing console no longer polls a retired legacy agent API, r
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide endpoint telemetry, a self-healing or remediation adapter, policy evaluation, endpoint identity, approval/audit durability, execution, verification, rollback, device packaging, Docker-host operation, or remediation/containment efficacy.
 
+## Completed bounded increment: dashboard malware-sandbox truthfulness boundary
+
+The dashboard malware-sandbox page no longer uploads suspicious files to the retired sandbox API or presents behavioral, network, cryptographic, artifact, verdict, hash, raw-output, or analysis-ID data as real analysis result. It now states that the legacy file-upload and sandbox-analysis control is retired pending an isolated, governed integration. A future workflow must provide authorized submission, isolated execution, tenant-scoped evidence handling, auditable lifecycle control, and validated result provenance before it is exposed as operational capability. Regression coverage prevents the direct upload request and unsupported result components from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide file submission, malware execution, sandbox isolation, authorization, tenant isolation, evidence retention, result provenance, verdict accuracy, external-analysis provider authorization, Docker-host operation, or malware-detection efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

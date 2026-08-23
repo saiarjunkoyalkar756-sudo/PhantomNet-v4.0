@@ -8,6 +8,7 @@ AGENTS_PAGE = ROOT / "dashboard_frontend/src/pages/AgentsManagementPage.jsx"
 AGENTS_TABLE = ROOT / "dashboard_frontend/src/features/agents/components/AgentsTable.jsx"
 ACTION_MENU = ROOT / "dashboard_frontend/src/features/agents/components/ActionMenu.jsx"
 SELF_HEALING_CONSOLE = ROOT / "dashboard_frontend/src/pages/SelfHealingConsolePage.jsx"
+SANDBOX_PAGE = ROOT / "dashboard_frontend/src/pages/SandboxPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -64,3 +65,25 @@ def test_self_healing_console_does_not_retain_legacy_agent_polling_or_placeholde
 
     assert "Governed Response Integration Pending" in source
     assert "human-approved for high-impact actions" in source
+
+
+def test_sandbox_page_does_not_retain_retired_upload_or_analysis_result_controls():
+    source = SANDBOX_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "FormData",
+        "/api/sandbox/analyze",
+        "handleAnalyzeFile",
+        "handleFileChange",
+        "type=\"file\"",
+        "Analyze File",
+        "analysisResult",
+        "raw_output",
+        "MALICIOUS",
+        "CLEAN",
+        "dropped_artifacts",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Malware Analysis Integration Pending" in source
+    assert "isolated execution, authorization, evidence, retention" in source
