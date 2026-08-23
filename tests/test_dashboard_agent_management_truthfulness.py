@@ -18,6 +18,7 @@ COMPLIANCE_REPORTING_PAGE = ROOT / "dashboard_frontend/src/pages/ComplianceRepor
 FORENSICS_PAGE = ROOT / "dashboard_frontend/src/pages/ForensicsPage.jsx"
 CLOUD_SECURITY_PAGE = ROOT / "dashboard_frontend/src/pages/CloudSecurityPage.jsx"
 SOAR_PAGE = ROOT / "dashboard_frontend/src/pages/SOARPage.jsx"
+GRAPH_CANVAS = ROOT / "dashboard_frontend/src/features/threat-graph/components/GraphCanvas.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -271,3 +272,20 @@ def test_soar_page_does_not_retain_fixture_playbooks_or_simulated_containment_co
     assert "Governed Containment Dashboard Integration Pending" in source
     assert "HMAC-signed audit evidence" in source
     assert "High-impact containment must never become automatic through the client" in source
+
+
+def test_graph_canvas_does_not_retain_placeholder_visualization_or_inert_controls():
+    source = GRAPH_CANVAS.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "ATTACK PATH INTELLIGENCE MAP",
+        "Interactive Graph Visualization",
+        "Zoom In",
+        "Zoom Out",
+        "Array.from({ length: 100 })",
+        "placeholder for a complex graph visualization",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Attack-Path Visualization Integration Pending" in source
+    assert "tenant-scoped, authorized, provenance-linked results" in source

@@ -406,6 +406,12 @@ The dashboard SOAR page no longer presents fixture playbooks, simulated approval
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-containment integration, playbook lifecycle, endpoint or network control, approval identity, audit durability, blockchain integrity, adapter execution, verification, rollback, Docker-host operation, or containment efficacy.
 
+## Completed bounded increment: dashboard attack-path visualization truthfulness boundary
+
+The dashboard threat-graph canvas no longer presents a placeholder attack-path map, relationship data, or inert graph controls as live investigation capability. It now states that the visualization is pending integration with the separately protected attack-path API. A future visualization must query tenant-scoped, authorized, provenance-linked results and distinguish graph hypotheses from verified evidence before it is exposed as operational capability. Regression coverage prevents placeholder graph claims and inert controls from returning while preserving the governed attack-path contract tests.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-graph integration, attack-path discovery, relationship accuracy, asset exposure analysis, tenant isolation, result provenance, graph evidence verification, deployment operation, or detection/investigation efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

@@ -1,41 +1,22 @@
 import React from 'react';
-import { GitGraph, ZoomIn, ZoomOut } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
+import { GitGraph } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
-// This is a placeholder for a complex graph visualization component.
-// A real implementation would involve libraries like react-force-graph, vis.js, or D3.
-const GraphCanvas = () => {
-  return (
-    <Card className="h-full flex flex-col">
-      <CardContent className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full h-full bg-background rounded-lg flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Background glowing grid effect */}
-            <div className="absolute inset-0 z-0 opacity-10">
-                <div className="grid grid-cols-10 h-full w-full">
-                    {Array.from({ length: 100 }).map((_, i) => (
-                        <div key={i} className="border-r border-b border-border/20"></div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="text-center relative z-10">
-                <GitGraph size={64} className="mx-auto text-primary animate-pulse" />
-                <p className="mt-4 text-text-secondary font-mono text-lg">ATTACK PATH INTELLIGENCE MAP</p>
-                <p className="text-sm text-muted-foreground">(Interactive Graph Visualization)</p>
-                <div className="flex justify-center mt-4 space-x-2">
-                    <Button variant="outline" size="sm" className="bg-panel-solid border-border text-primary hover:bg-accent/20">
-                        <ZoomIn className="w-4 h-4 mr-1" /> Zoom In
-                    </Button>
-                    <Button variant="outline" size="sm" className="bg-panel-solid border-border text-primary hover:bg-accent/20">
-                        <ZoomOut className="w-4 h-4 mr-1" /> Zoom Out
-                    </Button>
-                </div>
-            </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+const GraphCanvas = () => (
+  <Card className="h-full flex flex-col">
+    <CardContent className="flex-1 flex items-center justify-center p-6">
+      <div className="max-w-2xl text-center">
+        <GitGraph size={52} className="mx-auto text-primary" />
+        <h2 className="mt-4 text-lg font-semibold text-primary">Governed Attack-Path Visualization Integration Pending</h2>
+        <p className="mt-3 text-sm text-text-secondary leading-6">
+          This dashboard does not display an attack-path graph, relationship data, asset exposure, threat routes, or interactive graph controls. The previous canvas was a placeholder and could be mistaken for a live investigation view.
+        </p>
+        <p className="mt-3 text-sm text-text-secondary leading-6">
+          The separately protected attack-path API remains the only supported analysis boundary. Any future dashboard visualization must query tenant-scoped, authorized, provenance-linked results and must distinguish graph hypotheses from verified evidence before it is exposed as operational capability.
+        </p>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export default GraphCanvas;
