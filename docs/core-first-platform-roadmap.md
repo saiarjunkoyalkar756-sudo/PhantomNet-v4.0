@@ -274,6 +274,12 @@ The legacy chatbot accepted sensitive attack payloads and queries, generated sig
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed advisory replacement through this service, validate prompt handling, privacy, tenant isolation, evidence provenance, signature or attribution correctness, scoring quality, policy evaluation, provider authorization, analyst oversight, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
 
+## Completed bounded increment: legacy AI behavioral-engine retirement
+
+The legacy AI behavioral engine exposed untenant-scoped event analysis and fixture user profiles, while its second entry point initialized Kafka consumers and producers, retained mutable process-local event state, ran forecasting tasks, published predictions, and disclosed broker/model safe-mode details. Both entry points now declare no mandatory dependency and return `410 LEGACY_AI_BEHAVIORAL_API_RETIRED` for their former analysis, profile, and detailed-health routes. The code no longer imports behavioral-event, consumer, broker, model, forecasting, mutable-state, or detailed-health components. The active core-ingestion readiness matrix no longer represents this retired worker as Kafka-dependent.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed behavioral-detection or forecasting replacement, validate telemetry normalization, model behavior, anomaly or forecast correctness, provenance, tenant isolation, broker authorization, event durability, policy evaluation, provider authorization, Docker-host operation, or AI/detection efficacy. Governed evidence-bound detection and non-executing advisory workflows remain separate supported paths.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

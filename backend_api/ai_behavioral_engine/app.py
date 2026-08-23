@@ -1,48 +1,29 @@
+from __future__ import annotations
+
+from backend_api.core.response import error_response
 from backend_api.shared.service_factory import create_phantom_service
-from .consumer import start_kafka_consumer
-from loguru import logger
-import asyncio
-from pydantic import BaseModel
-from backend_api.core.response import success_response
 
-async def ai_startup(app: FastAPI):
-    # Start the Kafka consumer as a background task
-    app.state.consumer_task = asyncio.create_task(start_kafka_consumer())
-    logger.info("Kafka consumer task started.")
-
-async def ai_shutdown(app: FastAPI):
-    if hasattr(app.state, "consumer_task"):
-        app.state.consumer_task.cancel()
-        await asyncio.gather(app.state.consumer_task, return_exceptions=True)
-        logger.info("Kafka consumer task stopped.")
 
 app = create_phantom_service(
-    name="AI Behavioral Engine",
-    description="Real-time behavioral analytics and anomaly detection.",
+    name="Legacy AI Behavioral Engine",
+    description="Retired ungoverned behavioral-analysis boundary; no direct event-analysis surface is exposed.",
     version="1.0.0",
-    custom_startup=ai_startup,
-    custom_shutdown=ai_shutdown
+    required_dependencies=(),
 )
 
-class BehavioralEvent(BaseModel):
-    event_id: str
-    user_id: str
-    entity_id: str
-    timestamp: str
-    data: dict
 
-@app.post("/analyze")
-async def analyze_behavioral_event(event: BehavioralEvent):
-    return success_response(data={
-        "event_id": event.event_id,
-        "analysis_pending": False,
-        "detection_status": "queued_for_deep_analysis"
-    })
-
-@app.get("/profiles/user/{user_id}")
-async def get_user_profile(user_id: str):
-    return success_response(data={
-        "user_id": user_id,
-        "risk_profile": "low",
-        "last_seen": "2026-04-19T12:00:00Z"
-    })
+@app.api_route(
+    "/{legacy_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    include_in_schema=False,
+)
+async def retired_legacy_ai_behavioral_api(legacy_path: str = ""):
+    """Fail closed instead of analyzing arbitrary event data or exposing user profiles."""
+    return error_response(
+        code="LEGACY_AI_BEHAVIORAL_API_RETIRED",
+        message=(
+            "The legacy AI behavioral API is retired. Use evidence-bound, tenant-scoped, "
+            "policy-gated advisory and governed detection workflows."
+        ),
+        status_code=410,
+    )
