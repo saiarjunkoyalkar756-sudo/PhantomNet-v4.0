@@ -416,37 +416,31 @@ app.include_router(health_router, tags=["Health"])
 
 
 
-from backend_api.shared.pqc_wrapper import PQCWrapper
-pqc_engine = PQCWrapper()
+@app.post("/api/security/pqc-handshake", include_in_schema=False)
+async def retired_legacy_pqc_handshake():
+    """Fail closed instead of accepting unauthenticated caller-selected key identifiers."""
+    return JSONResponse(
+        status_code=410,
+        content={
+            "detail": (
+                "The legacy PQC handshake API is retired. Cryptographic session establishment "
+                "must be deployment-managed and independently validated."
+            ),
+            "code": "LEGACY_GATEWAY_PQC_API_RETIRED",
+        },
+    )
 
-@app.post("/api/security/pqc-handshake")
-async def pqc_handshake(request: Request):
-    """
-    Feature 18: Post-Quantum Cryptography Handshake.
-    Exchanges ML-KEM (Kyber) encapsulated keys for quantum-resistant session integrity.
-    """
-    body = await request.json()
-    peer_pub_key_id = body.get("public_key_id")
-    if not peer_pub_key_id:
-        raise HTTPException(status_code=400, detail="Missing public_key_id for PQC handshake")
-    
-    # Perform Lattice-based key encapsulation
-    result = pqc_engine.encapsulate_key(peer_pub_key_id)
-    logger.info(f"PQC_HANDSHAKE: Quantum-resistant key encapsulated for {peer_pub_key_id[:8]}...")
-    
-    return result
 
-from backend_api.iam_service.auth_methods import get_current_user
-
-@app.get("/api/security/audit-crypto-agility")
-async def audit_crypto_agility(current_user: User = Depends(get_current_user)):
-    """
-    Zero-Trust check for Shor-vulnerable algorithms across services.
-    """
-    # Simulate a check across multiple stacks
-    audit_results = {
-        "gateway": pqc_engine.apply_cryptographic_agility_check("PQC-Kyber-Dilithium"),
-        "iam_service": pqc_engine.apply_cryptographic_agility_check("RSA-4096"), # This will fail
-        "agent_protocol": pqc_engine.apply_cryptographic_agility_check("ECDSA-P384") # This will fail
-    }
-    return audit_results
+@app.get("/api/security/audit-crypto-agility", include_in_schema=False)
+async def retired_legacy_crypto_agility_audit():
+    """Fail closed instead of returning simulated cryptographic posture results."""
+    return JSONResponse(
+        status_code=410,
+        content={
+            "detail": (
+                "The legacy cryptographic-agility API is retired. Use governed, "
+                "evidence-backed configuration assessment workflows."
+            ),
+            "code": "LEGACY_GATEWAY_PQC_API_RETIRED",
+        },
+    )

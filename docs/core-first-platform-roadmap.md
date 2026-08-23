@@ -286,6 +286,12 @@ The legacy SOC copilot exposed unauthenticated alert explanation, auto-investiga
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed SOC copilot replacement, validate prompt handling, privacy, tenant isolation, evidence provenance, context authorization, recommendation or rule/report correctness, policy evaluation, provider authorization, analyst oversight, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
 
+## Completed bounded increment: legacy gateway PQC and crypto-agility retirement
+
+The active self-hosted gateway remains the production-reference entry point, with standardized health, readiness, environment-scoped CORS, rate limiting, and governed router composition retained. Its unauthenticated caller-selected PQC handshake and simulated crypto-agility routes are now explicitly retired with `410 LEGACY_GATEWAY_PQC_API_RETIRED`. The gateway no longer imports the PQC wrapper or invokes key encapsulation or simulated agility checks. Targeted ASGI coverage verifies the active health route remains available under isolated middleware dependencies.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate deployment-managed cryptographic session establishment, key custody, key rotation, ML-KEM interoperability, algorithm-agility assessment accuracy, authorization, real cryptographic posture, Docker-host operation, or production gateway security efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
