@@ -280,6 +280,12 @@ The legacy AI behavioral engine exposed untenant-scoped event analysis and fixtu
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed behavioral-detection or forecasting replacement, validate telemetry normalization, model behavior, anomaly or forecast correctness, provenance, tenant isolation, broker authorization, event durability, policy evaluation, provider authorization, Docker-host operation, or AI/detection efficacy. Governed evidence-bound detection and non-executing advisory workflows remain separate supported paths.
 
+## Completed bounded increment: legacy SOC copilot retirement
+
+The legacy SOC copilot exposed unauthenticated alert explanation, auto-investigation, and AI rule/report generation, while its second entry point directly queried SIEM and vulnerability data sources, disclosed raw context and related log snippets, and returned simulated recommendations and generated artifacts without tenant isolation, provenance, policy gating, or a non-execution guarantee. Both entry points now return `410 LEGACY_SOC_COPILOT_API_RETIRED`; the service declares no mandatory dependency and no longer imports context-builder, cross-service database, schema, auto-investigation, or generation components.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed SOC copilot replacement, validate prompt handling, privacy, tenant isolation, evidence provenance, context authorization, recommendation or rule/report correctness, policy evaluation, provider authorization, analyst oversight, Docker-host operation, or AI/detection efficacy. Advisory assistance remains evidence-bound, policy-gated, and non-executing.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
