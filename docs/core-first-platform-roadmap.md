@@ -334,6 +334,12 @@ The mounted IAM router now treats public self-registration as a standard-user pa
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide tenant provisioning, administrator provisioning, identity proofing, verified email or other out-of-band delivery, password-reset recovery, MFA/WebAuthn assurance, session revocation under real Redis/PostgreSQL failure, rate-limit effectiveness, user-directory privacy, Docker-host operation, or production authentication security proof.
 
+## Completed bounded increment: direct agent-command dispatch retirement
+
+The standalone direct agent-command API no longer signs, audits, or publishes arbitrary endpoint or network commands. Although its former envelope carried a tenant claim and RSA-PSS signature, it accepted arbitrary command types and targets through a capability-only route without a tenant-owned target check or the required request → human approval → audit → execution → verification → rollback lifecycle. All routes under `/api/v1/agents` now return `410 LEGACY_DIRECT_AGENT_COMMAND_API_RETIRED`; the service no longer imports broker, signing, capability, or direct-dispatch components. The independent canonical endpoint-signature protocol and its agent-side verification regressions remain source-covered, but they are not an authorization, approval, or execution claim.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed endpoint-command replacement or validate tenant-owned endpoint identity, approval identity, audit durability, signing-key custody, broker authorization, endpoint execution, verification, rollback, Wazuh/EDR integration, Docker-host operation, or containment efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
