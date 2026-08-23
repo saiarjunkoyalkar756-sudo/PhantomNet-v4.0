@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_ROOT = PROJECT_ROOT / "backend_api"
-MIGRATION_HEAD = "c8d9e0f1a2b3"
+MIGRATION_HEAD = "d9e0f1a2b3c4"
 
 
 def _config(database_path: Path) -> Config:
@@ -36,11 +36,15 @@ def test_autonomous_defense_migration_upgrades_clean_database_to_head(tmp_path):
         assert "defensive_evaluation_policies" in inspector.get_table_names()
         assert "defensive_model_evaluations" in inspector.get_table_names()
         assert "advisory_model_assessments" in inspector.get_table_names()
+        assert "telemetry_agent_credentials" in inspector.get_table_names()
+        assert "telemetry_signature_nonces" in inspector.get_table_names()
         policy_columns = {column["name"] for column in inspector.get_columns("autonomous_defense_policies")}
         decision_columns = {column["name"] for column in inspector.get_columns("autonomous_defense_decisions")}
         dataset_columns = {column["name"] for column in inspector.get_columns("defensive_dataset_versions")}
         evaluation_columns = {column["name"] for column in inspector.get_columns("defensive_model_evaluations")}
         assessment_columns = {column["name"] for column in inspector.get_columns("advisory_model_assessments")}
+        telemetry_credential_columns = {column["name"] for column in inspector.get_columns("telemetry_agent_credentials")}
+        telemetry_nonce_columns = {column["name"] for column in inspector.get_columns("telemetry_signature_nonces")}
         assert {"policy_id", "tenant_id", "decision_mode", "minimum_confidence"} <= policy_columns
         assert {
             "decision_id",
@@ -70,6 +74,8 @@ def test_autonomous_defense_migration_upgrades_clean_database_to_head(tmp_path):
             "requires_human_approval",
             "automatic_enforcement",
         } <= assessment_columns
+        assert {"credential_id", "tenant_id", "agent_id", "key_id", "public_key_pem", "status", "revoked_at"} <= telemetry_credential_columns
+        assert {"nonce_record_id", "tenant_id", "agent_id", "key_id", "nonce", "payload_sha256", "signed_at", "accepted_at"} <= telemetry_nonce_columns
         with engine.connect() as connection:
             revision = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         assert revision == MIGRATION_HEAD

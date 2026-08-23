@@ -45,6 +45,70 @@ class EventEnvelope(BaseModel):
         return sha256(canonical).hexdigest()
 
 
+class TelemetrySigningCredential(BaseModel):
+    """Tenant-owned public-key identity authorized only to sign telemetry envelopes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    credential_id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    agent_id: str = Field(min_length=3, max_length=128)
+    key_id: str = Field(min_length=8, max_length=128)
+    public_key_pem: str = Field(min_length=128, max_length=8192)
+    status: Literal["active", "revoked"] = "active"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    revoked_at: Optional[datetime] = None
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_telemetry_tenant_id(cls, value: str) -> str:
+        from uuid import UUID
+
+        try:
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @model_validator(mode="after")
+    def validate_revocation_state(self) -> "TelemetrySigningCredential":
+        if self.status == "revoked" and self.revoked_at is None:
+            raise ValueError("revoked telemetry credentials require revoked_at.")
+        if self.status == "active" and self.revoked_at is not None:
+            raise ValueError("active telemetry credentials cannot have revoked_at.")
+        return self
+
+
+class SignedTelemetryEnvelope(BaseModel):
+    """Detached signature metadata binding one telemetry body to one active agent identity."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    tenant_id: str
+    agent_id: str = Field(min_length=3, max_length=128)
+    key_id: str = Field(min_length=8, max_length=128)
+    nonce: str = Field(min_length=16, max_length=256, pattern=r"^[A-Za-z0-9._~-]+$")
+    signed_at: datetime
+    payload_sha256: str = Field(min_length=64, max_length=64, pattern=r"^[a-f0-9]{64}$")
+    signature: str = Field(min_length=64, max_length=16384, pattern=r"^[a-f0-9]+$")
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_signed_telemetry_tenant_id(cls, value: str) -> str:
+        from uuid import UUID
+
+        try:
+            return str(UUID(value))
+        except ValueError as exc:
+            raise ValueError("tenant_id must be a UUID.") from exc
+
+    @field_validator("signed_at")
+    @classmethod
+    def require_timezone_aware_signed_at(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
 class MitreEvidence(BaseModel):
     """A bounded, analyst-readable ATT&CK mapping produced by a governed rule."""
 

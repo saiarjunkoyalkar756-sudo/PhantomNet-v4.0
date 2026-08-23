@@ -27,6 +27,7 @@ from backend_api.evidence_vault.integration import EvidenceIntegrationService
 from backend_api.core.response import success_response
 from backend_api.iam_service.policy import require_capability
 from backend_api.shared.database import User
+from backend_api.telemetry_ingestor.signed_auth import TelemetryCredentialRepository
 from backend_api.soar_engine.autonomous_defense import (
     AutonomousDefenseDecisionService,
     AutonomousDefenseRepository,
@@ -41,6 +42,7 @@ from phantomnet_core.contracts import (
     DefensiveDatasetSample,
     DefensiveDatasetSource,
     DefensiveEvaluationPolicy,
+    TelemetrySigningCredential,
 )
 
 
@@ -58,6 +60,7 @@ detection_repository = DetectionRepository()
 defensive_evaluation_repository = DefensiveEvaluationRepository()
 defensive_evaluation_service = DefensiveModelEvaluationService(defensive_evaluation_repository)
 advisory_assessment_repository = AdvisoryModelAssessmentRepository()
+telemetry_credential_repository = TelemetryCredentialRepository()
 deterministic_advisory_provider = DeterministicAdvisoryProvider()
 advisory_assessment_service = AdvisoryModelAssessmentService(
     defensive_evaluation_repository,
@@ -83,6 +86,34 @@ class ApprovalDecisionCreate(BaseModel):
 
 class AutonomousDefenseEvaluationRequest(BaseModel):
     detection_id: str = Field(min_length=1, max_length=255)
+
+
+class TelemetryCredentialCreate(BaseModel):
+    agent_id: str = Field(min_length=3, max_length=128)
+    key_id: str = Field(min_length=8, max_length=128)
+    public_key_pem: str = Field(min_length=128, max_length=8192)
+
+    def to_contract(self, tenant_id: str) -> TelemetrySigningCredential:
+        return TelemetrySigningCredential(
+            tenant_id=tenant_id,
+            agent_id=self.agent_id,
+            key_id=self.key_id,
+            public_key_pem=self.public_key_pem,
+            status="active",
+        )
+
+
+def _telemetry_credential_metadata(credential: TelemetrySigningCredential) -> dict[str, Any]:
+    """Return public operational metadata only; key material is never echoed by governed APIs."""
+    return {
+        "credential_id": credential.credential_id,
+        "tenant_id": credential.tenant_id,
+        "agent_id": credential.agent_id,
+        "key_id": credential.key_id,
+        "status": credential.status,
+        "created_at": credential.created_at,
+        "revoked_at": credential.revoked_at,
+    }
 
 
 class DefensiveDatasetSourceCreate(BaseModel):
@@ -186,6 +217,42 @@ class AutonomousDefensePolicyCreate(BaseModel):
 
     def to_contract(self, tenant_id: str) -> AutonomousDefensePolicy:
         return AutonomousDefensePolicy(tenant_id=tenant_id, **self.model_dump())
+
+
+@router.post("/telemetry-credentials")
+async def register_telemetry_credential(
+    request: TelemetryCredentialCreate,
+    current_user: User = Depends(require_capability("agents:approve")),
+):
+    """Register an active public key for one authenticated tenant's agent telemetry only."""
+    try:
+        credential, created = await telemetry_credential_repository.register(
+            request.to_contract(str(current_user.tenant_id))
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Telemetry credential was rejected.") from exc
+    return success_response(data={"credential": _telemetry_credential_metadata(credential), "created": created})
+
+
+@router.get("/telemetry-credentials")
+async def list_telemetry_credentials(
+    limit: int = Query(default=200, ge=1, le=500),
+    current_user: User = Depends(require_capability("audit:read")),
+):
+    credentials = await telemetry_credential_repository.list_for_tenant(str(current_user.tenant_id), limit=limit)
+    return success_response(data=[_telemetry_credential_metadata(credential) for credential in credentials])
+
+
+@router.post("/telemetry-credentials/{credential_id}/revoke")
+async def revoke_telemetry_credential(
+    credential_id: str,
+    current_user: User = Depends(require_capability("agents:approve")),
+):
+    try:
+        credential = await telemetry_credential_repository.revoke(str(current_user.tenant_id), credential_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="Telemetry credential was not found.") from exc
+    return success_response(data=_telemetry_credential_metadata(credential))
 
 
 @router.post("/defensive-data/sources", status_code=201)

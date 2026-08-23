@@ -17,6 +17,7 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
     event,
+    inspect,
     text
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as pgUUID
@@ -1159,3 +1160,66 @@ class TelemetryReplicationReceiptRow(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
     delivered_at = Column(DateTime(timezone=True), nullable=True)
     error_code = Column(String, nullable=True)
+
+
+class TelemetryAgentCredentialRow(Base):
+    """Tenant-bound public-key identity that may sign telemetry, never response commands."""
+
+    __tablename__ = "telemetry_agent_credentials"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "agent_id", "key_id", name="uq_telemetry_agent_credential"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    credential_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    agent_id = Column(String, nullable=False, index=True)
+    key_id = Column(String, nullable=False, index=True)
+    public_key_pem = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="active", index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+
+@event.listens_for(TelemetryAgentCredentialRow, "before_update")
+def _restrict_telemetry_credential_update(_mapper, _connection, target) -> None:
+    state = inspect(target)
+    for field in ("credential_id", "tenant_id", "agent_id", "key_id", "public_key_pem", "created_at"):
+        if state.attrs[field].history.has_changes():
+            raise RuntimeError("Telemetry credential identity fields are immutable through the application ORM.")
+    status_history = state.attrs["status"].history
+    revoked_history = state.attrs["revoked_at"].history
+    if not status_history.has_changes() and not revoked_history.has_changes():
+        return
+    previous_status = status_history.deleted[0] if status_history.deleted else None
+    if previous_status != "active" or target.status != "revoked" or target.revoked_at is None:
+        raise RuntimeError("Telemetry credentials may only transition once from active to revoked.")
+
+
+class TelemetrySignatureNonceRow(Base):
+    """Immutable accepted signed-telemetry nonce preventing cross-restart replay."""
+
+    __tablename__ = "telemetry_signature_nonces"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "agent_id", "key_id", "nonce", name="uq_telemetry_signature_nonce"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    nonce_record_id = Column(String, unique=True, nullable=False, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
+    agent_id = Column(String, nullable=False, index=True)
+    key_id = Column(String, nullable=False, index=True)
+    nonce = Column(String, nullable=False)
+    payload_sha256 = Column(String, nullable=False)
+    signed_at = Column(DateTime(timezone=True), nullable=False)
+    accepted_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+
+@event.listens_for(TelemetrySignatureNonceRow, "before_update")
+def _reject_telemetry_nonce_update(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Accepted telemetry signature nonces are immutable and cannot be updated through the application ORM.")
+
+
+@event.listens_for(TelemetrySignatureNonceRow, "before_delete")
+def _reject_telemetry_nonce_delete(_mapper, _connection, _target) -> None:
+    raise RuntimeError("Accepted telemetry signature nonces are immutable and cannot be deleted through the application ORM.")

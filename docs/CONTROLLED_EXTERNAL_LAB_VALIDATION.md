@@ -145,11 +145,12 @@ Move beyond source compilation without generalizing from one device.
 ### Procedure
 
 1. Use approved Linux, Windows, and Android/Termux lab devices. Record OS version, architecture, install method, and available capability class.
-2. Build or package the agent for the intended platform. Record artifact checksum and source commit.
-3. Install with the least required privilege. Record start/stop behavior, telemetry route, identity enrollment behavior, and clean uninstall behavior.
-4. Collect CPU, memory, network, and—where relevant—battery observations for a defined idle and synthetic-workload interval. Do not claim a universal footprint from a single device.
-5. Record any eBPF or native-capture fallback explicitly. A simulator fallback is a different evidence class from a native collector.
-6. Delete credentials and temporary agent state after the run.
+2. Complete `docs/lab-evidence/GATE6_SIGNED_TELEMETRY_EVIDENCE_TEMPLATE.md` with the approved lab scope, key-handling boundary, and no-response-authority declaration.
+3. Build or package the agent for the intended platform. Record artifact checksum and source commit.
+4. Install with the least required privilege. Provision a tenant-bound public telemetry key through the governed credential API; record only the key fingerprint and metadata. Validate valid signature acceptance, altered-body rejection, durable nonce replay rejection, and post-revocation rejection before recording start/stop behavior, telemetry route, identity enrollment behavior, and clean uninstall behavior.
+5. Collect CPU, memory, network, and—where relevant—battery observations for a defined idle and synthetic-workload interval. Do not claim a universal footprint from a single device.
+6. Record any eBPF or native-capture fallback explicitly. A simulator fallback is a different evidence class from a native collector.
+7. Revoke lab credentials, delete temporary agent state, and retain only secret-free evidence after the run.
 
 ### Pass criteria
 
