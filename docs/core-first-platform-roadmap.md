@@ -340,6 +340,12 @@ The standalone direct agent-command API no longer signs, audits, or publishes ar
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed endpoint-command replacement or validate tenant-owned endpoint identity, approval identity, audit durability, signing-key custody, broker authorization, endpoint execution, verification, rollback, Wazuh/EDR integration, Docker-host operation, or containment efficacy.
 
+## Completed bounded increment: dashboard agent-management truthfulness boundary
+
+The dashboard’s agent-management view no longer presents fixture agents, simulated online/quarantined/offline state, fabricated heartbeat/certificate/CPU telemetry, or in-memory approve, revoke, and quarantine controls as product capability. The former add-agent action is also removed. The view now clearly states that legacy agent enrollment and lifecycle controls are retired and that a governed, tenant-scoped endpoint control plane must provide request-bound, human-approved, auditable, verified, and rollback-capable actions before operational fleet controls can return. Regression coverage prevents reintroduction of fixture data, simulated lifecycle handlers, action-menu controls, or stale legacy agent paths.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a governed endpoint integration, endpoint identity, inventory accuracy, telemetry delivery, certificate lifecycle, lifecycle authorization, approval/audit durability, command execution, verification, rollback, device packaging, Docker-host operation, or endpoint-security efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
