@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard governed-configuration truthfulness boundary
+
+The settings dashboard no longer simulates autonomous-defense activation, threat-scoring changes, log-level changes, or successful configuration saves. It now states that governed configuration integration is pending. Any future workflow must enforce privileged authorization and tenant scope, validate policy and safe defaults, record immutable auditable changes, require approval for high-impact settings, and preserve verification and rollback. AI remains advisory-only and cannot enable automated containment through the dashboard. Regression coverage prevents unsupported mutable settings behavior from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide configuration integration, privileged authorization, policy validation, change persistence, audit durability, approvals, verification, rollback, automatic containment, Docker-host operation, or defensive efficacy.
+
 ## Completed bounded increment: dashboard event-evidence truthfulness boundary
 
 The event-stream dashboard no longer connects to an unscoped event WebSocket, retains events in browser state, filters endpoint data, or exposes raw event details. It now states that governed event-evidence integration is pending. Any future event view must use a protected tenant-scoped analyst workflow with authorization-checked, provenance-linked, validated and minimized observations; constrain filters and returned fields; retain deterministic auditability; and distinguish collected telemetry from verified detections. It must remain read-only and non-enforcing, with no containment or response authority. Regression coverage prevents the unscoped stream client and raw evidence interface from returning.

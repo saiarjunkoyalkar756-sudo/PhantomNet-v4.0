@@ -44,6 +44,7 @@ ADMIN_DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/AdminDashboard.jsx"
 TERMINAL_CHAT = ROOT / "dashboard_frontend/src/features/ai-console/components/TerminalChat.jsx"
 LEGACY_AGENT_MODAL = ROOT / "dashboard_frontend/src/features/agents/components/AgentModal.jsx"
 EVENT_STREAM_VIEWER = ROOT / "dashboard_frontend/src/pages/EventStreamViewer.jsx"
+SETTINGS_FORM = ROOT / "dashboard_frontend/src/features/settings/components/SettingsForm.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -670,3 +671,22 @@ def test_event_stream_viewer_retires_unscoped_live_event_client():
     assert "Governed Event-Evidence Integration Pending" in source
     assert "authorization-checked, provenance-linked, validated and minimized observations" in source
     assert "read-only and non-enforcing" in source
+
+
+def test_settings_form_retires_simulated_autonomous_configuration_controls():
+    source = SETTINGS_FORM.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "autoDefense",
+        "threatScoring",
+        "loggingLevel",
+        "handleSave",
+        "Settings saved successfully",
+        "Autonomous Defense Mode",
+        "SAVE SETTINGS",
+    ):
+        assert unsafe_component not in source
+
+    assert "GOVERNED CONFIGURATION INTEGRATION PENDING" in source
+    assert "privileged authorization and tenant scope" in source
+    assert "AI remains advisory-only" in source
