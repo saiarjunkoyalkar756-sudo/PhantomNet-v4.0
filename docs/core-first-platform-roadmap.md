@@ -106,6 +106,14 @@ The source-controlled protocol and controlled-device evidence requirements are d
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove agent packaging, runtime secret injection, OS trust-store behavior, broker ACLs, certificate rotation, command delivery, live device execution, or containment effectiveness. Those claims require the controlled-device validation gate with fresh non-repository credentials.
 
+## Completed bounded increment: legacy API gateway retirement
+
+The legacy API gateway previously composed authentication, administrative blacklist, agent enrollment, websocket, and orchestrator routers into one service. Its audit identified untenant-scoped and unauthenticated route families that could not be safely retained as a public compatibility surface. The legacy gateway is now a fail-closed boundary: standard `/health`, `/ready`, `/metrics`, and compatibility `/health_status` remain available, while former routes return `410 LEGACY_API_GATEWAY_RETIRED`.
+
+The separate self-hosted governed gateway and tenant-scoped service APIs remain the supported control plane. The retired gateway declares no mandatory upstream dependency because it performs no authentication, persistence, broker, enrollment, or response function. Regression coverage verifies actual ASGI retirement responses for former administrative, agent, authentication, and orchestrator paths and confirms standard health visibility remains intact.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not demonstrate migration of legacy callers, live ingress routing, replacement API adoption, Docker-host startup, hosted authentication behavior, agent enrollment, or response execution. Operators must update integrations to supported governed APIs before retiring any legacy deployment.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
