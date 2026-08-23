@@ -316,6 +316,12 @@ The active self-hosted gateway no longer exposes its legacy agent-management sur
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed enrollment replacement or validate agent identity, certificate issuance or revocation, key custody, tenant isolation, configuration authorization, telemetry durability, approval/audit durability, WebSocket authorization, command authorization, endpoint signing, Docker-host operation, or endpoint-security efficacy.
 
+## Completed bounded increment: legacy gateway admin retirement
+
+The active self-hosted gateway no longer exposes its legacy `/admin` control surface. That router could mutate a globally unique blacklist without tenant ownership, approval/audit lifecycle, or enforcement verification, and it exposed unscoped user and blacklist listings. Every former route now returns `410 LEGACY_GATEWAY_ADMIN_API_RETIRED`; the source no longer imports blacklist or user models, database access, data schemas, capability enforcement, query helpers, or commit operations.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed administrative or network-control replacement, validate tenant isolation, administrator identity, capability policy, approval/audit durability, enforcement, verification, rollback, user-directory privacy, database durability, Docker-host operation, or containment efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
