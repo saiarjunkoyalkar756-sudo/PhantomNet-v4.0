@@ -37,6 +37,7 @@ LOG_VIEWER_PAGE = ROOT / "dashboard_frontend/src/pages/LogViewer.jsx"
 LEGACY_LOG_FORMAT_SWITCH = ROOT / "dashboard_frontend/src/features/log-viewer/components/FormatSwitch.jsx"
 LEGACY_LOG_ACTION_BAR = ROOT / "dashboard_frontend/src/features/log-viewer/components/ActionBar.jsx"
 LEGACY_LOG_STREAM_VIEWER = ROOT / "dashboard_frontend/src/features/log-viewer/components/LogStreamViewer.jsx"
+ALERTS_PAGE = ROOT / "dashboard_frontend/src/pages/AlertsPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -530,3 +531,27 @@ def test_log_viewer_page_retires_fixture_stream_and_local_disclosure_controls():
     assert "Governed Log-Evidence Integration Pending" in source
     assert "authorization-checked, provenance-linked, minimized results" in source
     assert "must not imply live ingestion" in source
+
+
+def test_alerts_page_retires_unsupported_raw_alert_polling_and_disclosure():
+    source = ALERTS_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "axios",
+        "VITE_API_BASE_URL",
+        "/api/v1/alerts",
+        "fetchAlerts",
+        "setInterval(",
+        "alert.alert_id",
+        "alert.rule_name",
+        "alert.agent_id",
+        "alert.severity",
+        "alert.triggered_at",
+        "alert.details",
+        "<Table",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Alert-Evidence Integration Pending" in source
+    assert "tenant-scoped, authorization-checked, provenance-linked alert evidence" in source
+    assert "remain non-enforcing with no containment or response authority" in source
