@@ -310,6 +310,12 @@ The active self-hosted gateway no longer mounts a live conceptual API ecosystem.
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide governed analytics or reporting replacement, validate data provenance, tenant isolation, report authorization, aggregation correctness, privacy, retention, SDK generation, Docker-host operation, or operational detection efficacy.
 
+## Completed bounded increment: legacy gateway agent-management retirement
+
+The active self-hosted gateway no longer exposes its legacy agent-management surface. That router permitted optional in-memory bootstrap-token enrollment, process-local certificate authority material, unauthenticated agent heartbeats and configuration reads, an unscoped agent list, non-durable approval, and unauthenticated agent-event WebSocket subscription. Every former HTTP route under `/agents` now returns `410 LEGACY_GATEWAY_AGENT_API_RETIRED`, and the legacy WebSocket is rejected before subscription. The router no longer imports enrollment, certificate, database, telemetry, message-bus, in-memory-token, or authorization components. This does not alter separately versioned agent command interfaces, which require their own independent security evidence.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed enrollment replacement or validate agent identity, certificate issuance or revocation, key custody, tenant isolation, configuration authorization, telemetry durability, approval/audit durability, WebSocket authorization, command authorization, endpoint signing, Docker-host operation, or endpoint-security efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
