@@ -39,6 +39,7 @@ LEGACY_LOG_ACTION_BAR = ROOT / "dashboard_frontend/src/features/log-viewer/compo
 LEGACY_LOG_STREAM_VIEWER = ROOT / "dashboard_frontend/src/features/log-viewer/components/LogStreamViewer.jsx"
 ALERTS_PAGE = ROOT / "dashboard_frontend/src/pages/AlertsPage.jsx"
 NETWORK_OVERVIEW_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkOverviewPage.jsx"
+DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/Dashboard.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -578,3 +579,25 @@ def test_network_overview_page_retires_unscoped_stream_and_metric_claims():
     assert "Governed Network-Evidence Integration Pending" in source
     assert "authorization-checked, provenance-linked, validated and minimized observations" in source
     assert "remain read-only and non-enforcing" in source
+
+
+def test_dashboard_page_preserves_governed_summary_without_autonomous_product_claims():
+    source = DASHBOARD_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "GLOBAL THREAT COMMAND",
+        "Real-time autonomous security orchestration overview.",
+        "ZEN DEFENSE ACTIVE",
+        "NEW INVESTIGATION",
+        "LIVE PROPAGATION FEED",
+        "450 automated remediations successful",
+        "PHANTOM SENTINEL",
+        "No manual intervention required.",
+        "Chat with Sentinel (AI)",
+    ):
+        assert unsafe_component not in source
+
+    assert "THREAT-HUNTING EVIDENCE SUMMARY" in source
+    assert "fetchHuntDashboardSummary" in source
+    assert "Read-only governed summary" in source
+    assert "does not establish global visibility" in source

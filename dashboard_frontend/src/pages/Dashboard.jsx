@@ -1,206 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';import PageHeader from '@/components/shared/PageHeader';
-import MetricsWidget from '@/features/dashboard/MetricsWidget';
-import WorldAttackMap from '@/features/dashboard/WorldAttackMap';
-import { Button } from '@/components/ui/button';
-import { fetchHuntDashboardSummary } from '@/services/threatHunting.service';
+import React, { useEffect, useState } from 'react';
+import PageHeader from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Plus,
-    Shield,
-    AlertTriangle,
-    Cpu,
-    Activity,
-    Brain,
-    MessageSquare,
-    Zap,
-    Wind
-} from 'lucide-react';
-
-const MotionButton = motion.button;
-const MotionDiv = motion.div;
+import { fetchHuntDashboardSummary } from '@/services/threatHunting.service';
 
 const Dashboard = () => {
-    const [summary, setSummary] = useState(null);
-    const [isZenMode, setIsZenMode] = useState(false);
-    const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [error, setError] = useState(null);
 
-    // Fetch real metrics from the Dashboard Service
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetchHuntDashboardSummary();
-                setSummary(response);
-            } catch (err) {
-                console.error("Failed to fetch dashboard summary:", err);
-            }
-        };
-        fetchData();
-        const interval = setInterval(fetchData, 30000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const metrics = [
-        {
-            title: "Canonical Detections",
-            value: summary?.metrics?.detections ?? "—",
-            change: "Governed evidence pipeline",
-            icon: Zap,
-            color: "primary"
-        },
-        {
-            title: "Active Analyst Alerts",
-            value: summary?.metrics?.active_alerts ?? "—",
-            change: "New, triaged, and in-progress",
-            icon: Brain,
-            color: "secondary"
-        },
-        {
-            title: "Open Investigations",
-            value: summary?.metrics?.open_cases ?? "—",
-            change: "Tenant-scoped case lifecycle",
-            icon: Shield,
-            color: "primary"
-        },
-    ];
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  useEffect(() => {
+    let active = true;
+    const fetchData = async () => {
+      try {
+        const response = await fetchHuntDashboardSummary();
+        if (active) setSummary(response);
+      } catch {
+        if (active) setError('Governed threat-hunting summary is unavailable.');
+      }
     };
 
-    return (
-        <div className={`relative min-h-screen transition-all duration-700 ${isZenMode ? 'bg-[#05070a] grayscale-[0.5]' : ''}`}>
-            {/* Zen Mode Toggle Overlay */}
-            <AnimatePresence>
-                {isZenMode && (
-                    <MotionDiv
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 pointer-events-none z-50 border-[20px] border-primary/5 shadow-[inset_0_0_100px_rgba(139,92,246,0.1)]"
-                    />
-                )}
-            </AnimatePresence>
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
 
-            <PageHeader
-                title={isZenMode ? "ZEN DEFENSE ACTIVE" : "GLOBAL THREAT COMMAND"}
-                subtitle={isZenMode ? "UI simplified for cognitive load optimization." : "Real-time autonomous security orchestration overview."}
-                actions={
-                    <div className="flex items-center space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsZenMode(!isZenMode)}
-                            className={`transition-all ${isZenMode ? 'bg-primary text-primary-foreground border-primary' : 'border-primary/20 hover:border-primary/50'}`}
-                        >
-                            <Wind className={`w-4 h-4 mr-2 ${isZenMode ? 'animate-spin-slow' : ''}`} />
-                            {isZenMode ? "EXIT ZEN" : "ZEN MODE"}
-                        </Button>
-                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(139,92,246,0.4)]">
-                            <Plus className="w-4 h-4 mr-2" />
-                            NEW INVESTIGATION
-                        </Button>
-                    </div>
-                }
-            />
+  const metrics = [
+    ['Canonical detections', summary?.metrics?.detections ?? '—'],
+    ['Active analyst alerts', summary?.metrics?.active_alerts ?? '—'],
+    ['Open investigations', summary?.metrics?.open_cases ?? '—'],
+  ];
 
-            <MotionDiv
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-            >
-                {metrics.map((metric, index) => (
-                    <MotionDiv key={index} variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-                        <MetricsWidget {...metric} />
-                    </MotionDiv>
-                ))}
-            </MotionDiv>
-
-            <div className={`grid grid-cols-1 lg:grid-cols-5 gap-6 transition-all duration-500 ${isZenMode ? 'scale-[0.98]' : ''}`}>
-                <div className="lg:col-span-3 h-[450px]">
-                    <WorldAttackMap />
-                </div>
-
-                <div className="lg:col-span-2 space-y-6">
-                    <Card className="glass-panel border-primary/20 flex-1 overflow-hidden">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/50 bg-muted/20">
-                            <CardTitle className="text-xs font-bold tracking-widest text-text-secondary flex items-center">
-                                <Activity className="w-4 h-4 mr-2 text-primary animate-pulse" />
-                                LIVE PROPAGATION FEED
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 h-[350px] overflow-y-auto custom-scrollbar">
-                           {!isZenMode ? (
-                                <ul className="divide-y divide-border/30">
-                                    {(summary?.top_mitre_techniques || []).map((vector, i) => (
-                                        <li key={i} className="p-4 hover:bg-primary/5 transition-colors flex items-center justify-between group">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="w-1 h-8 bg-primary/20 group-hover:bg-primary rounded-full transition-all" />
-                                                <div>
-                                                    <p className="text-xs font-bold uppercase tracking-tighter">MITRE {vector.technique_id}</p>
-                                                    <p className="text-[10px] text-muted-foreground font-mono">Governed detection evidence</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-xl font-black font-mono opacity-20 group-hover:opacity-100 transition-opacity">
-                                                {vector.count}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                           ) : (
-                                <div className="h-full flex items-center justify-center text-center p-8">
-                                    <p className="text-sm text-muted-foreground italic font-light italic">
-                                        "Noise suppressed. Focus on critical path. 450 automated remediations successful in last update."
-                                    </p>
-                                </div>
-                           )}
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-
-            {/* AI Assistant Floating Toggle */}
-            <MotionButton
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsAIAssistantOpen(!isAIAssistantOpen)}
-                className="fixed bottom-8 right-8 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.6)] z-50 text-white"
-            >
-                <MessageSquare />
-            </MotionButton>
-
-            {/* AI Assistant Chat UI */}
-            <AnimatePresence>
-                {isAIAssistantOpen && (
-                    <MotionDiv
-                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                        className="fixed bottom-24 right-8 w-80 h-[400px] glass-panel border-primary/30 rounded-2xl z-50 flex flex-col shadow-2xl overflow-hidden"
-                    >
-                        <div className="p-4 bg-primary text-primary-foreground flex items-center space-x-2">
-                            <Brain className="w-5 h-5" />
-                            <span className="text-xs font-bold uppercase tracking-widest">PHANTOM SENTINEL</span>
-                        </div>
-                        <div className="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4">
-                            <div className="bg-muted/50 p-3 rounded-tr-xl rounded-br-xl rounded-bl-xl text-[11px] leading-relaxed">
-                                Hello Admin. I'm monitoring the colony. Current stress levels are low.
-                                <span className="block mt-2 font-bold text-primary">Status: No manual intervention required.</span>
-                            </div>
-                        </div>
-                        <div className="p-4 border-t border-border/50 flex">
-                            <input
-                                disabled
-                                placeholder="Chat with Sentinel (AI)..."
-                                className="flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground"
-                            />
-                        </div>
-                    </MotionDiv>
-                )}
-            </AnimatePresence>
-        </div>
-    );
+  return (
+    <div className="min-h-screen">
+      <PageHeader
+        title="THREAT-HUNTING EVIDENCE SUMMARY"
+        subtitle="Read-only governed summary; dashboard actions, global telemetry, and AI assistance require separately authorized integrations."
+      />
+      {error && <p className="mt-4 rounded border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+        {metrics.map(([title, value]) => (
+          <Card key={title}>
+            <CardHeader><CardTitle className="text-sm text-text-secondary">{title}</CardTitle></CardHeader>
+            <CardContent><p className="text-3xl font-bold">{value}</p></CardContent>
+          </Card>
+        ))}
+      </div>
+      <Card className="mt-6">
+        <CardHeader><CardTitle>Governed detection evidence</CardTitle></CardHeader>
+        <CardContent>
+          <p className="mb-4 text-sm text-text-secondary">This panel presents only the protected threat-hunting summary when available. It does not establish global visibility, autonomous orchestration, live propagation, containment, remediation, or AI decision support.</p>
+          <ul className="space-y-2">
+            {(summary?.top_mitre_techniques || []).map((item) => (
+              <li key={item.technique_id} className="flex justify-between border-b border-border/50 py-2 text-sm">
+                <span>MITRE {item.technique_id}</span><span>{item.count}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export default Dashboard;

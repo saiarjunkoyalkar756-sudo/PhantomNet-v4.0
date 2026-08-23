@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard threat-hunting summary truthfulness boundary
+
+The dashboard home view now retains only the protected threat-hunting summary read path and no longer presents global-command framing, autonomous orchestration, inert new-investigation controls, live-propagation labeling, fabricated remediation results, or mock AI chat. It explicitly states that dashboard actions, global telemetry, and AI assistance require separately authorized integrations. Any future dashboard expansion must retain tenant-scoped authorization, evidence provenance and minimization, deterministic auditability, and advisory non-enforcing boundaries. Regression coverage preserves the governed summary service path while preventing unsupported autonomous, remediation, chat, and propagation claims from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide global visibility, autonomous orchestration, dashboard action authority, new-investigation creation, live propagation, remediation execution or success, AI assistant integration or efficacy, tenant isolation at the UI boundary, Docker-host operation, or defensive efficacy.
+
 ## Completed bounded increment: dashboard network-overview truthfulness boundary
 
 The dashboard network-overview page no longer connects to an unscoped network WebSocket or displays real-time traffic, active connections, anomaly counts, or blocked-threat metrics. It now states that governed network-evidence integration is pending. Any future network view must use a protected tenant-scoped analyst workflow with authorization-checked, provenance-linked, validated and minimized observations; identify data currency and collection boundaries; distinguish network observations from verified detections; retain deterministic auditability; and remain read-only and non-enforcing. It must not imply live network visibility, threat blocking, automatic containment, or response execution. Regression coverage prevents the direct stream client and unsupported network-metric claims from returning.
