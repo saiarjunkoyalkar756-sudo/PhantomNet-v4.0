@@ -32,6 +32,7 @@ NETWORK_SEGMENTATION_PAGE = ROOT / "dashboard_frontend/src/pages/network/Network
 NETWORK_GRAPH = ROOT / "dashboard_frontend/src/components/network/NetworkGraph.jsx"
 WORLD_ATTACK_MAP = ROOT / "dashboard_frontend/src/features/dashboard/WorldAttackMap.jsx"
 CASE_MANAGEMENT_PAGE = ROOT / "dashboard_frontend/src/pages/CaseManagementPage.jsx"
+GRAPH_INVESTIGATION_PAGE = ROOT / "dashboard_frontend/src/pages/GraphInvestigationPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -477,3 +478,23 @@ def test_case_management_page_retires_direct_legacy_case_and_playbook_controls()
     assert "authenticated tenant-owned alerts" in source
     assert "playbook runs approval-bound and non-executing" in source
     assert "HMAC-signed audit" in source
+
+
+def test_graph_investigation_page_retires_arbitrary_raw_graph_query_controls():
+    source = GRAPH_INVESTIGATION_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "/api/graph-intelligence/graph",
+        "cypherQuery",
+        "executeQuery",
+        "Execute Cypher",
+        "MATCH (p:Process)",
+        "setResults",
+        "Object.keys(results[0])",
+        "JSON.stringify(value)",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Graph-Investigation Integration Pending" in source
+    assert "tenant-scoped, authorization-checked, provenance-linked results" in source
+    assert "remain non-enforcing with no containment or response authority" in source
