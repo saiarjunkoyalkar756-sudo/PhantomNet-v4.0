@@ -24,6 +24,9 @@ ATTACK_GRAPH_PAGE = ROOT / "dashboard_frontend/src/pages/AttackGraphPage.jsx"
 SIEM_PAGE = ROOT / "dashboard_frontend/src/pages/SIEMPage.jsx"
 LEGACY_LOG_SEARCH = ROOT / "dashboard_frontend/src/components/LogSearch.jsx"
 LEGACY_SIEM_SERVICE = ROOT / "dashboard_frontend/src/services/siem.service.js"
+THREAT_INTEL_OSINT_PAGE = ROOT / "dashboard_frontend/src/pages/ThreatIntelOSINTPage.jsx"
+SIMULATED_OSINT_SEARCH = ROOT / "dashboard_frontend/src/features/threat-intel/components/SearchBar.jsx"
+SIMULATED_OSINT_CARDS = ROOT / "dashboard_frontend/src/features/threat-intel/components/IntelCards.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -354,3 +357,27 @@ def test_siem_page_retires_direct_legacy_phantomql_search_client():
     assert "Governed Log-Search Integration Pending" in source
     assert "tenant scope and analyst authorization" in source
     assert "deterministic auditability" in source
+
+
+def test_threat_intel_osint_page_retires_randomized_fixture_enrichment_views():
+    source = THREAT_INTEL_OSINT_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "handleIpSearch",
+        "Math.random",
+        "ipQueryResult",
+        "Reputation Score",
+        "Malicious Reports",
+        "GEOIP LOCATION",
+        "IOC LIST VIEWER",
+        "OSINT EVIDENCE TIMELINE",
+        "SearchBar",
+        "IntelCard",
+    ):
+        assert unsafe_component not in source
+
+    assert not SIMULATED_OSINT_SEARCH.exists()
+    assert not SIMULATED_OSINT_CARDS.exists()
+    assert "Governed Advisory-Enrichment Integration Pending" in source
+    assert "analyst authorization" in source
+    assert "remain advisory-only with no response authority" in source
