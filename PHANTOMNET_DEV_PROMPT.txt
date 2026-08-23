@@ -1,0 +1,561 @@
+
+================================================================================
+PHANTOMNET v4.0 — REAL-WORLD PLATFORM DEVELOPMENT PROMPT
+For Manus AI / Cursor / Claude Code / Aider Integration
+================================================================================
+
+AUTHOR: Sai Arjun Koyalkar
+PROJECT: PhantomNet v4.0 — Evidence-First Self-Hosted SOC Foundation
+CURRENT STATE: Post-remediation (commit f8a58ac), pre-external-lab evidence
+TARGET: Production-ready security operations platform
+
+This prompt is designed for AI-assisted development tools (Manus AI, Cursor,
+Claude Code, Aider, etc.) to maintain evidence discipline while building real
+implementation from the current stub-heavy architecture.
+
+================================================================================
+SECTION 1: CORE PRINCIPLES (NON-NEGOTIABLE)
+================================================================================
+
+Every AI-assisted development session MUST enforce these principles:
+
+PRINCIPLE 1: EVIDENCE BEFORE CLAIMS
+- No feature may be marketed or documented as operational until it has
+  Class A (implemented + regression-covered) or Class B (controlled harness)
+  evidence.
+- The credibility regression suite must pass before any public-facing text
+  is updated.
+- The 4-tier evidence taxonomy (A/B/C/D) governs ALL claims.
+
+PRINCIPLE 2: FAIL-CLOSED SECURITY
+- Every containment action requires: human approval → HMAC-signed audit →
+  adapter verification → rollback capability.
+- Missing or invalid approval/audit evidence MUST prevent execution.
+- No code may bypass approval gates, omit audit records, or hardcode secrets.
+
+PRINCIPLE 3: DETERMINISTIC BEFORE PROBABILISTIC
+- Build deterministic correlation rules, fixtures, and MITRE mappings FIRST.
+- AI/ML features (Class D) must not be presented as operational (Class A).
+- All AI suggestions must be evidence-grounded, explainable, and human-reviewed.
+
+PRINCIPLE 4: OPERATIONAL REALITY
+- Every service must be deployable, observable, and recoverable.
+- No stub services in production topology. Consolidate or implement.
+- All code must pass: isolated regression → Docker Compose validation →
+  controlled external lab gate before production claim.
+
+PRINCIPLE 5: SECRET-FREE SOURCE
+- Runtime credentials via environment variables ONLY.
+- No secrets in source code, Docker images, or git history.
+- Use .env.example for documentation, never .env with real values.
+
+================================================================================
+SECTION 2: EVIDENCE TAXONOMY (MUST BE ENFORCED BY AI)
+================================================================================
+
+Before implementing ANY feature, classify it:
+
+| Class | Meaning | AI Action |
+|-------|---------|-----------|
+| A — Implemented & regression-covered | Source code + deterministic tests | Implement, test, document as operational |
+| B — Controlled harness evidence | Mocked/SQLite/LocalStack/disposable proof | Implement with harness, document boundary |
+| C — External lab required | Needs real dependency/host/device/operator | Build protocol, schedule lab, document as pending |
+| D — Roadmap / intentionally unsupported | Not currently operational | Add to ROADMAP.md, block from public claims |
+
+AI MUST reject any request to:
+- Promote Class D to Class A without evidence
+- Add unsupported phrases to public-facing files (README, website, docs root)
+- Skip regression tests for "production-ready" features
+- Hardcode secrets or disable approval gates
+
+================================================================================
+SECTION 3: CURRENT ARCHITECTURE SNAPSHOT
+================================================================================
+
+Backend: FastAPI microservices (currently ~30 services, many stubs)
+Frontend: React 18 + Vite (dashboard), Next.js 16 (portal/website)
+Agent: Cross-platform Python (Windows/Linux/Termux)
+Database: PostgreSQL (operational), Redis (cache), Neo4j (graph)
+Messaging: Redpanda/Kafka
+Audit: HMAC-signed tamper-evident hash chain (PostgreSQL-backed)
+Deployment: Docker Compose (development + Phase 7 self-hosted reference)
+
+SERVICE INVENTORY (as of f8a58ac):
+
+IMPLEMENTED (Class A/B):
+✅ gateway-service (API gateway, routing)
+✅ telemetry-ingestor (event ingestion)
+✅ event-normalizer (canonical schema)
+✅ alert-storage (PostgreSQL persistence)
+✅ case-management-service (case lifecycle)
+✅ soar-playbook-engine (playbook structure)
+✅ honeypot-service (SSH low-interaction)
+✅ threat-intelligence-service (Redis-cached)
+✅ blockchain_layer (HMAC audit chain)
+✅ phantomnet_agent (cross-platform endpoint agent)
+
+STUB / MINIMAL (needs real implementation):
+⚠️ ai-behavioral-engine (50-line stub, hardcoded responses)
+⚠️ ai-agent-orchestrator (structure only)
+⚠️ auto-response-engine (depends on soar-playbook-engine, minimal logic)
+⚠️ playbook-flow-builder (structure only)
+⚠️ siem-integration-service (no real SIEM adapters)
+⚠️ siem-ingest-service (structure only)
+⚠️ cloud-security-service (no real cloud adapters beyond AWS SG stub)
+⚠️ sandbox-service (no real sandboxing)
+⚠️ bas-engine (no real attack simulation)
+⚠️ autonomous-blue-team (depends on soar-playbook-engine, minimal)
+⚠️ forensics-engine (timeline_builder, evidence_collector stubs)
+⚠️ compliance-reporting-service (structure only)
+⚠️ compliance-service (structure only)
+⚠️ audit-log-collector (structure only)
+⚠️ vulnerability-management-service (structure only)
+⚠️ cve_resolver (not found in compose)
+⚠️ patch_recommendation_ai (not found in compose)
+⚠️ mitre-attack-mapper-service (structure only)
+⚠️ graph-intelligence-service (Neo4j connection, minimal logic)
+⚠️ attack-graph-engine (structure only)
+⚠️ lateral-movement-detector (structure only)
+⚠️ phantomql-engine (structure only)
+⚠️ log-normalizer (structure only)
+⚠️ command-dispatcher (structure only)
+
+INFRASTRUCTURE:
+✅ redpanda (Kafka-compatible messaging)
+✅ postgres (PostgreSQL 15)
+✅ redis (Redis 7)
+✅ neo4j (Neo4j 5)
+
+================================================================================
+SECTION 4: DEVELOPMENT ROADMAP (PHASED)
+================================================================================
+
+PHASE 1: FOUNDATION HARDENING (Weeks 1-4)
+Goal: Make the existing Class A/B services production-deployable
+
+Week 1: Service Consolidation & Cleanup
+- [ ] Identify 15+ stub services for consolidation into 5 real services
+- [ ] Merge siem-integration + siem-ingest into single SIEM adapter service
+- [ ] Merge compliance-reporting + compliance + audit-log-collector into
+      single compliance-audit service
+- [ ] Merge forensics-engine + timeline_builder + evidence_collector into
+      single forensics service
+- [ ] Remove or archive truly unused services (cve_resolver, 
+      patch_recommendation_ai if they don't exist)
+- [ ] Update docker-compose.yml to reflect consolidated topology
+- [ ] Update all documentation to reflect new service map
+- Acceptance: docker-compose config renders cleanly, all existing tests pass
+
+Week 2: Gateway Security & AuthZ
+- [ ] Implement proper authz middleware on ALL backend services
+- [ ] Ensure case-management-service cannot be bypassed by direct calls
+- [ ] Add service-to-service mTLS or JWT validation
+- [ ] Implement rate limiting (slowapi already in requirements)
+- [ ] Add request ID propagation across services
+- [ ] Implement tenant isolation validation on every service boundary
+- Acceptance: Penetration test showing no bypass of approval gates
+
+Week 3: Observability & Health
+- [ ] Implement /health, /ready, /metrics on ALL services
+- [ ] Add dependency readiness checks (DB, Redis, Redpanda, Neo4j)
+- [ ] Configure Prometheus scraping for all services
+- [ ] Add structured logging (loguru) with correlation IDs
+- [ ] Implement log aggregation to central sink
+- [ ] Add alerting on service health degradation
+- Acceptance: All services report healthy only when dependencies ready
+
+Week 4: Configuration & Secrets Management
+- [ ] Audit all services for hardcoded values
+- [ ] Implement pydantic-settings with validation on every service
+- [ ] Create deploy/self-hosted/.env.example with ALL required variables
+- [ ] Add configuration validation on startup (fail fast on missing secrets)
+- [ ] Document secret rotation procedures
+- Acceptance: No service starts with missing required configuration
+
+PHASE 2: DETECTION ENGINE (Weeks 5-10)
+Goal: Build real detection capability with MITRE alignment
+
+Week 5-6: Correlation Rule Engine
+- [ ] Implement deterministic correlation rules with YAML/JSON fixtures
+- [ ] Build rule parser, compiler, and executor
+- [ ] Add MITRE ATT&CK technique mapping to every rule
+- [ ] Implement rule versioning and immutable revisions
+- [ ] Add rule testing harness (input event → expected detection)
+- [ ] Create 20+ real detection rules covering:
+      - T1059 (Command and Scripting Interpreter)
+      - T1003 (OS Credential Dumping)
+      - T1055 (Process Injection)
+      - T1078 (Valid Accounts)
+      - T1021 (Remote Services)
+      - T1053 (Scheduled Task/Job)
+      - T1083 (File and Directory Discovery)
+      - T1047 (Windows Management Instrumentation)
+- Acceptance: Each rule has fixture tests, MITRE mapping, and passes regression
+
+Week 7-8: BAS Fixture System
+- [ ] Build safe attack simulation framework (no real malware)
+- [ ] Create JSON fixtures for:
+      - Simulated Golden Ticket (Kerberos TGT anomaly)
+      - Simulated LSASS memory access
+      - Simulated Cobalt Strike beacon pattern
+      - Simulated lateral movement (RDP + credential reuse)
+      - Simulated data exfiltration (DNS tunneling pattern)
+- [ ] Each fixture must include: pre-condition, event sequence, expected
+      detection, expected MITRE mapping, expected case creation
+- [ ] Build fixture replay harness for regression testing
+- Acceptance: All fixtures replay deterministically, producing expected alerts
+
+Week 9-10: False Positive Management
+- [ ] Implement alert suppression with configurable thresholds
+- [ ] Build baseline learning (statistical, not ML) for normal behavior
+- [ ] Add analyst feedback loop (true positive / false positive / benign)
+- [ ] Implement alert grouping and deduplication
+- [ ] Create suppression rule engine
+- Acceptance: Run 10,000 benign events through pipeline, measure FP rate < 1%
+
+PHASE 3: RESPONSE GOVERNANCE (Weeks 11-14)
+Goal: Make containment actually work with real adapters
+
+Week 11-12: Approval Workflow
+- [ ] Implement case → containment request → approval queue flow
+- [ ] Build approval UI in React dashboard (analyst view)
+- [ ] Add approval timeout, escalation, and delegation
+- [ ] Implement HMAC signing of approval decisions
+- [ ] Build audit chain recording for every approval/rejection
+- [ ] Add approval policy engine (who can approve what, based on asset criticality)
+- Acceptance: End-to-end approval flow tested with mock adapter
+
+Week 13: AWS Security Group Adapter (Real)
+- [ ] Implement boto3-based AWS adapter with least-privilege IAM
+- [ ] Add rule read-back verification before and after change
+- [ ] Implement CloudTrail event correlation
+- [ ] Build rollback mechanism with exact rule restoration
+- [ ] Add scope validation (only configured security groups, exact rules)
+- [ ] Implement deny-by-default for out-of-scope requests
+- Acceptance: Execute Gate 5 (AWS sandbox) with real AWS account
+
+Week 14: Wazuh Bridge (Real)
+- [ ] Implement Wazuh API client for telemetry ingestion
+- [ ] Build active-response command bridge with signed envelopes
+- [ ] Add endpoint receipt verification
+- [ ] Implement replay attack prevention
+- [ ] Build governed release mechanism
+- Acceptance: Execute Gate 4 (Wazuh lab) with real Wazuh manager
+
+PHASE 4: AI LAYER (Weeks 15-20) — CLASS D TO CLASS B
+Goal: Make AI real but contained, never autonomous for high-impact actions
+
+Week 15-16: Evidence-Grounded Triage
+- [ ] Build anomaly detection using statistical baselines (not ML yet)
+- [ ] Implement risk scoring based on:
+      - Asset criticality
+      - MITRE technique severity
+      - Threat actor association
+      - Historical false positive rate
+- [ ] Add explainable factors to every alert (why this alert, why this priority)
+- [ ] Build analyst context panel with correlated evidence
+- Acceptance: Every alert shows deterministic reasoning, not black-box scores
+
+Week 17-18: Natural Language Analyst Assistant (Class B)
+- [ ] Integrate lightweight local LLM (Llama 3.1 8B or Mistral 7B)
+- [ ] Implement RAG over case evidence, detection rules, and MITRE framework
+- [ ] Build case summary generation (read-only, never modifies case)
+- [ ] Add hunt hypothesis suggestion (advisory only, requires analyst approval)
+- [ ] Implement detection rule draft suggestion (advisory only, requires review)
+- [ ] Add refusal tests: LLM must NOT suggest autonomous actions
+- Acceptance: LLM responses are evidence-grounded, advisory-only, with citations
+
+Week 19-20: Continuous Evaluation Framework
+- [ ] Build evaluation dataset from historical fixtures
+- [ ] Implement detection quality metrics: precision, recall, F1 per technique
+- [ ] Add false positive trend analysis
+- [ ] Build coverage gap identification
+- [ ] Create evaluation dashboard for analyst review
+- Acceptance: Published metrics with versioned evaluation sets
+
+PHASE 5: EXTERNAL LAB VALIDATION (Weeks 21-26)
+Goal: Execute all 7 gates and publish evidence
+
+Week 21-22: Gate 1 — Topology Validation
+- [ ] Deploy Phase 7 reference on controlled Docker host
+- [ ] Record health/readiness states
+- [ ] Verify metrics scraping
+- [ ] Test restart and volume persistence
+- Acceptance: Published evidence bundle with secret-redacted config
+
+Week 23: Gate 2 — Recovery Validation
+- [ ] Create synthetic data, take backups
+- [ ] Restore to blank environment
+- [ ] Verify data integrity and audit chain
+- [ ] Measure recovery time
+- Acceptance: Published RPO/RTO targets with evidence
+
+Week 24: Gate 3 — Incident Flow
+- [ ] Inject BAS fixtures through canonical pipeline
+- [ ] Record: event → detection → alert → case → approval → audit → rollback
+- [ ] Measure end-to-end latency
+- Acceptance: Published workflow evidence with timing
+
+Week 25: Gate 4 + 5 — Wazuh + AWS
+- [ ] Execute Wazuh bridge with lab manager and endpoint
+- [ ] Execute AWS adapter with sandbox account
+- [ ] Record all evidence per protocol
+- Acceptance: Published evidence bundles for both gates
+
+Week 26: Gate 6 + 7 — Agent + Throughput
+- [ ] Package agent for Linux, Windows, Android/Termux
+- [ ] Measure CPU/memory/battery on real devices
+- [ ] Run throughput benchmark with published p50/p95/p99
+- Acceptance: Published device matrix and benchmark report
+
+PHASE 6: PRODUCTION READINESS (Weeks 27-30)
+Goal: Prepare for controlled production deployment
+
+Week 27: Hardening & Security Review
+- [ ] Third-party code review (if budget allows) or community security audit
+- [ ] Penetration testing of all service boundaries
+- [ ] Secret scanning and dependency audit
+- [ ] Implement security headers, CORS, CSP
+- Acceptance: Security review report with remediated findings
+
+Week 28: Documentation & Training
+- [ ] Complete operator runbook
+- [ ] Create analyst training material
+- [ ] Build onboarding guide (new analyst → productive in 1 week)
+- [ ] Document incident response procedures
+- Acceptance: New contributor can deploy and operate platform from docs alone
+
+Week 29: Performance Optimization
+- [ ] Profile and optimize slow queries
+- [ ] Implement connection pooling
+- [ ] Add caching layers where appropriate
+- [ ] Optimize Docker image sizes
+- Acceptance: Meets published throughput targets under load
+
+Week 30: Release & Community
+- [ ] Tag v1.0.0 release
+- [ ] Publish release notes with evidence summary
+- [ ] Create community Discord/Slack
+- [ ] Write blog post on evidence-led development model
+- [ ] Submit to security-focused open source directories
+- Acceptance: First external user successfully deploys and provides feedback
+
+================================================================================
+SECTION 5: AI DEVELOPMENT WORKFLOW INSTRUCTIONS
+================================================================================
+
+When using Manus AI / Cursor / Claude Code for development, follow this
+workflow for EVERY task:
+
+STEP 1: TASK CLASSIFICATION
+- Ask: "What evidence class does this task target?"
+- If Class A: Proceed with implementation + regression tests
+- If Class B: Proceed with implementation + harness tests
+- If Class C: Build protocol first, schedule lab, implement with mocks
+- If Class D: Add to ROADMAP.md, implement only if explicitly requested
+
+STEP 2: IMPLEMENTATION CHECKLIST
+Before writing code, verify:
+- [ ] No hardcoded secrets
+- [ ] Environment variables documented in .env.example
+- [ ] pydantic-settings validation configured
+- [ ] /health, /ready, /metrics endpoints planned
+- [ ] Error handling for all external dependencies (fail-closed)
+- [ ] Audit logging for all state-changing operations
+- [ ] Tenant isolation validation
+- [ ] Regression tests planned
+
+STEP 3: CODE REVIEW PROMPT
+After implementation, run this checklist:
+- [ ] Does this code bypass any approval gate? (REJECT if yes)
+- [ ] Does this code omit audit records for state changes? (REJECT if yes)
+- [ ] Are there hardcoded credentials or keys? (REJECT if yes)
+- [ ] Does this code handle missing dependencies gracefully? (SAFE_MODE)
+- [ ] Are all external calls bounded by timeouts and retries?
+- [ ] Is tenant scoping validated on every data access?
+- [ ] Are error messages safe (no sensitive data leakage)?
+
+STEP 4: TESTING REQUIREMENTS
+- [ ] Unit tests with mocked dependencies
+- [ ] Integration tests with SQLite/LocalStack
+- [ ] Regression test added to isolated suite
+- [ ] Docker Compose validation (service starts, health passes)
+- [ ] If Class B/C: Protocol document updated with test procedure
+
+STEP 5: DOCUMENTATION REQUIREMENTS
+- [ ] API documentation updated (OpenAPI/Swagger)
+- [ ] Architecture docs updated if service boundaries changed
+- [ ] Operations guide updated for new feature
+- [ ] Public claims reviewed against evidence taxonomy
+- [ ] CHANGELOG.md updated with evidence class
+
+STEP 6: CREDIBILITY REGRESSION
+Before any commit touching public-facing files:
+- [ ] Run claim regression suite
+- [ ] Verify no unsupported phrases in README, website, docs root
+- [ ] Verify MITRE mappings are accurate
+- [ ] Verify no "autonomous," "self-healing," "blockchain," "post-quantum"
+      language without evidence reclassification
+
+================================================================================
+SECTION 6: MANUS AI SPECIFIC INSTRUCTIONS
+================================================================================
+
+When using Manus AI for PhantomNet development:
+
+1. CONTEXT WINDOW MANAGEMENT
+   - Provide the evidence taxonomy (Section 2) at the start of every session
+   - Reference the current service inventory (Section 3) before adding services
+   - Include the development roadmap phase (Section 4) for context
+
+2. PROMPT TEMPLATES
+
+   For new feature implementation:
+   ```
+   Implement [FEATURE] for PhantomNet v4.0.
+   Evidence class target: [A/B/C/D]
+   Service: [SERVICE_NAME]
+   Current state: [STUB/IMPLEMENTED/PARTIAL]
+
+   Requirements:
+   - [Functional requirement]
+   - [Security requirement]
+   - [Observability requirement]
+
+   Constraints:
+   - No hardcoded secrets
+   - Fail-closed on missing approval/audit
+   - Tenant isolation required
+   - Must include regression tests
+
+   Acceptance criteria:
+   - [Specific, measurable outcome]
+   ```
+
+   For bug fixes:
+   ```
+   Fix [BUG] in PhantomNet v4.0.
+   Service: [SERVICE_NAME]
+   Severity: [P0/P1/P2]
+
+   Root cause: [Known or investigate]
+
+   Fix must:
+   - Not bypass approval gates
+   - Include regression test preventing recurrence
+   - Update relevant documentation
+   ```
+
+   For documentation:
+   ```
+   Update [DOCUMENT] for PhantomNet v4.0.
+   Evidence class: [A/B/C/D for referenced features]
+
+   Must verify:
+   - All claims match evidence taxonomy
+   - No unsupported phrases
+   - Accurate service boundaries
+   - Correct MITRE mappings
+   ```
+
+3. MANUS AI CAPABILITIES TO LEVERAGE
+   - Multi-file editing across the microservice architecture
+   - Docker Compose validation and testing
+   - Test generation and execution
+   - Documentation generation with evidence taxonomy enforcement
+   - Code review against security principles
+
+4. MANUS AI LIMITATIONS TO RESPECT
+   - Cannot execute external lab gates (Class C) — these require real infrastructure
+   - Cannot verify real AWS/Wazuh integrations — provide LocalStack/mock paths
+   - Should not generate unsupported marketing language
+   - Must flag when a request exceeds current evidence class
+
+================================================================================
+SECTION 7: COMMIT MESSAGE CONVENTIONS
+================================================================================
+
+Format: [EVIDENCE-CLASS] [AREA] Brief description
+
+Examples:
+- [A] correlation Add T1059 PowerShell detection rule with fixtures
+- [B] aws-adapter Implement Security Group revoke/restore with LocalStack harness
+- [C] wazuh-bridge Add lab protocol for Gate 4 validation
+- [D] ai-triage Add roadmap entry for evidence-grounded LLM assistant
+- [DOCS] credibility Update claim ledger for new BAS fixtures
+- [FIX] gateway Repair authz middleware bypass in direct service calls
+- [HARDEN] deps Remove web3 and py-solc-x dead dependencies
+
+================================================================================
+SECTION 8: EMERGENCY PROCEDURES
+================================================================================
+
+If Manus AI or any tool generates code that:
+
+1. BYPASSES APPROVAL GATES
+   → Revert immediately
+   → Add regression test preventing the bypass
+   → File incident report in docs/INCIDENTS.md
+
+2. ADDS UNSUPPORTED CLAIMS TO PUBLIC FILES
+   → Revert the text changes
+   → Run credibility regression suite
+   → Review why the suite didn't catch it
+
+3. INTRODUCES HARDCODED SECRETS
+   → Rotate the secret immediately
+   → Scrub from git history (git-filter-repo or BFG)
+   → Add pre-commit hook preventing recurrence
+
+4. BREAKS FAIL-CLOSED BEHAVIOR
+   → Revert immediately
+   → Add test verifying fail-closed on dependency outage
+   → Document the failure mode
+
+================================================================================
+SECTION 9: RESOURCES & REFERENCES
+================================================================================
+
+Repository: https://github.com/saiarjunkoyalkar756-sudo/PhantomNet-v4.0
+Evidence Taxonomy: docs/CREDIBILITY_AND_EXTERNAL_PROOF_BASELINE.md
+Lab Protocol: docs/CONTROLLED_EXTERNAL_LAB_VALIDATION.md
+Deployment Guide: docs/DEPLOYMENT_GUIDE.md
+Operations Guide: docs/OPERATIONS_GUIDE.md
+
+MITRE ATT&CK: https://attack.mitre.org/
+Wazuh Documentation: https://documentation.wazuh.com/
+FastAPI: https://fastapi.tiangolo.com/
+Pydantic Settings: https://docs.pydantic.dev/latest/concepts/pydantic_settings/
+
+================================================================================
+SECTION 10: SUCCESS METRICS
+================================================================================
+
+By end of Phase 6 (Week 30), PhantomNet should demonstrate:
+
+| Metric | Target | Evidence Class |
+|--------|--------|---------------|
+| Detection rules with MITRE mapping | 50+ | A |
+| BAS fixtures | 10+ | A |
+| False positive rate | < 1% | B |
+| End-to-end incident latency | < 60 seconds | B |
+| Services in production topology | 10 (consolidated) | A |
+| External lab gates executed | 7/7 | C |
+| Agent platforms validated | Linux, Windows, Android | C |
+| Throughput (events/sec) | 10,000 | C |
+| p99 latency | < 5 seconds | C |
+| Code coverage | > 80% | A |
+| npm audit vulnerabilities | 0 | A |
+| Security review findings | 0 critical, 0 high | C |
+| External contributors | 2+ | N/A |
+| Production deployments (self-reported) | 1+ | C |
+
+================================================================================
+END OF PROMPT
+================================================================================
+
+Save this file as PHANTOMNET_DEV_PROMPT.txt and load it at the start of
+every Manus AI / Cursor / Claude Code session.
+
+Remember: Evidence before claims. Deterministic before probabilistic.
+Fail-closed always. No shortcuts.

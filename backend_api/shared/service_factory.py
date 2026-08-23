@@ -79,12 +79,16 @@ def create_phantom_service(
         
         logger.info(f"Service '{name}' shutdown complete.")
 
+    declared_required_dependencies = tuple(required_dependencies or ("database", "kafka", "redis"))
     app = FastAPI(
         title=name,
         description=description,
         version=version,
         lifespan=lifespan
     )
+    # This is internal process state for deterministic probes and tests. It contains
+    # dependency names only, never URLs, credentials, tenant data, or audit material.
+    app.state.required_dependencies = declared_required_dependencies
     app.state.observability = {
         "requests_total": 0,
         "requests_4xx_total": 0,
@@ -187,7 +191,7 @@ def create_phantom_service(
     async def health_check():
         try:
             from backend_api.shared.health import run_standard_health_check
-            health_details = await run_standard_health_check(required_dependencies=required_dependencies)
+            health_details = await run_standard_health_check(required_dependencies=app.state.required_dependencies)
             health_details["service"] = name
             health_details["version"] = version
             return success_response(data=health_details)
@@ -204,7 +208,7 @@ def create_phantom_service(
         """Return 200 only when required upstream protection dependencies are active."""
         try:
             from backend_api.shared.health import run_standard_health_check
-            health_details = await run_standard_health_check(required_dependencies=required_dependencies)
+            health_details = await run_standard_health_check(required_dependencies=app.state.required_dependencies)
             health_details["service"] = name
             health_details["version"] = version
             if health_details["readiness"] != "ready":

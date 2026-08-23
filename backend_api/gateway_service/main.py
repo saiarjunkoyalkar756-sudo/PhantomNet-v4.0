@@ -132,6 +132,7 @@ from backend_api.shared.email_service import send_reset_email  # Import send_res
 from backend_api.shared.health_monitor import monitor_health  # Import health monitor
 from jose import jwt, JWTError  # Import jwt for token decoding in logout
 
+from backend_api.shared.control_plane_contracts import GATEWAY_REQUIRED_DEPENDENCIES
 from backend_api.shared.service_factory import create_phantom_service
 from backend_api.shared.audit_log import AUDIT_LOG_QUEUE
 # from blockchain_layer.blockchain import BlockchainNotary
@@ -199,6 +200,9 @@ async def gateway_shutdown(app: FastAPI):
     logger.info("Gateway service is cleaning up resources...")
     # Add any specific cleanup here if needed
 
+# The Phase 7 self-hosted reference supplies all declared dependencies. /ready fails
+# closed whenever one is unavailable; /health remains diagnostic and secret-safe.
+
 # Initialize slowapi limiter
 limiter = Limiter(key_func=get_remote_address)
 
@@ -208,7 +212,8 @@ app = create_phantom_service(
     version="1.0.0",
     custom_startup=gateway_startup,
     custom_shutdown=gateway_shutdown,
-    cors_origins=["https://phantomnet.io", "http://localhost:3000"]
+    cors_origins=["https://phantomnet.io", "http://localhost:3000"],
+    required_dependencies=GATEWAY_REQUIRED_DEPENDENCIES,
 )
 
 app.state.limiter = limiter

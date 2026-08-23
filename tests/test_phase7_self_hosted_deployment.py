@@ -6,6 +6,12 @@ import pytest
 import yaml
 
 from backend_api.shared import container_healthcheck
+from backend_api.shared.control_plane_contracts import (
+    GATEWAY_REQUIRED_DEPENDENCIES,
+    PHASE7_CONTRACTS_BY_SERVICE,
+    STANDARD_APPLICATION_ENDPOINTS,
+    phase7_contract,
+)
 from backend_api.shared.service_factory import create_phantom_service
 
 
@@ -44,6 +50,33 @@ def test_self_hosted_compose_uses_internal_data_networks_loopback_ingress_and_no
     assert "read_only: true" in content
     assert "no-new-privileges:true" in content
     assert "cap_drop:" in content
+
+
+def test_phase7_control_plane_observability_contract_matches_the_self_hosted_manifest():
+    manifest = yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))
+    contracts = PHASE7_CONTRACTS_BY_SERVICE
+
+    assert set(contracts) == {"postgres", "redis", "redpanda", "neo4j", "gateway-service", "prometheus"}
+    assert set(manifest["services"]) == set(contracts)
+    gateway = phase7_contract("gateway-service")
+    assert (gateway.health_probe, gateway.readiness_probe, gateway.metrics_endpoint) == STANDARD_APPLICATION_ENDPOINTS
+    assert gateway.depends_on == ("postgres", "redis", "redpanda", "neo4j")
+    assert GATEWAY_REQUIRED_DEPENDENCIES == ("database", "kafka", "redis", "neo4j")
+    assert manifest["services"]["gateway-service"]["healthcheck"]["test"][-1].endswith(gateway.readiness_probe)
+    assert phase7_contract("prometheus").metrics_endpoint == "/metrics"
+    with pytest.raises(LookupError, match="observability contract"):
+        phase7_contract("legacy-development-service")
+
+
+def test_standard_service_contract_retains_declared_dependencies_without_secret_material():
+    app = create_phantom_service(
+        "Phase7 Contract Service",
+        "Contract test",
+        required_dependencies=GATEWAY_REQUIRED_DEPENDENCIES,
+    )
+
+    assert app.state.required_dependencies == GATEWAY_REQUIRED_DEPENDENCIES
+    assert all("url" not in dependency.casefold() and "password" not in dependency.casefold() for dependency in app.state.required_dependencies)
 
 
 def test_phase7_observability_config_scrapes_only_the_internal_gateway_metrics_target():
