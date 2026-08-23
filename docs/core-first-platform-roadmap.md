@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard administration truthfulness boundary
+
+The administrative dashboard no longer polls an unsupported alert endpoint, reports hard-coded agent or user counts, asserts operational health, or provides implied action shortcuts. It now states that governed administration integration is pending. Any future administration surface must enforce authenticated role and tenant scope; use authorization-checked, provenance-linked, minimized data; distinguish readiness signals from production availability; audit all changes; and keep high-impact actions within their separately governed approval, audit, verification, and rollback lifecycles. Regression coverage prevents the unsupported client and operational claims from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide dashboard-to-administration integration, live alert or inventory data, user or agent counts, operational health, role enforcement at the UI boundary, tenant isolation, change auditing, high-impact execution, verification, rollback, Docker-host operation, or defensive efficacy.
+
 ## Completed bounded increment: dashboard threat-hunting summary truthfulness boundary
 
 The dashboard home view now retains only the protected threat-hunting summary read path and no longer presents global-command framing, autonomous orchestration, inert new-investigation controls, live-propagation labeling, fabricated remediation results, or mock AI chat. It explicitly states that dashboard actions, global telemetry, and AI assistance require separately authorized integrations. Any future dashboard expansion must retain tenant-scoped authorization, evidence provenance and minimization, deterministic auditability, and advisory non-enforcing boundaries. Regression coverage preserves the governed summary service path while preventing unsupported autonomous, remediation, chat, and propagation claims from returning.

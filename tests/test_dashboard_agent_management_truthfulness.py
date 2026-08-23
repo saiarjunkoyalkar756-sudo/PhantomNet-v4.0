@@ -40,6 +40,7 @@ LEGACY_LOG_STREAM_VIEWER = ROOT / "dashboard_frontend/src/features/log-viewer/co
 ALERTS_PAGE = ROOT / "dashboard_frontend/src/pages/AlertsPage.jsx"
 NETWORK_OVERVIEW_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkOverviewPage.jsx"
 DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/Dashboard.jsx"
+ADMIN_DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/AdminDashboard.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -601,3 +602,24 @@ def test_dashboard_page_preserves_governed_summary_without_autonomous_product_cl
     assert "fetchHuntDashboardSummary" in source
     assert "Read-only governed summary" in source
     assert "does not establish global visibility" in source
+
+
+def test_admin_dashboard_retires_unsupported_polling_and_operational_claims():
+    source = ADMIN_DASHBOARD_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "axios",
+        "/api/v1/alerts",
+        "setInterval(",
+        "Active Agents",
+        "Total Users",
+        "Operational",
+        "All services running",
+        "View All Alerts",
+        "Go to Agents",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Administration Integration Pending" in source
+    assert "authenticated role and tenant scope" in source
+    assert "approval, audit, verification, and rollback lifecycles" in source
