@@ -256,6 +256,12 @@ The legacy MITRE ATT&CK mapper disclosed its local technique dataset and accepte
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed ATT&CK mapping replacement through this service, validate content versioning, MITRE coverage or mapping correctness, source provenance, tenant data isolation, analyst authorization, Docker-host operation, or detection efficacy. Governed tenant-scoped detection content and investigation workflows remain separate supported paths.
 
+## Completed bounded increment: legacy forensics-engine retirement
+
+The legacy forensics engine accepted unauthenticated forensic-job requests, ran placeholder background work, initialized its own database tables, listed unscoped jobs, nested evidence and timeline routers, and wrote local forensic-vault records. It now declares no mandatory dependency and returns `410 LEGACY_FORENSICS_API_RETIRED` for its former job, timeline, and evidence route families. The entry point no longer imports job persistence, nested routers, background-task code, or forensic-vault logging.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed forensic replacement through this service, validate evidence collection, chain of custody, source provenance, tenant isolation, forensic analysis correctness, secure retention, analyst authorization, Docker-host operation, or investigative efficacy. Governed tenant-scoped evidence intake and analyst-authorized investigation remain separate supported work.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
