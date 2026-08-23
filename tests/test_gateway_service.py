@@ -61,8 +61,8 @@ def test_rate_limiting():
         assert response.status_code == 429
         assert "Too Many Requests" in response.json()["detail"]
 
-def test_route_authentication():
-    """Verify auth middleware blocks protected endpoints for unauthenticated requests."""
+def test_retired_ecosystem_route_fails_closed_before_legacy_auth_processing():
+    """Ensure the former conceptual threat-summary route cannot be restored as an active gateway API."""
     response = client.get("/analytics/threat_summary")
-    # Gateway routes through security handlers
-    assert response.status_code == 401
+    assert response.status_code == 410
+    assert response.json()["error"]["code"] == "LEGACY_GATEWAY_ECOSYSTEM_API_RETIRED"

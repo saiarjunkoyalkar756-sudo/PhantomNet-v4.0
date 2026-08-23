@@ -304,6 +304,12 @@ The active self-hosted gateway’s mounted orchestrator router no longer accepts
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate blockchain integrity, audit notarization, honeypot isolation, authorized simulation, telemetry ingestion, tenant isolation, control-plane authorization, Docker-host operation, or production gateway security efficacy.
 
+## Completed bounded increment: legacy gateway API-ecosystem retirement
+
+The active self-hosted gateway no longer mounts a live conceptual API ecosystem. Its former threat-summary and daily-digest routes mixed database counts and raw-log disclosure with static attack types, risk scores, anomalies, and recommendations; the GraphQL placeholder echoed caller input; and the module retained local SDK-file generation. The entire router now returns `410 LEGACY_GATEWAY_ECOSYSTEM_API_RETIRED`, and no longer imports database analytics, user authentication, GraphQL echo, or SDK-generation components. The former gateway test now explicitly protects that retirement contract.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide governed analytics or reporting replacement, validate data provenance, tenant isolation, report authorization, aggregation correctness, privacy, retention, SDK generation, Docker-host operation, or operational detection efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
