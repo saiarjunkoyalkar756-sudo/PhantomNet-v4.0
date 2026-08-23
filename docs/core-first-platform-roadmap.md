@@ -388,6 +388,12 @@ The dashboard compliance-reporting page no longer generates, lists, inspects, sc
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide compliance report generation, report authorization, tenant isolation, evidence provenance, control-evaluation completeness, artifact retention, audit durability, PDF integrity, independent attestation, Docker-host operation, or compliance efficacy.
 
+## Completed bounded increment: dashboard forensics truthfulness boundary
+
+The dashboard forensics page no longer presents fixture acquisition jobs, evidence-vault artifacts, reconstructed attack timelines, custody-integrity assertions, artifact acquisition, or report-export controls as live investigative capability. It now states that these controls are retired pending governed forensics integration. A future workflow must establish authorized collection targets, tenant-scoped evidence, immutable custody records, controlled artifact access, validated timeline provenance, policy-bound task execution, human approval where required, retention controls, verification, and rollback before it is exposed as operational capability. Regression coverage prevents fixture forensic state and retired task/evidence/export controls from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide forensic collection, endpoint acquisition, evidence custody, cryptographic integrity, artifact access, timeline reconstruction, authorization, tenant isolation, task execution, retention, verification, rollback, Docker-host operation, or investigative efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

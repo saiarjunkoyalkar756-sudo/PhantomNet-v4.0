@@ -15,6 +15,7 @@ VULNERABILITY_MANAGEMENT_PAGE = ROOT / "dashboard_frontend/src/pages/Vulnerabili
 MARKETPLACE_PAGE = ROOT / "dashboard_frontend/src/pages/Marketplace.jsx"
 MARKETPLACE_GRID = ROOT / "dashboard_frontend/src/features/marketplace/components/MarketplaceGrid.jsx"
 COMPLIANCE_REPORTING_PAGE = ROOT / "dashboard_frontend/src/pages/ComplianceReportingPage.jsx"
+FORENSICS_PAGE = ROOT / "dashboard_frontend/src/pages/ForensicsPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -201,3 +202,23 @@ def test_compliance_reporting_page_does_not_retain_retired_artifact_or_audit_con
 
     assert "Governed Compliance Evidence Integration Pending" in source
     assert "tenant-scoped evidence provenance, report authorization" in source
+
+
+def test_forensics_page_does_not_retain_fixture_acquisition_or_evidence_controls():
+    source = FORENSICS_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "runningJobs",
+        "forensicsTimeline",
+        "evidenceVault",
+        "launchForensicJob",
+        "LAUNCH DYNAMIC ACQUISITION",
+        "CRYPTOGRAPHIC CUSTODY VAULT",
+        "EXPORT FORENSIC REPORT",
+        "Live RAM dump extraction",
+        "Custody Integrity",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Forensics Integration Pending" in source
+    assert "authorized collection targets, tenant-scoped evidence" in source
