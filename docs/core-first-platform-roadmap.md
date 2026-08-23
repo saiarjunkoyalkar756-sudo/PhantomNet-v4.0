@@ -244,6 +244,12 @@ The legacy event-stream processor started an ungated Kafka consumer and exposed 
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed analytical-query replacement through this service, validate broker authorization, event durability, database query correctness or performance, tenant isolation in historic data, Docker-host operation, or detection efficacy. Governed canonical ingestion and tenant-scoped workflows remain separate supported paths.
 
+## Completed bounded increment: legacy lateral-movement detector retirement
+
+The legacy lateral-movement detector accepted unauthenticated arbitrary batches of normalized events and returned sensitive host, user, command-line, and detection context without tenant binding or evidence provenance. It now declares no mandatory dependency and returns `410 LEGACY_LATERAL_MOVEMENT_API_RETIRED` for its former direct detection route. The entry point no longer imports the event schema or direct detector implementation.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed lateral-movement detection replacement through this service, validate telemetry normalization, MITRE mapping, detection correctness, false-positive rate, tenant data isolation, analyst authorization, Docker-host operation, or detection efficacy. Governed tenant-scoped correlation and investigation workflows remain separate supported paths.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
