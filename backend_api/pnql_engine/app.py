@@ -1,32 +1,26 @@
-from backend_api.shared.service_factory import create_phantom_service
-from backend_api.core.response import success_response, error_response
-from .parser import parse_query
-from .executor import execute_query
-from loguru import logger
-from fastapi import FastAPI, HTTPException, Request
-from pydantic import BaseModel
+from __future__ import annotations
 
-class PNQLQuery(BaseModel):
-    query: str
+from backend_api.core.response import error_response
+from backend_api.shared.service_factory import create_phantom_service
+
 
 app = create_phantom_service(
-    name="PNQL Engine Service",
-    description="Parser and executor for the PhantomNet Query Language.",
-    version="1.0.0"
+    name="Legacy PNQL Engine Service",
+    description="Retired untenant-scoped query executor; no direct parser or execution surface is exposed.",
+    version="1.0.0",
+    required_dependencies=(),
 )
 
-@app.post("/query")
-async def execute_pnql_query(pnql_query: PNQLQuery):
-    logger.info(f"Received PNQL query: {pnql_query.query}")
-    try:
-        parsed_query = parse_query(pnql_query.query)
-        results = await execute_query(parsed_query)
-        return success_response(data={
-            "query": pnql_query.query,
-            "results": results
-        })
-    except ValueError as e:
-        return error_response(code="PARSING_ERROR", message=str(e), status_code=400)
-    except Exception as e:
-        logger.error(f"Error executing PNQL query: {e}")
-        return error_response(code="EXECUTION_ERROR", message="Internal server error during query execution.", status_code=500)
+
+@app.api_route(
+    "/{legacy_path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    include_in_schema=False,
+)
+async def retired_legacy_pnql_api(legacy_path: str = ""):
+    """Fail closed instead of executing unauthenticated direct query requests."""
+    return error_response(
+        code="LEGACY_PNQL_API_RETIRED",
+        message="The legacy PNQL API is retired. Use governed tenant-scoped analytical workflows.",
+        status_code=410,
+    )

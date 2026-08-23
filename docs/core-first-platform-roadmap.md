@@ -152,6 +152,12 @@ The legacy vulnerability scanner accepted arbitrary port-scan targets, returned 
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed authorized-scanning replacement, target ownership validation, real CVE detection, scan accuracy, remediation lifecycle, Docker-host proof, or external assessment evidence.
 
+## Completed bounded increment: legacy PNQL retirement
+
+The legacy PNQL service accepted direct parser-and-executor requests without authentication or tenant scope. It now declares no mandatory dependency and returns `410 LEGACY_PNQL_API_RETIRED` for its former query route. The entry point no longer imports the query parser, executor, or request model.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-safe PNQL replacement, validate parser correctness, prove query authorization, establish database performance, or supply Docker-host or analyst-workflow evidence.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
