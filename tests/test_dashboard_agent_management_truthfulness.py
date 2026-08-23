@@ -19,6 +19,7 @@ FORENSICS_PAGE = ROOT / "dashboard_frontend/src/pages/ForensicsPage.jsx"
 CLOUD_SECURITY_PAGE = ROOT / "dashboard_frontend/src/pages/CloudSecurityPage.jsx"
 SOAR_PAGE = ROOT / "dashboard_frontend/src/pages/SOARPage.jsx"
 GRAPH_CANVAS = ROOT / "dashboard_frontend/src/features/threat-graph/components/GraphCanvas.jsx"
+AI_DECISION_LOG_PAGE = ROOT / "dashboard_frontend/src/pages/AIDecisionLogPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -289,3 +290,23 @@ def test_graph_canvas_does_not_retain_placeholder_visualization_or_inert_control
 
     assert "Governed Attack-Path Visualization Integration Pending" in source
     assert "tenant-scoped, authorized, provenance-linked results" in source
+
+
+def test_ai_decision_log_page_does_not_retain_unsupported_autonomous_decision_views():
+    source = AI_DECISION_LOG_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "/api/ai/decision_logs",
+        "fetchAIDecisionLogs",
+        "setInterval(",
+        "decisionLogs",
+        "Execution Trace",
+        "Confidence",
+        "Review autonomous decisions",
+        "JSON.stringify(log.details",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Advisory Evidence-Log Integration Pending" in source
+    assert "policy-gated and non-executing" in source
+    assert "approval-bound containment" in source

@@ -412,6 +412,12 @@ The dashboard threat-graph canvas no longer presents a placeholder attack-path m
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-graph integration, attack-path discovery, relationship accuracy, asset exposure analysis, tenant isolation, result provenance, graph evidence verification, deployment operation, or detection/investigation efficacy.
 
+## Completed bounded increment: dashboard advisory decision-evidence truthfulness boundary
+
+The dashboard advisory decision-evidence page no longer polls an unsupported AI endpoint or presents decision logs, confidence values, execution traces, agent outcomes, raw details, or autonomous-action claims as live capability. It now states that advisory evidence-log integration is pending. A future view must use tenant-scoped, provenance-linked observations; minimize displayed evidence; distinguish recommendations from deterministic findings; remain policy-gated and non-executing; and preserve approval-bound containment rather than implying autonomous remediation. Regression coverage prevents unsupported AI polling and autonomous-decision claims from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
