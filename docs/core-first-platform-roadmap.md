@@ -140,6 +140,12 @@ The legacy plugin marketplace accepted unauthenticated upload files, registered 
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed signed-artifact replacement, malware scanning, provenance validation, compatibility testing, sandboxed execution, tenant-owned extension lifecycle, Docker-host proof, or plugin efficacy evidence.
 
+## Completed bounded increment: legacy PhantomQL retirement
+
+The legacy PhantomQL service exposed direct database-backed event search and aggregate analytics without authentication or tenant scope. It now starts a valid standard service with no mandatory dependency and returns `410 LEGACY_PHANTOMQL_API_RETIRED` for former query and analytics routes. The service no longer initializes session or query-parser dependencies.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-safe query replacement, validate query correctness, prove database performance, authorize data access, or establish Docker-host or analyst-workflow proof.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
