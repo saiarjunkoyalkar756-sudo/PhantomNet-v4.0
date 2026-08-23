@@ -172,6 +172,12 @@ The supported containment surface remains the separate governed workflow, in whi
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate a governed response replacement through this legacy service, live adapter execution, approval identity, audit durability, verification, rollback, Docker-host deployment, or containment efficacy.
 
+## Completed bounded increment: legacy asset-inventory retirement
+
+The legacy asset-inventory service accepted arbitrary scan targets through an unauthenticated background task and disclosed an unscoped asset list. It now declares no mandatory dependency and returns `410 LEGACY_ASSET_INVENTORY_API_RETIRED` for its former scan and asset routes. The entry point no longer imports or initializes the scanner, local asset table, or background task.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-safe inventory or authorized-discovery replacement, validate target ownership, perform a real scan, prove source authentication, establish asset accuracy or durability, or provide Docker-host or external assessment evidence.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
