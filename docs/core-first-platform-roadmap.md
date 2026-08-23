@@ -56,6 +56,14 @@ The legacy broad development Compose service now has a bounded `/ready` healthch
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence only. It does not prove a live Docker healthcheck, PostgreSQL persistence, an external ledger mirror, cryptographic audit immutability, or production-operable deployment. The root Compose file remains a legacy development topology; the hardened six-service Phase 7 reference and controlled external-lab gates remain the authoritative paths for deployment proof.
 
+## Completed bounded increment: case-management tenant-safety boundary
+
+The case-management service now declares **database only** as its readiness dependency, initializes only the governed workflow store, and has a bounded `/ready` healthcheck in the legacy development Compose file. The former `/cases` CRUD and simulated-playbook routes were untenant-scoped and did not enforce a capability boundary. They now fail closed with `410 LEGACY_CASE_API_RETIRED` and direct callers to the governed API.
+
+The retained `/governed-cases` lifecycle remains tenant-bound and capability-protected. Case creation begins from an authenticated tenant-owned alert; playbook runs begin approval-bound, require `response:approve` before approval, and the workflow records lifecycle state without dispatching an action. Regression coverage validates the actual retired route, startup-store boundary, readiness declaration, healthcheck configuration, tenant isolation, and approval-before-running invariant.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not migrate or delete historic rows in the legacy `cases` table, prove a live PostgreSQL/Docker-host deployment, or prove real external response execution. An operator-approved data migration or retention decision, controlled-host health evidence, and governed response evidence remain separate work.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
