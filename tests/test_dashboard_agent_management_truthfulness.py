@@ -53,6 +53,13 @@ MFA_CHALLENGE_PAGE = ROOT / "dashboard_frontend/src/pages/MFAChallengePage.jsx"
 MFA_CHALLENGE_SERVICE = ROOT / "dashboard_frontend/src/services/mfaChallenge.js"
 DASHBOARD_ROUTER = ROOT / "dashboard_frontend/src/router/index.jsx"
 AUTH_STORE = ROOT / "dashboard_frontend/src/store/authStore.js"
+LEGACY_SOAR_SERVICE = ROOT / "dashboard_frontend/src/services/soar.service.js"
+LEGACY_VULNERABILITY_SERVICE = ROOT / "dashboard_frontend/src/services/vulnerability.service.js"
+LEGACY_COPILOT_SERVICE = ROOT / "dashboard_frontend/src/services/copilot.service.js"
+LEGACY_SOAR_COMPONENT = ROOT / "dashboard_frontend/src/components/PlaybookList.jsx"
+LEGACY_ASSET_COMPONENT = ROOT / "dashboard_frontend/src/components/AssetList.jsx"
+LEGACY_RED_TEAM_PLAYBOOK_COMPONENT = ROOT / "dashboard_frontend/src/features/red-team/components/PlaybookList.jsx"
+THREAT_HUNTING_SERVICE = ROOT / "dashboard_frontend/src/services/threatHunting.service.js"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -784,6 +791,22 @@ def test_mfa_challenge_uses_memory_only_handoff_and_active_server_contract():
     assert "let pendingCredentials = null" in handoff_source
     assert "sessionStorage" not in handoff_source
     assert "localStorage" not in handoff_source
+
+
+def test_unreferenced_legacy_dashboard_clients_and_fixture_components_remain_removed():
+    for retired_path in (
+        LEGACY_SOAR_SERVICE,
+        LEGACY_VULNERABILITY_SERVICE,
+        LEGACY_COPILOT_SERVICE,
+        LEGACY_SOAR_COMPONENT,
+        LEGACY_ASSET_COMPONENT,
+        LEGACY_RED_TEAM_PLAYBOOK_COMPONENT,
+    ):
+        assert not retired_path.exists()
+
+    threat_hunting_source = THREAT_HUNTING_SERVICE.read_text(encoding="utf-8")
+    assert "fetchHuntDashboardSummary" in threat_hunting_source
+    assert "localhost:8001" not in threat_hunting_source
 
 
 def test_authentication_routes_and_hydration_follow_active_server_contracts():
