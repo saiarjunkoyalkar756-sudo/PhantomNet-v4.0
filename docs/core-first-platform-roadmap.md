@@ -122,6 +122,12 @@ This prevents fixture-backed data and ungoverned recommendation behavior from be
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed replacement asset inventory, scanner, patch executor, real CVE-provider validation, tenant-safe remediation lifecycle, Docker-host evidence, or vulnerability-detection efficacy. Those remain separate source and controlled-lab workstreams.
 
+## Completed bounded increment: legacy honeypot lifecycle retirement
+
+The legacy honeypot service exposed unauthenticated routes that could create and stop local runner processes, list their status, and return event placeholders. It now declares no mandatory dependency and returns `410 LEGACY_HONEYPOT_API_RETIRED` for all former honeypot lifecycle paths. The entry point no longer imports the lifecycle manager or process runner; standard health and metrics endpoints remain available.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not implement a governed replacement honeypot deployment, validate safe listener isolation, capture real attacker interaction, forward telemetry, or establish any external-lab honeypot proof.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
