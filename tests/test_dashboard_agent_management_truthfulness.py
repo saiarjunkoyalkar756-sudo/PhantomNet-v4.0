@@ -27,6 +27,7 @@ LEGACY_SIEM_SERVICE = ROOT / "dashboard_frontend/src/services/siem.service.js"
 THREAT_INTEL_OSINT_PAGE = ROOT / "dashboard_frontend/src/pages/ThreatIntelOSINTPage.jsx"
 SIMULATED_OSINT_SEARCH = ROOT / "dashboard_frontend/src/features/threat-intel/components/SearchBar.jsx"
 SIMULATED_OSINT_CARDS = ROOT / "dashboard_frontend/src/features/threat-intel/components/IntelCards.jsx"
+NETWORK_THREATS_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkThreatsPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -381,3 +382,24 @@ def test_threat_intel_osint_page_retires_randomized_fixture_enrichment_views():
     assert "Governed Advisory-Enrichment Integration Pending" in source
     assert "analyst authorization" in source
     assert "remain advisory-only with no response authority" in source
+
+
+def test_network_threats_page_retires_unsupported_raw_threat_feed():
+    source = NETWORK_THREATS_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "useEffect",
+        "useState",
+        "fetch('/api/v1/network/threats')",
+        "setThreats",
+        "Recent Threats",
+        "Source IP",
+        "threat.source",
+        "threat.timestamp",
+        "<Table",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Network-Threat Evidence Integration Pending" in source
+    assert "tenant-scoped, provenance-linked evidence" in source
+    assert "must not imply active network control" in source
