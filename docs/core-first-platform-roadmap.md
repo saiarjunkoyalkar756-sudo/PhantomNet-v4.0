@@ -114,6 +114,14 @@ The separate self-hosted governed gateway and tenant-scoped service APIs remain 
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not demonstrate migration of legacy callers, live ingress routing, replacement API adoption, Docker-host startup, hosted authentication behavior, agent enrollment, or response execution. Operators must update integrations to supported governed APIs before retiring any legacy deployment.
 
+## Completed bounded increment: legacy vulnerability-management retirement
+
+The legacy vulnerability-management service exposed mock asset inventory, scanner, external-CVE lookup, vulnerability, and patch-recommendation routes without an authentication or tenant boundary. It now declares no mandatory upstream dependency and fails closed with `410 LEGACY_VULNERABILITY_API_RETIRED` for its former route family, while retaining standardized health endpoints.
+
+This prevents fixture-backed data and ungoverned recommendation behavior from being represented as a real vulnerability-management capability. Regression coverage exercises representative asset, scan, CVE, and patch-recommendation paths through ASGI and confirms the retired service has no dependency claim.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed replacement asset inventory, scanner, patch executor, real CVE-provider validation, tenant-safe remediation lifecycle, Docker-host evidence, or vulnerability-detection efficacy. Those remain separate source and controlled-lab workstreams.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
