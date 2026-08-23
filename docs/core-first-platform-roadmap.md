@@ -164,6 +164,14 @@ The legacy SIEM integration service accepted unauthenticated log ingestion, exec
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-scoped replacement ingestion or analytical API, validate telemetry delivery, normalization correctness, log durability, broker/database performance, source authorization, Docker-host deployment, or detection efficacy.
 
+## Completed bounded increment: legacy auto-response retirement
+
+The legacy auto-response engine exposed unauthenticated execution and approval-resume routes for simulated `isolate_host`, `block_ip`, and ticket actions. It neither enforced tenant scope nor established a complete human-approval, HMAC-audit, verification, or rollback chain. It now declares no mandatory dependency and returns `410 LEGACY_AUTO_RESPONSE_API_RETIRED` for the entire former route family; the entry point no longer imports or starts the simulated executor, background runner, or legacy playbook CRUD path.
+
+The supported containment surface remains the separate governed workflow, in which high-impact action is requested, human-approved, HMAC-audited, executed through a controlled adapter, verified, and rollback-capable. This retirement does not broaden automatic enforcement.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate a governed response replacement through this legacy service, live adapter execution, approval identity, audit durability, verification, rollback, Docker-host deployment, or containment efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
