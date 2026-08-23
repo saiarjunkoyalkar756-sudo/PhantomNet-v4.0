@@ -1,61 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import React from 'react';
 
-const NetworkOverviewPage = () => {
-  const [traffic, setTraffic] = useState(0);
-  const [connections, setConnections] = useState(0);
-  const [threats, setThreats] = useState(0);
-
-  useEffect(() => {
-    const ws = new WebSocket(`ws://${window.location.host}/ws/network`);
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'packet_metadata') {
-        setTraffic(prevTraffic => prevTraffic + data.data.size);
-      } else if (data.type === 'network_graph') {
-        setConnections(data.data.connections.length);
-      } else if (data.type.includes('anomaly')) {
-        setThreats(prevThreats => prevThreats + 1);
-      }
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, []);
-
-  return (
-    <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-6">Network Overview</h1>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Real-Time Traffic</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{(traffic / 1024).toFixed(2)} KB</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Connections</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{connections}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Blocked Threats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold text-red-500">{threats}</p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
+const NetworkOverviewPage = () => (
+  <div className="p-4 md:p-8">
+    <h1 className="text-3xl font-bold mb-6">Network Overview</h1>
+    <section className="rounded-xl border border-border bg-panel-solid/70 p-6">
+      <h2 className="text-lg font-semibold text-primary">Governed Network-Evidence Integration Pending</h2>
+      <p className="mt-3 text-sm text-text-secondary leading-6">
+        This dashboard does not connect to a network WebSocket or display real-time traffic, active connections, anomaly counts, or blocked-threat metrics. The prior client accepted unscoped stream messages and calculated security-relevant totals without authenticated tenant scope, source provenance, data validation, analyst authorization, or an evidence contract.
+      </p>
+      <p className="mt-3 text-sm text-text-secondary leading-6">
+        Any future network view must use a protected tenant-scoped analyst workflow with authorization-checked, provenance-linked, validated and minimized observations; identify data currency and collection boundaries; distinguish network observations from verified detections; retain deterministic auditability; and remain read-only and non-enforcing. It must not imply live network visibility, threat blocking, automatic containment, or response execution.
+      </p>
+    </section>
+  </div>
+);
 
 export default NetworkOverviewPage;

@@ -38,6 +38,7 @@ LEGACY_LOG_FORMAT_SWITCH = ROOT / "dashboard_frontend/src/features/log-viewer/co
 LEGACY_LOG_ACTION_BAR = ROOT / "dashboard_frontend/src/features/log-viewer/components/ActionBar.jsx"
 LEGACY_LOG_STREAM_VIEWER = ROOT / "dashboard_frontend/src/features/log-viewer/components/LogStreamViewer.jsx"
 ALERTS_PAGE = ROOT / "dashboard_frontend/src/pages/AlertsPage.jsx"
+NETWORK_OVERVIEW_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkOverviewPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -555,3 +556,25 @@ def test_alerts_page_retires_unsupported_raw_alert_polling_and_disclosure():
     assert "Governed Alert-Evidence Integration Pending" in source
     assert "tenant-scoped, authorization-checked, provenance-linked alert evidence" in source
     assert "remain non-enforcing with no containment or response authority" in source
+
+
+def test_network_overview_page_retires_unscoped_stream_and_metric_claims():
+    source = NETWORK_OVERVIEW_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "WebSocket(",
+        "/ws/network",
+        "packet_metadata",
+        "network_graph",
+        "setTraffic",
+        "setConnections",
+        "setThreats",
+        "Real-Time Traffic",
+        "Active Connections",
+        "Blocked Threats",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Network-Evidence Integration Pending" in source
+    assert "authorization-checked, provenance-linked, validated and minimized observations" in source
+    assert "remain read-only and non-enforcing" in source
