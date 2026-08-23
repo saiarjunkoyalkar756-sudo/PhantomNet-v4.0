@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard compliance-evidence truthfulness boundary
+
+The compliance dashboard no longer runs simulated audits, calculates fixture framework posture, presents fabricated findings or AI remediation, or implies report generation. It now states that governed compliance-evidence integration is pending. Any future workflow must use authorized tenant-scoped evidence, validated control mappings, reproducible assessment methods, source-linked findings, appropriately authorized report generation, and auditable review. Recommendations must remain advisory; remediation requires separately governed human approval, verification, and rollback. Regression coverage prevents fixture compliance claims from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide compliance assessment, control mapping accuracy, audit execution, report generation, evidence authorization, tenant isolation, recommendation efficacy, remediation, Docker-host operation, or regulatory assurance.
+
 ## Completed bounded increment: dashboard governed-configuration truthfulness boundary
 
 The settings dashboard no longer simulates autonomous-defense activation, threat-scoring changes, log-level changes, or successful configuration saves. It now states that governed configuration integration is pending. Any future workflow must enforce privileged authorization and tenant scope, validate policy and safe defaults, record immutable auditable changes, require approval for high-impact settings, and preserve verification and rollback. AI remains advisory-only and cannot enable automated containment through the dashboard. Regression coverage prevents unsupported mutable settings behavior from returning.
