@@ -41,6 +41,7 @@ ALERTS_PAGE = ROOT / "dashboard_frontend/src/pages/AlertsPage.jsx"
 NETWORK_OVERVIEW_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkOverviewPage.jsx"
 DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/Dashboard.jsx"
 ADMIN_DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/AdminDashboard.jsx"
+TERMINAL_CHAT = ROOT / "dashboard_frontend/src/features/ai-console/components/TerminalChat.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -623,3 +624,22 @@ def test_admin_dashboard_retires_unsupported_polling_and_operational_claims():
     assert "Governed Administration Integration Pending" in source
     assert "authenticated role and tenant scope" in source
     assert "approval, audit, verification, and rollback lifecycles" in source
+
+
+def test_terminal_chat_retires_unsupported_copilot_and_action_claims():
+    source = TERMINAL_CHAT.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "copilotService",
+        "handleSendMessage",
+        "getExplanation",
+        "Show me active threats",
+        "Check agent status",
+        "Run playbook Alpha",
+        "Ask PhantomNet AI",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Advisory AI Integration Pending" in source
+    assert "evidence-minimized, tenant-scoped, provenance-linked inputs" in source
+    assert "policy-gated and non-executing" in source

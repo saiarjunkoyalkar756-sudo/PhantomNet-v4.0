@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard advisory-chat truthfulness boundary
+
+The dashboard conversational copilot no longer accepts prompts, returns AI explanations, retrieves operational status, or implies playbook or defensive-action authority. It now states that governed advisory AI integration is pending. Any future advisory integration must use evidence-minimized, tenant-scoped, provenance-linked inputs; remain policy-gated and non-executing; identify recommendations as advisory; and preserve approval-bound containment with HMAC-signed audit, verification, and rollback outside the chat interface. Regression coverage prevents the unsupported copilot client and action claims from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide dashboard-to-AI integration, model availability, prompt handling, evidence authorization, tenant isolation, recommendation accuracy, action authority, containment, verification, rollback, Docker-host operation, or defensive efficacy.
+
 ## Completed bounded increment: dashboard administration truthfulness boundary
 
 The administrative dashboard no longer polls an unsupported alert endpoint, reports hard-coded agent or user counts, asserts operational health, or provides implied action shortcuts. It now states that governed administration integration is pending. Any future administration surface must enforce authenticated role and tenant scope; use authorization-checked, provenance-linked, minimized data; distinguish readiness signals from production availability; audit all changes; and keep high-impact actions within their separately governed approval, audit, verification, and rollback lifecycles. Regression coverage prevents the unsupported client and operational claims from returning.
