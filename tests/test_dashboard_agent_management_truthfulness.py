@@ -42,6 +42,7 @@ NETWORK_OVERVIEW_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkOver
 DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/Dashboard.jsx"
 ADMIN_DASHBOARD_PAGE = ROOT / "dashboard_frontend/src/pages/AdminDashboard.jsx"
 TERMINAL_CHAT = ROOT / "dashboard_frontend/src/features/ai-console/components/TerminalChat.jsx"
+LEGACY_AGENT_MODAL = ROOT / "dashboard_frontend/src/features/agents/components/AgentModal.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -643,3 +644,7 @@ def test_terminal_chat_retires_unsupported_copilot_and_action_claims():
     assert "Governed Advisory AI Integration Pending" in source
     assert "evidence-minimized, tenant-scoped, provenance-linked inputs" in source
     assert "policy-gated and non-executing" in source
+
+
+def test_unreferenced_legacy_agent_detail_component_remains_removed():
+    assert not LEGACY_AGENT_MODAL.exists()

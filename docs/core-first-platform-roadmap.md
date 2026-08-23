@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: unused agent-detail component retirement
+
+The unreferenced legacy agent-detail component has been removed. It previously rendered raw agent identity, status, heartbeat, address, load, certificate, and metadata values without an active tenant-scoped governed agent-lifecycle dashboard integration. Regression coverage requires the deleted component to remain absent. Any future detail view must use tenant-scoped, authorization-checked, provenance-linked, minimized observations and must not imply direct lifecycle or containment authority.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide agent inventory, endpoint telemetry, identity validation, certificate state, tenant isolation, lifecycle actions, containment, Docker-host operation, or defensive efficacy.
+
 ## Completed bounded increment: dashboard advisory-chat truthfulness boundary
 
 The dashboard conversational copilot no longer accepts prompts, returns AI explanations, retrieves operational status, or implies playbook or defensive-action authority. It now states that governed advisory AI integration is pending. Any future advisory integration must use evidence-minimized, tenant-scoped, provenance-linked inputs; remain policy-gated and non-executing; identify recommendations as advisory; and preserve approval-bound containment with HMAC-signed audit, verification, and rollback outside the chat interface. Regression coverage prevents the unsupported copilot client and action claims from returning.
