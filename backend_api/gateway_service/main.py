@@ -212,7 +212,6 @@ app = create_phantom_service(
     version="1.0.0",
     custom_startup=gateway_startup,
     custom_shutdown=gateway_shutdown,
-    cors_origins=["https://phantomnet.io", "http://localhost:3000"],
     required_dependencies=GATEWAY_REQUIRED_DEPENDENCIES,
 )
 

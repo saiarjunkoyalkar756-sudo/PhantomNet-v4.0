@@ -83,6 +83,30 @@ BASELINE_SCENARIOS: List[Dict[str, Any]] = [
             "collection_mode": "telemetry-fixture",
         },
     },
+    {
+        "scenario_id": "BAS-WMI-001",
+        "name": "Controlled WMI activity metadata",
+        "event_type": "wmi_activity",
+        "severity": "medium",
+        "payload": {
+            "host": "lab-endpoint-01",
+            "namespace": "root/cimv2",
+            "method": "InventoryQuery",
+            "execution": "telemetry-fixture",
+        },
+    },
+    {
+        "scenario_id": "BAS-CRED-001",
+        "name": "Controlled credential-artifact alert metadata",
+        "event_type": "credential_access_alert",
+        "severity": "high",
+        "payload": {
+            "host": "lab-endpoint-01",
+            "target": "lab-credential-artifact",
+            "detector": "fixture-only",
+            "access_mode": "metadata",
+        },
+    },
 ]
 
 

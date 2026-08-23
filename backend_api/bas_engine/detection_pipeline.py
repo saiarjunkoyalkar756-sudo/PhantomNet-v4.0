@@ -112,6 +112,30 @@ BAS_DETECTION_RULES: Dict[str, DetectionRule] = {
         mitre_tactics=["discovery"],
         expected_outcome={"detection": True, "automatic_enforcement": False},
     ),
+    "BAS-WMI-001": DetectionRule(
+        rule_id="bas.execution.controlled-wmi-metadata",
+        version="1.0.0",
+        name="BAS controlled WMI activity metadata",
+        description="Detects only the named WMI telemetry fixture; it never issues a WMI query.",
+        event_types=["wmi_activity"],
+        severity="medium",
+        conditions={"namespace": "root/cimv2", "method": "InventoryQuery", "execution": "telemetry-fixture"},
+        mitre_techniques=["T1047"],
+        mitre_tactics=["execution"],
+        expected_outcome={"detection": True, "automatic_enforcement": False},
+    ),
+    "BAS-CRED-001": DetectionRule(
+        rule_id="bas.credential-access.controlled-artifact-alert",
+        version="1.0.0",
+        name="BAS controlled credential-artifact alert metadata",
+        description="Detects only an inert credential-artifact alert fixture; it never accesses credentials.",
+        event_types=["credential_access_alert"],
+        severity="high",
+        conditions={"target": "lab-credential-artifact", "detector": "fixture-only", "access_mode": "metadata"},
+        mitre_techniques=["T1003"],
+        mitre_tactics=["credential-access"],
+        expected_outcome={"detection": True, "automatic_enforcement": False},
+    ),
 }
 
 
@@ -166,6 +190,22 @@ def _discovery_matches(payload: Mapping[str, Any]) -> bool:
     )
 
 
+def _wmi_matches(payload: Mapping[str, Any]) -> bool:
+    return (
+        payload.get("namespace") == "root/cimv2"
+        and payload.get("method") == "InventoryQuery"
+        and payload.get("execution") == "telemetry-fixture"
+    )
+
+
+def _credential_artifact_matches(payload: Mapping[str, Any]) -> bool:
+    return (
+        payload.get("target") == "lab-credential-artifact"
+        and payload.get("detector") == "fixture-only"
+        and payload.get("access_mode") == "metadata"
+    )
+
+
 SCENARIO_MATCHERS: Dict[str, Callable[[Mapping[str, Any]], bool]] = {
     "BAS-AUTH-001": _auth_matches,
     "BAS-PROC-001": _process_matches,
@@ -175,6 +215,8 @@ SCENARIO_MATCHERS: Dict[str, Callable[[Mapping[str, Any]], bool]] = {
     "BAS-SCHED-001": _scheduled_task_matches,
     "BAS-RDP-001": _rdp_matches,
     "BAS-DISC-001": _discovery_matches,
+    "BAS-WMI-001": _wmi_matches,
+    "BAS-CRED-001": _credential_artifact_matches,
 }
 
 

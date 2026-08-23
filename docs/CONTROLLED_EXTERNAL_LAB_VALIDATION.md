@@ -44,13 +44,14 @@ Prove that the Phase 7 reference topology starts on a controlled Docker host, ha
 
 ### Procedure
 
-1. Copy `deploy/self-hosted/env/.env.example` to a protected lab-only environment file and provide fresh non-production values.
-2. Render the topology with `docker compose ... config`; retain only a secret-redacted digest or sanitized output.
-3. Start the reference topology. Record image tags, volume names, service health state, and the resolved gateway/Prometheus loopback bindings.
-4. Confirm PostgreSQL, Redis, Redpanda, and Neo4j have no host-published ports. Confirm the gateway and Prometheus are loopback-only or sit behind a lab-controlled TLS boundary.
-5. Request `/health`, `/ready`, and `/metrics` from the controlled host. Confirm readiness fails before a required dependency is ready and recovers only after it is healthy.
-6. Confirm Prometheus scrapes only the internal gateway target and that no metric label contains tenant, user, event, case, raw request body, credential, or exception text.
-7. Stop and restart the topology. Confirm persistent volumes behave according to the documented recovery plan.
+1. Complete `docs/lab-evidence/GATE1_TOPOLOGY_EVIDENCE_TEMPLATE.md` with a run identifier, lab scope declaration, and no-response-adapter confirmation before starting the topology.
+2. Copy `deploy/self-hosted/env/.env.example` to a protected lab-only environment file and provide fresh non-production values.
+3. Render the topology with `docker compose ... config`; retain only a secret-redacted digest or sanitized output.
+4. Start the reference topology. Record image tags, volume names, service health state, and the resolved gateway/Prometheus loopback bindings.
+5. Confirm PostgreSQL, Redis, Redpanda, and Neo4j have no host-published ports. Confirm the gateway and Prometheus are loopback-only or sit behind a lab-controlled TLS boundary.
+6. Request `/health`, `/ready`, and `/metrics` from the controlled host. Confirm readiness fails before a required dependency is ready and recovers only after it is healthy.
+7. Confirm Prometheus scrapes only the internal gateway target and that no metric label contains tenant, user, event, case, raw request body, credential, or exception text.
+8. Stop and restart the topology. Confirm persistent volumes behave according to the documented recovery plan and record results in the Gate 1 template.
 
 ### Pass criteria
 

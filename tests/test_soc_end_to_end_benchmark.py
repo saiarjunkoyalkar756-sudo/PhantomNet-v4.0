@@ -118,10 +118,10 @@ async def test_controlled_end_to_end_soc_workflow_covers_detection_to_containmen
             normalized = normalize_event(event.model_dump(mode="json"))
             broker_results.append(await harness.processor.process(normalized))
 
-        assert sum(len(result.created_detection_ids) for result in broker_results) == 8
-        assert sum(len(result.alert_workflows) for result in broker_results) == 8
+        assert sum(len(result.created_detection_ids) for result in broker_results) == 10
+        assert sum(len(result.alert_workflows) for result in broker_results) == 10
         alerts = await harness.alert_workflow.list_for_tenant(TENANT_ID)
-        assert len(alerts) == 8
+        assert len(alerts) == 10
         assert all(alert.mitre_evidence for alert in alerts)
 
         case, case_created = await harness.case_workflow.create_from_alert(TENANT_ID, alerts[0].alert_id, "e2e-analyst")

@@ -37,7 +37,7 @@ def _repeat_of(detection: DetectionRecord) -> DetectionRecord:
 def test_baseline_detections_include_validated_mitre_evidence():
     detections = run_baseline_detection(TENANT_ID, CORRELATION_ID)
 
-    assert len(detections) == 8
+    assert len(detections) == 10
     assert {detection.mitre_evidence[0].technique_id for detection in detections} == {
         "T1110",
         "T1059",
@@ -47,6 +47,8 @@ def test_baseline_detections_include_validated_mitre_evidence():
         "T1053.005",
         "T1021.001",
         "T1083",
+        "T1047",
+        "T1003",
     }
     assert all(evidence.confidence == 1.0 for detection in detections for evidence in detection.mitre_evidence)
     assert all(detection.automatic_enforcement is False for detection in detections)

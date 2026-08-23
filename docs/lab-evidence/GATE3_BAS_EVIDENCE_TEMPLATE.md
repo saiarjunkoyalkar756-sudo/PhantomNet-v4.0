@@ -26,6 +26,8 @@
 | `BAS-SCHED-001` | `T1053.005` | `bas.execution.controlled-scheduled-task` | Documentation-only task metadata; no task creation | `<pass/fail/not-run>` |
 | `BAS-RDP-001` | `T1021.001` | `bas.lateral-movement.controlled-rdp-failures` | Synthetic RDP failure telemetry only; no remote login attempt | `<pass/fail/not-run>` |
 | `BAS-DISC-001` | `T1083` | `bas.discovery.controlled-lab-tree` | Bounded `/tmp/phantomnet-lab-tree` inventory metadata only | `<pass/fail/not-run>` |
+| `BAS-WMI-001` | `T1047` | `bas.execution.controlled-wmi-metadata` | WMI activity metadata only; no query is issued | `<pass/fail/not-run>` |
+| `BAS-CRED-001` | `T1003` | `bas.credential-access.controlled-artifact-alert` | Inert credential-artifact alert metadata only; no credentials are accessed | `<pass/fail/not-run>` |
 
 ## Canonical workflow observations
 

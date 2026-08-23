@@ -11,7 +11,7 @@ CORRELATION_ID = "corr-baseline-pipeline-001"
 def test_all_safe_baseline_scenarios_normalize_into_detections():
     detections = run_baseline_detection(TENANT_ID, CORRELATION_ID)
 
-    assert len(detections) == 8
+    assert len(detections) == 10
     assert {detection.evidence["scenario_id"] for detection in detections} == {
         "BAS-AUTH-001",
         "BAS-PROC-001",
@@ -21,6 +21,8 @@ def test_all_safe_baseline_scenarios_normalize_into_detections():
         "BAS-SCHED-001",
         "BAS-RDP-001",
         "BAS-DISC-001",
+        "BAS-WMI-001",
+        "BAS-CRED-001",
     }
     technique_by_scenario = {
         detection.evidence["scenario_id"]: detection.mitre_evidence[0].technique_id
@@ -35,6 +37,8 @@ def test_all_safe_baseline_scenarios_normalize_into_detections():
         "BAS-SCHED-001": "T1053.005",
         "BAS-RDP-001": "T1021.001",
         "BAS-DISC-001": "T1083",
+        "BAS-WMI-001": "T1047",
+        "BAS-CRED-001": "T1003",
     }
     for detection in detections:
         assert detection.schema_version == CONTRACT_VERSION
@@ -74,6 +78,8 @@ def test_new_bas_scenarios_refuse_altered_non_destructive_fixture_conditions():
         "BAS-SCHED-001": {"task_name": "unapproved-task"},
         "BAS-RDP-001": {"failed_attempts": 2},
         "BAS-DISC-001": {"discovered_entries": 99},
+        "BAS-WMI-001": {"method": "UnapprovedMethod"},
+        "BAS-CRED-001": {"access_mode": "unapproved"},
     }
 
     for scenario_id, altered_fields in expected_rejections.items():
