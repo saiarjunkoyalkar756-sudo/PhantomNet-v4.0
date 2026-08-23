@@ -158,6 +158,12 @@ The legacy PNQL service accepted direct parser-and-executor requests without aut
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-safe PNQL replacement, validate parser correctness, prove query authorization, establish database performance, or supply Docker-host or analyst-workflow evidence.
 
+## Completed bounded increment: legacy SIEM integration retirement
+
+The legacy SIEM integration service accepted unauthenticated log ingestion, executed direct in-memory PhantomQL queries, enumerated a fixture workspace, and exposed raw and normalized log records without tenant scope. It now declares no mandatory dependency and returns `410 LEGACY_SIEM_INTEGRATION_API_RETIRED` for the entire former `/api/siem` route family. The entry point no longer starts the ingest worker, normalizer, in-memory stores, or direct query engine.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-scoped replacement ingestion or analytical API, validate telemetry delivery, normalization correctness, log durability, broker/database performance, source authorization, Docker-host deployment, or detection efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
