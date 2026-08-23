@@ -31,6 +31,7 @@ NETWORK_THREATS_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkThrea
 NETWORK_SEGMENTATION_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkSegmentationPage.jsx"
 NETWORK_GRAPH = ROOT / "dashboard_frontend/src/components/network/NetworkGraph.jsx"
 WORLD_ATTACK_MAP = ROOT / "dashboard_frontend/src/features/dashboard/WorldAttackMap.jsx"
+CASE_MANAGEMENT_PAGE = ROOT / "dashboard_frontend/src/pages/CaseManagementPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -452,3 +453,27 @@ def test_world_attack_map_retires_mock_global_attack_visualization():
     assert "Governed Global-Evidence Visualization Integration Pending" in source
     assert "tenant-scoped, provenance-linked and minimized evidence" in source
     assert "remain read-only, advisory, and non-enforcing" in source
+
+
+def test_case_management_page_retires_direct_legacy_case_and_playbook_controls():
+    source = CASE_MANAGEMENT_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "/api/case-management/cases",
+        "fetchCases",
+        "handleCreateCase",
+        "handleUpdateCase",
+        "handleAddNote",
+        "handleExecutePlaybook",
+        "Create New Case",
+        "Execute Default Playbook",
+        "playbook_name: 'default_playbook'",
+        "selectedCase.notes",
+        "selectedCase.timeline",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Case-Lifecycle Integration Pending" in source
+    assert "authenticated tenant-owned alerts" in source
+    assert "playbook runs approval-bound and non-executing" in source
+    assert "HMAC-signed audit" in source
