@@ -400,6 +400,12 @@ The dashboard cloud-security page no longer accepts caller-supplied cloud creden
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide cloud-account authorization, credential custody, resource discovery, bucket enumeration, IAM analysis, configuration assessment, tenant isolation, provider rate-limit behavior, evidence provenance, remediation, Docker-host operation, or cloud-security efficacy.
 
+## Completed bounded increment: dashboard SOAR truthfulness boundary
+
+The dashboard SOAR page no longer presents fixture playbooks, simulated approvals, manual mitigation, execution status, firewall blocks, blockchain assertions, or containment outcomes as live operations. It now states that the legacy view is retired pending dashboard integration with the separately protected governed containment control plane. A future dashboard integration must remain tenant-scoped and capability-protected, issue a request before human decision, retain HMAC-signed audit evidence, use controlled adapters, verify execution, and support rollback; high-impact containment must never become automatic through the client. Regression coverage prevents fixture SOAR state and retired response controls from returning while preserving the governed containment tests.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-containment integration, playbook lifecycle, endpoint or network control, approval identity, audit durability, blockchain integrity, adapter execution, verification, rollback, Docker-host operation, or containment efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.

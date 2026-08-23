@@ -17,6 +17,7 @@ MARKETPLACE_GRID = ROOT / "dashboard_frontend/src/features/marketplace/component
 COMPLIANCE_REPORTING_PAGE = ROOT / "dashboard_frontend/src/pages/ComplianceReportingPage.jsx"
 FORENSICS_PAGE = ROOT / "dashboard_frontend/src/pages/ForensicsPage.jsx"
 CLOUD_SECURITY_PAGE = ROOT / "dashboard_frontend/src/pages/CloudSecurityPage.jsx"
+SOAR_PAGE = ROOT / "dashboard_frontend/src/pages/SOARPage.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -246,3 +247,27 @@ def test_cloud_security_page_does_not_retain_caller_credentials_or_retired_cloud
 
     assert "Governed Cloud Security Integration Pending" in source
     assert "authorized credentials held outside the client" in source
+
+
+def test_soar_page_does_not_retain_fixture_playbooks_or_simulated_containment_controls():
+    source = SOAR_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "FALLBACK_PLAYBOOKS",
+        "pendingApprovals",
+        "activeExecutions",
+        "recentRuns",
+        "blockedIps",
+        "handleTriggerPlaybook",
+        "DEPLOY MITIGATION",
+        "AUTHORIZE",
+        "UNBAN",
+        "EXECUTE REMOTE PATCH",
+        "Blockchain Ledgers",
+        "LAUNCH DYNAMIC ACQUISITION",
+    ):
+        assert unsafe_component not in source
+
+    assert "Governed Containment Dashboard Integration Pending" in source
+    assert "HMAC-signed audit evidence" in source
+    assert "High-impact containment must never become automatic through the client" in source
