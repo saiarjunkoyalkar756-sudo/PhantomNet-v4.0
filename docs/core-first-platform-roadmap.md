@@ -80,6 +80,14 @@ The shared readiness runner now preserves an explicitly empty dependency set, ma
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove a live Neo4j authentication/authorization policy, graph data migration, tenant isolation inside a legacy graph projection, Docker-host startup, backup/recovery, query performance, or graph-analysis efficacy. The incomplete internal consumer remains outside this release’s production claim boundary.
 
+## Completed bounded increment: correlation-engine rule-management boundary
+
+The correlation engine now declares **database and Kafka only** as its readiness dependencies, matching its durable projection initialization and background broker consumer. The prior `/rules` CRUD endpoints were untenant-scoped and unauthenticated. They now fail closed with `410 LEGACY_RULE_API_RETIRED`; rule management is limited to the existing tenant-scoped, capability-protected `/governed-rules` interface.
+
+The governed API retains structured deterministic rule definitions, tenant-mismatch rejection, immutable revisions, fixture evaluation, quality summaries, and no response-execution authority. Regression coverage validates dependency declaration, retention of governed-capability guards, actual ASGI retirement behavior, absence of the legacy rule-store import, and the existing ingestion/alert/tenant workflow invariants.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not demonstrate live Kafka consumer startup, PostgreSQL durability, topic authorization, replay performance, external enrichment provider behavior, Docker-host startup, or detection efficacy. Controlled broker/database-host and recovery evidence remains required before operational claims.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
