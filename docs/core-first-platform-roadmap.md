@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard security-validation truthfulness boundary
+
+The security-validation dashboard no longer simulates attack playbook execution, report viewing, or new simulations. It now states that authorized security-validation integration is pending. Any future workflow must require explicit authorization, tenant and target scope, bounded execution in an approved environment, evidence-linked results, independent safety controls, and immutable audit records. It must not create autonomous containment or production-impacting response authority. Regression coverage prevents simulated playbook and report controls from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide test authorization, target permission, validation execution, environmental isolation, finding accuracy, report generation, production safety, containment, Docker-host operation, or defensive efficacy.
+
 ## Completed bounded increment: dashboard compliance-evidence truthfulness boundary
 
 The compliance dashboard no longer runs simulated audits, calculates fixture framework posture, presents fabricated findings or AI remediation, or implies report generation. It now states that governed compliance-evidence integration is pending. Any future workflow must use authorized tenant-scoped evidence, validated control mappings, reproducible assessment methods, source-linked findings, appropriately authorized report generation, and auditable review. Recommendations must remain advisory; remediation requires separately governed human approval, verification, and rollback. Regression coverage prevents fixture compliance claims from returning.

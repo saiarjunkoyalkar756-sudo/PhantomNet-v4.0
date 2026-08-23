@@ -46,6 +46,7 @@ LEGACY_AGENT_MODAL = ROOT / "dashboard_frontend/src/features/agents/components/A
 EVENT_STREAM_VIEWER = ROOT / "dashboard_frontend/src/pages/EventStreamViewer.jsx"
 SETTINGS_FORM = ROOT / "dashboard_frontend/src/features/settings/components/SettingsForm.jsx"
 COMPLIANCE_PAGE = ROOT / "dashboard_frontend/src/pages/CompliancePage.jsx"
+RED_TEAM_PLAYBOOK_PAGE = ROOT / "dashboard_frontend/src/pages/RedTeamPlaybookUI.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -711,3 +712,22 @@ def test_compliance_page_retires_fixture_assessment_and_audit_claims():
     assert "Governed Compliance-Evidence Integration Pending" in source
     assert "authorized tenant-scoped evidence" in source
     assert "human approval, verification, and rollback" in source
+
+
+def test_red_team_playbook_page_retires_simulated_validation_controls():
+    source = RED_TEAM_PLAYBOOK_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "handleRunPlaybook",
+        "handleViewReport",
+        "Running playbook",
+        "Viewing report",
+        "RUN NEW SIMULATION",
+        "PlaybookList",
+        "Manage and execute attack simulations",
+    ):
+        assert unsafe_component not in source
+
+    assert "Authorized Security-Validation Integration Pending" in source
+    assert "explicit authorization, tenant and target scope" in source
+    assert "immutable audit records" in source
