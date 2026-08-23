@@ -28,6 +28,8 @@ THREAT_INTEL_OSINT_PAGE = ROOT / "dashboard_frontend/src/pages/ThreatIntelOSINTP
 SIMULATED_OSINT_SEARCH = ROOT / "dashboard_frontend/src/features/threat-intel/components/SearchBar.jsx"
 SIMULATED_OSINT_CARDS = ROOT / "dashboard_frontend/src/features/threat-intel/components/IntelCards.jsx"
 NETWORK_THREATS_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkThreatsPage.jsx"
+NETWORK_SEGMENTATION_PAGE = ROOT / "dashboard_frontend/src/pages/network/NetworkSegmentationPage.jsx"
+NETWORK_GRAPH = ROOT / "dashboard_frontend/src/components/network/NetworkGraph.jsx"
 
 
 def test_dashboard_agent_management_page_states_the_governed_integration_boundary():
@@ -403,3 +405,26 @@ def test_network_threats_page_retires_unsupported_raw_threat_feed():
     assert "Governed Network-Threat Evidence Integration Pending" in source
     assert "tenant-scoped, provenance-linked evidence" in source
     assert "must not imply active network control" in source
+
+
+def test_network_segmentation_page_retires_unsupported_topology_and_violation_views():
+    source = NETWORK_SEGMENTATION_PAGE.read_text(encoding="utf-8")
+
+    for unsafe_component in (
+        "useEffect",
+        "useState",
+        "fetch('/api/v1/network/violations')",
+        "fetch('/api/v1/network/topology')",
+        "NetworkGraph",
+        "Segmentation Map",
+        "Segmentation Violations",
+        "source_ip",
+        "destination_ip",
+        "<Table",
+    ):
+        assert unsafe_component not in source
+
+    assert not NETWORK_GRAPH.exists()
+    assert "Governed Segmentation-Evidence Integration Pending" in source
+    assert "tenant-scoped, provenance-linked evidence" in source
+    assert "must not imply live topology accuracy" in source

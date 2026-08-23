@@ -418,6 +418,12 @@ The dashboard advisory decision-evidence page no longer polls an unsupported AI 
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide a dashboard-to-advisory-log integration, AI decision provenance, confidence calibration, model efficacy, raw evidence authorization, tenant isolation, autonomous enforcement, containment execution, Docker-host operation, or defensive efficacy.
 
+## Completed bounded increment: dashboard network-segmentation truthfulness boundary
+
+The dashboard network-segmentation page no longer requests unsupported topology or segmentation-violation endpoints, renders a client-side force-directed network map, or displays raw source and destination identifiers. The unused topology renderer has been removed. The page now states that governed segmentation-evidence integration is pending. Any future view must use tenant-scoped, provenance-linked evidence through a protected analyst workflow; minimize sensitive identifiers; distinguish observed relationships from verified policy violations; preserve deterministic auditability; and avoid claims of live topology accuracy, policy enforcement, active network control, automatic containment, or incident-response execution. Regression coverage prevents the direct fetches, topology component, raw-table interface, and unproven violation fields from returning.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not provide dashboard-to-evidence integration, live topology discovery, segmentation-policy evaluation, relationship or violation accuracy, analyst authorization enforcement, tenant isolation, evidence provenance, result minimization, audit durability, policy enforcement, network control, containment, Docker-host operation, or detection/response efficacy.
+
 ## Completed bounded increment: dashboard network-threat truthfulness boundary
 
 The dashboard network-threat page no longer requests an unsupported direct endpoint or renders raw source addresses, timestamps, and threat labels. It now states that governed network-threat evidence integration is pending. Any future analyst view must consume tenant-scoped, provenance-linked evidence through a protected workflow, minimize sensitive network identifiers, distinguish observations from verified findings, preserve deterministic auditability, and avoid implying active network control, automatic containment, or incident-response execution. Regression coverage prevents the direct fetch, raw-table interface, and unproven threat-result fields from returning.
