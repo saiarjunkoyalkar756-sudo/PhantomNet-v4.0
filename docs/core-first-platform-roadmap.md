@@ -210,6 +210,14 @@ The legacy malware sandbox exposed unauthenticated file upload and sandbox execu
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed evidence-intake or malware-analysis replacement, validate tenant-bound sample ownership, upload malware isolation, sandbox escape resistance, analysis accuracy, artifact retention, analyst authorization, Docker-host operation, or malware-detection efficacy.
 
+## Completed bounded increment: legacy autonomous blue-team retirement
+
+The legacy autonomous blue-team service accepted unauthenticated defensive-action requests, started an ungated Kafka consumer, and exposed process-local action-history files and identifiers. It now declares no mandatory dependency and returns `410 LEGACY_AUTONOMOUS_BLUE_TEAM_API_RETIRED` for its former action and history routes. The entry point no longer imports or starts its consumer, local history directory, or simulated defensive-action path.
+
+The supported containment surface remains the separate governed workflow, in which high-impact action is requested, human-approved, HMAC-audited, executed through a controlled adapter, verified, and rollback-capable. This retirement does not permit automatic enforcement.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate a governed response replacement through this legacy service, broker authorization, live response execution, action-history durability, approval identity, audit-chain integrity, verification, rollback, Docker-host operation, or containment efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
