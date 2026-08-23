@@ -198,6 +198,12 @@ The separate governed AWS Security Group containment adapter remains deployment-
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed cloud-posture replacement through this service, validate cloud credential injection or authorization, enumerate real cloud resources, prove S3/IAM detection accuracy, establish AWS account isolation, or provide controlled-cloud/Docker-host evidence.
 
+## Completed bounded increment: legacy compliance-reporting retirement
+
+The legacy compliance-reporting service generated unauthenticated fixture compliance scores and findings, wrote PDFs to a shared local directory, maintained a process-local report list, and allowed unscoped report download. It now declares no mandatory dependency and returns `410 LEGACY_COMPLIANCE_REPORTING_API_RETIRED` for its former report-generation, listing, and download routes. The entry point no longer imports the PDF generator, initializes a report directory, or maintains fixture report state.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not provide a governed tenant-scoped compliance-reporting replacement, validate evidence collection, control mapping, report accuracy, generation integrity, secure storage or download authorization, retention, Docker-host operation, or audit/compliance efficacy.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
