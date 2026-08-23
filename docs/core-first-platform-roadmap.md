@@ -292,6 +292,12 @@ The active self-hosted gateway remains the production-reference entry point, wit
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate deployment-managed cryptographic session establishment, key custody, key rotation, ML-KEM interoperability, algorithm-agility assessment accuracy, authorization, real cryptographic posture, Docker-host operation, or production gateway security efficacy.
 
+## Completed bounded increment: legacy SOAR engine retirement
+
+The legacy SOAR engine exposed unscoped playbook listing and loading, direct playbook execution, simulated AI playbook generation, in-memory approval disclosure, caller-supplied approval decisions, and a legacy Kafka consumer. It now declares database-only readiness and returns `410 LEGACY_SOAR_API_RETIRED` for its legacy `/api/soar` routes. The engine no longer imports legacy playbook/executor, generation, in-memory approval, or consumer components. The separate `/api/soar/governed-containment` router remains first-class and retains tenant-scoped approvals, signed audit evidence, execution verification, and rollback.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not validate governed containment execution, approval identity, HMAC key custody, audit durability, adapter verification, rollback behavior, Wazuh receipt authentication, database recovery, Docker-host operation, or containment efficacy. The retained governed path remains approval-bound and cannot justify claims of automatic high-impact enforcement.
+
 ## Completed development increment: Phase 7
 
 Phase 7 now provides a **self-hosted deployment and observability reference architecture**. The new Compose topology isolates PostgreSQL, Redis, Redpanda, and Neo4j on an internal network; exposes the gateway and Prometheus only through loopback ports; health-gates the control-plane startup; pins service images; protects stateless services with read-only filesystems and dropped capabilities; and requires every credential to be injected outside source control.
