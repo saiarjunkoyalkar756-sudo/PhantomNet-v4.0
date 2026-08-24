@@ -14,6 +14,18 @@ from backend_api.compliance_service import main as legacy_compliance
 ROOT = Path(__file__).resolve().parents[1]
 COMPLIANCE_MAIN = ROOT / "backend_api/compliance_service/main.py"
 SHARED_COMPLIANCE_ENGINE = ROOT / "backend_api/shared/compliance_engine.py"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+COMPLIANCE_RETIRED_PATHS = (
+    ROOT / "backend_api/compliance_service/crud.py",
+    ROOT / "backend_api/compliance_service/database.py",
+    ROOT / "backend_api/compliance_service/models.py",
+    ROOT / "backend_api/compliance_service/Dockerfile",
+)
+
+
+def test_legacy_compliance_has_no_persistence_or_deployment_surface():
+    assert all(not path.exists() for path in COMPLIANCE_RETIRED_PATHS)
+    assert "compliance-service:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_compliance_service_has_no_database_cache_or_crud_dependencies():

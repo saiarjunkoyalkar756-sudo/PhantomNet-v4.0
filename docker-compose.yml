@@ -352,25 +352,6 @@ services:
     env_file:
       - .env
 
-  compliance-service:
-    build:
-      context: ./backend_api/compliance_service
-      dockerfile: Dockerfile
-    ports:
-      - "8026:8000"
-    depends_on:
-      - postgres
-    environment:
-      DB_HOST: 'postgres'
-      DB_NAME: 'phantomnet_db'
-      DB_USER: 'phantomnet'
-      DB_PASSWORD: '${DB_PASSWORD}'
-      SERVICE_NAME: 'compliance-service'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-    env_file:
-      - .env
-
   audit-log-collector:
     build:
       context: ./backend_api/audit_log_collector

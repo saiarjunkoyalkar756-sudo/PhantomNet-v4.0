@@ -929,3 +929,12 @@ The unmounted legacy asset-inventory scanner, database helper, CVE mapper, and o
 Separate governed tenant-scoped inventory and authorized-discovery workflows remain the supported path and are unchanged. Regression coverage prevents restoration of the legacy scanner, storage, mapper, and container while preserving the zero-dependency fail-closed compatibility route.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove asset discovery, scan authorization, inventory accuracy, CVE coverage, tenant isolation under live load, evidence durability, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy compliance implementation retirement
+
+The unmounted legacy compliance CRUD, database helper, model, obsolete Python 3.9 container build, and root development-Compose service are removed. They maintained mutable standards and assessments outside tenant scope, authorization, evidence provenance, immutable evidence, or governed remediation controls. Source tracing found no tracked caller of the deleted implementation; the retained API remains explicit `410 LEGACY_COMPLIANCE_API_RETIRED`.
+
+The separate shared compliance analysis engine remains unchanged. Regression coverage prevents restoration of the legacy persistence and deployment surfaces while preserving the zero-dependency fail-closed compatibility route.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove compliance assessment accuracy, evidence provenance, tenant isolation under live load, authorization correctness, remediation execution, Docker-host operation, or defensive efficacy.
