@@ -1082,3 +1082,12 @@ The unmounted BAS simulator that fabricated attack outcomes and persisted local 
 Regression coverage prevents restoration of the fabricated BAS simulator modules while preserving the separate baseline-fixture pipeline.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove attack simulation, scanning, exploitation, external-target authorization, event delivery, detection accuracy, tenant isolation under live load, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: CVE resolver prototype retirement
+
+The unmounted CVE resolver prototypes are removed: one fabricated CVE response API and one direct NVD query helper. The retained vulnerability-management API continues to fail closed, directing callers to governed tenant-scoped asset and remediation integrations.
+
+Regression coverage prevents restoration of the resolver prototypes while retaining the explicit `410` vulnerability-management boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove vulnerability enrichment, CVE accuracy, external-source authentication, asset identity, authorization, tenant isolation, remediation accuracy, Docker-host operation, investigation efficacy, or defensive efficacy.
