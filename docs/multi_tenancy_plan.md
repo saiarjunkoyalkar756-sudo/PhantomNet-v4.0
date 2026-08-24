@@ -25,7 +25,7 @@ PhantomNet employs a tenant-isolated data model, primarily using a shared databa
 #### 1.3. Data Isolation in Kafka/Redpanda Event Stream
 
 *   **Event Tagging:** All event types (`TelemetryEvent`, `NormalizedEvent`, `Alert`, `AgentCommandPayload`) now include a `tenant_id` field.
-*   **Producer Enforcement:** Producers (e.g., `telemetry-ingestor`, `event-normalizer`, `ai-behavioral-engine`) inject the `tenant_id` into the message payload.
+*   **Producer Enforcement:** Active producers such as `telemetry-ingestor` and `event-normalizer` must supply `tenant_id` in the message payload. The legacy `ai-behavioral-engine` is retired and is not a producer.
 *   **Consumer Filtering:** Consumers are designed to process only messages relevant to their context. Agents listen for commands specifically for their `agent_id` AND `tenant_id`. Backend services processing events would typically group or filter by `tenant_id`.
 
 ---

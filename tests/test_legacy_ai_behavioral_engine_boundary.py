@@ -13,6 +13,15 @@ from backend_api.ai_behavioral_engine import main as legacy_ai_behavioral_worker
 ROOT = Path(__file__).resolve().parents[1]
 AI_BEHAVIORAL_API_PATH = ROOT / "backend_api/ai_behavioral_engine/app.py"
 AI_BEHAVIORAL_WORKER_PATH = ROOT / "backend_api/ai_behavioral_engine/main.py"
+AI_BEHAVIORAL_CONSUMER_PATH = ROOT / "backend_api/ai_behavioral_engine/consumer.py"
+AI_BEHAVIORAL_DOCKERFILE_PATH = ROOT / "infra/docker/ai-behavioral-engine.Dockerfile"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+
+
+def test_legacy_ai_behavioral_worker_has_no_consumer_or_deployment_surface():
+    assert not AI_BEHAVIORAL_CONSUMER_PATH.exists()
+    assert not AI_BEHAVIORAL_DOCKERFILE_PATH.exists()
+    assert "ai-behavioral-engine:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize(

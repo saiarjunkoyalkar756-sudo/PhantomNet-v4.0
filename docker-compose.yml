@@ -49,29 +49,6 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  ai-behavioral-engine:
-    build:
-      context: .
-      dockerfile: infra/docker/ai-behavioral-engine.Dockerfile
-    ports:
-      - "8003:8000" # Expose port for FastAPI app
-    depends_on:
-      - redpanda
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092'
-      SERVICE_NAME: 'ai-behavioral-engine'
-      ENVIRONMENT: 'production'
-      APP_PORT: '8000' # Internal port for uvicorn
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-    networks:
-      - phantom_internal
-    security_opt:
-      - no-new-privileges:true
-
   alert-storage:
     build:
       context: .

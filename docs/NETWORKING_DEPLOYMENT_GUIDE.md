@@ -54,8 +54,6 @@ This document provides instructions for deploying and running the PhantomNet Net
     # Start the gateway service
     uvicorn backend_api.gateway_service.main:app --host 0.0.0.0 --port 8000 --reload
 
-    # Start the AI Behavioral Engine
-    python backend_api.ai_behavioral_engine.main.py
 
     # Start the governed SOAR containment control plane
     uvicorn backend_api.soar_engine.app:app --host 0.0.0.0 --port 8016

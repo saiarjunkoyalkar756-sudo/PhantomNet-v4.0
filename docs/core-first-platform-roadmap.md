@@ -866,3 +866,12 @@ The now-unreferenced legacy SOAR playbook-model module is removed after source t
 The mounted SOAR service remains limited to the tenant-scoped governed containment API and durable-store startup path. Its high-impact lifecycle does not import these legacy playbook models and continues to require request creation, human approval, HMAC-signed audit evidence, controlled adapter execution, verification, and rollback. Regression coverage prevents restoration of the model module together with its retired execution paths.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove containment execution, adapter availability, command delivery, identity or password-management operation, firewall or endpoint operation, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy AI behavioral worker deployment retirement
+
+The legacy AI behavioral raw Kafka consumer, obsolete Python 3.9 container build, root development-Compose service, and stale manual-start instruction are removed. The consumer constructed behavioral events from raw broker payloads and invoked legacy direct-analysis code without an authenticated tenant context, source provenance contract, accepted model evaluation, advisory-only policy boundary, or governed response lifecycle. Source tracing found no tracked consumer import or startup hook outside the consumer itself; the hardened self-hosted reference topology did not include the service.
+
+The retained `app.py` and `main.py` boundaries continue to return `410 LEGACY_AI_BEHAVIORAL_API_RETIRED`. The separate defensive-evaluation implementation remains the supported tenant-scoped, evidence-bound, advisory-only evaluation path and is not altered. Regression coverage preserves both fail-closed ASGI boundaries and requires the raw consumer, container build, and root-Compose service to remain absent. The event-schema and tenant-isolation documentation no longer identify the retired service as a producer or consumer.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, source-event delivery, behavioral analysis, forecasting, model quality, telemetry provenance, tenant isolation under live load, alert production, Docker-host operation, detection efficacy, or defensive efficacy.
