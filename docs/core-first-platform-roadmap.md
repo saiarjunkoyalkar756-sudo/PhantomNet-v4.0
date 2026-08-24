@@ -626,3 +626,10 @@ The unmounted `gateway_service/threat_intelligence_api.py` router has been remov
 The source-reachable standalone log-service retained global raw attack-log and SIEM-polling endpoints despite no tenant identifier on the legacy `AttackLog` model and no tenant filter on either retrieval path. Both routes now return a distinct 410 retirement contract, and the service status no longer claims raw-log retrieval is operational. The log service is not part of the hardened self-hosted reference, and the dashboard log viewer already states that governed evidence integration is pending. This change preserves the service boundary while preventing global raw-data disclosure until a tenant-scoped evidence integration is designed and validated.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate a replacement log-service deployment, raw-log ingestion, broker connectivity, data durability, authorization, tenant isolation, provenance, data minimization, analyst retrieval, retention, observability, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy SIEM ingestion retirement
+
+The source-reachable standalone SIEM ingestion service exposed unauthenticated single and batch raw-log ingestion plus global raw-record lookup and listing. Its legacy data model did not establish source identity, tenant scope, or durable evidence provenance, and the service is absent from the hardened self-hosted reference. The four compatibility routes now return a distinct 410 retirement contract and the service status reports the retired state. This does not alter the separately governed endpoint-inventory telemetry integration, which uses capability checks and tenant-scoped Wazuh ingestion and evidence handling.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate a replacement SIEM deployment, telemetry ingestion, forwarder authentication, tenant isolation, source provenance, data durability, broker operation, evidence handling, alert correlation, analyst retrieval, Wazuh integration, Docker-host operation, or defensive efficacy.

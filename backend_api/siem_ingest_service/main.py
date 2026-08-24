@@ -1,109 +1,62 @@
+"""Fail-closed compatibility boundary for legacy unauthenticated SIEM ingestion."""
+
+from fastapi import APIRouter, FastAPI
+
+from backend_api.core.response import error_response
 from backend_api.shared.service_factory import create_phantom_service
-from backend_api.core.response import success_response, error_response
-from . import crud, models
-from .database import engine, get_db
-from loguru import logger
-import datetime
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, FastAPI
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+
 
 router = APIRouter()
 
-class RawLogEventBase(BaseModel):
-    raw_log_data: str = Field(..., example="<13>Jan 1 00:00:00 hostname program: Message content")
-    source_type: str = Field(..., example="syslog")
-    host_identifier: Optional[str] = None
-    timestamp: Optional[datetime.datetime] = None
-    initial_metadata: Optional[Dict[str, Any]] = None
 
-class RawLogEventCreate(RawLogEventBase):
-    pass
-
-class RawLogEventResponse(RawLogEventBase):
-    id: int
-    ingested_at: datetime.datetime
-
-    class Config:
-        from_attributes = True
-
-@router.post("/ingest/", response_model=RawLogEventResponse, status_code=status.HTTP_201_CREATED)
-def ingest_single_log_event(log_event: RawLogEventCreate, db: Session = Depends(get_db)):
-    """
-    Ingest a single raw log event into the SIEM.
-    """
-    try:
-        db_log = crud.create_raw_log_event(
-            db=db,
-            raw_log_data=log_event.raw_log_data,
-            source_type=log_event.source_type,
-            host_identifier=log_event.host_identifier,
-            timestamp=log_event.timestamp,
-            initial_metadata=log_event.initial_metadata
-        )
-        return success_response(data=db_log)
-    except Exception as e:
-        logger.error(f"Failed to ingest log: {e}")
-        return error_response(code="INGEST_FAILED", message=str(e), status_code=500)
-
-@router.post("/ingest/batch", response_model=List[RawLogEventResponse], status_code=status.HTTP_201_CREATED)
-def ingest_batch_log_events(log_events: List[RawLogEventCreate], db: Session = Depends(get_db)):
-    """
-    Ingest multiple raw log events in a single batch.
-    """
-    try:
-        created_logs = []
-        for log_event in log_events:
-            db_log = crud.create_raw_log_event(
-                db=db,
-                raw_log_data=log_event.raw_log_data,
-                source_type=log_event.source_type,
-                host_identifier=log_event.host_identifier,
-                timestamp=log_event.timestamp,
-                initial_metadata=log_event.initial_metadata
-            )
-            created_logs.append(db_log)
-        return success_response(data=created_logs)
-    except Exception as e:
-        logger.error(f"Batch ingestion failed: {e}")
-        return error_response(code="BATCH_INGEST_FAILED", message=str(e), status_code=500)
-
-@router.get("/logs/{log_id}", response_model=RawLogEventResponse)
-def get_log_event_by_id(log_id: int, db: Session = Depends(get_db)):
-    db_log = crud.get_raw_log_event(db, log_id=log_id)
-    if db_log is None:
-        return error_response(code="NOT_FOUND", message="Log event not found", status_code=404)
-    return success_response(data=db_log)
-
-@router.get("/logs/", response_model=List[RawLogEventResponse])
-def get_log_events(
-    skip: int = 0,
-    limit: int = 100,
-    source_type: Optional[str] = None,
-    host_identifier: Optional[str] = None,
-    start_time: Optional[datetime.datetime] = None,
-    end_time: Optional[datetime.datetime] = None,
-    db: Session = Depends(get_db)
-):
-    logs = crud.get_raw_log_events(
-        db=db, skip=skip, limit=limit, source_type=source_type,
-        host_identifier=host_identifier, start_time=start_time, end_time=end_time
+def _retired_legacy_siem_api():
+    return error_response(
+        code="LEGACY_SIEM_INGEST_API_RETIRED",
+        message=(
+            "Legacy SIEM ingestion and raw-log retrieval are retired because they did not "
+            "authenticate the source or establish tenant-scoped evidence provenance. Use "
+            "the governed tenant-scoped telemetry integration."
+        ),
+        status_code=410,
     )
-    return success_response(data=logs)
 
-async def siem_ingest_startup(app: FastAPI):
-    """
-    Handles startup events for the SIEM Ingest Service.
-    """
-    models.Base.metadata.create_all(bind=engine)
-    logger.info("SIEM Ingest Service: Database tables initialized.")
+
+@router.post("/ingest/", include_in_schema=False)
+async def retired_legacy_single_ingest():
+    """Fail closed instead of accepting unauthenticated raw events."""
+    return _retired_legacy_siem_api()
+
+
+@router.post("/ingest/batch", include_in_schema=False)
+async def retired_legacy_batch_ingest():
+    """Fail closed instead of accepting unauthenticated raw event batches."""
+    return _retired_legacy_siem_api()
+
+
+@router.get("/logs/{log_id}", include_in_schema=False)
+async def retired_legacy_log_lookup(log_id: int):
+    """Fail closed instead of exposing raw evidence without a tenant boundary."""
+    return _retired_legacy_siem_api()
+
+
+@router.get("/logs/", include_in_schema=False)
+async def retired_legacy_log_list():
+    """Fail closed instead of listing raw evidence without a tenant boundary."""
+    return _retired_legacy_siem_api()
+
 
 app = create_phantom_service(
-    name="SIEM Ingest Service",
-    description="High-throughput raw log ingestion engine for SIEM integration.",
+    name="Legacy SIEM Compatibility Boundary",
+    description="Retired raw SIEM ingestion and retrieval compatibility boundary.",
     version="1.0.0",
-    custom_startup=siem_ingest_startup
 )
 
 app.include_router(router, prefix="/api/v1/siem")
+
+
+@app.get("/status")
+async def status() -> dict[str, str]:
+    return {
+        "status": "legacy-siem-ingest-retired",
+        "detail": "Use governed tenant-scoped telemetry integrations.",
+    }
