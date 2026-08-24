@@ -677,3 +677,12 @@ The root-compose-exposed standalone audit-log collector HTTP surface is now an e
 The `audit_log_collector` package's integrity and verification modules remain intact because the separately governed containment lifecycle imports them for its approval-bound, HMAC-audited execution evidence. The retired standalone HTTP process no longer initializes a collector schema or depends on a database; only generic non-mutating operational probes remain.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove audit-event ingestion, authorization, tenant isolation, durable storage, append-only behavior, source provenance, HMAC material provisioning, audit-chain integrity, containment approval or execution, Docker-host operation, recovery, or defensive efficacy.
+
+
+## Completed bounded increment: standalone compliance API retirement
+
+The root-compose-exposed standalone compliance service is now an explicit fail-closed compatibility boundary. Its former standards and assessments APIs permitted client-driven creation, update, and global retrieval without tenant ownership, authorization, evidence provenance, or a governed remediation lifecycle. The seven former data routes now return `410 LEGACY_COMPLIANCE_API_RETIRED`, and status explicitly identifies the boundary as retired.
+
+This increment does not remove or expose the separately tested shared compliance-engine utility. No tenant-scoped compliance replacement is currently represented as an exposed API, so the retired boundary directs no caller toward an unsupported workflow.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove compliance control assessment, authorization, tenant isolation, evidence collection or provenance, report generation, durable storage, regulatory alignment, remediation, Docker-host operation, or compliance efficacy.
