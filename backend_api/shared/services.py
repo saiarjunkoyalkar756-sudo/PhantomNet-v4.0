@@ -1,19 +1,16 @@
 import asyncio
 from .plugin_manager import PluginManager
 from .blue_team_ai import BlueTeamAI
-from .pnql_engine import PnqlEngine
 from .osint_engine import OsintEngine
 from .event_stream_processor import EventStreamProcessor
 from .dfir_toolkit import DFIRToolkit
 from .compliance_engine import ComplianceEngine
 from .bas_simulator import BASSimulator
 from .telemetry_ingest import TelemetryIngestService, TelemetryIngestConfig
-from .database import get_db, SessionLocal, AttackLog
+from .database import get_db
 from backend_api.log_streaming.websocket_broadcaster import broadcaster
 
-from typing import Dict, Any
-from sqlalchemy.orm import Session
-from fastapi import Depends
+from typing import Dict
 from loguru import logger
 
 # Dictionary to hold background tasks
@@ -43,86 +40,8 @@ dfir_toolkit = DFIRToolkit()
 compliance_engine = ComplianceEngine()
 bas_simulator = BASSimulator()
 
-def get_logs_pnql():
-    db = SessionLocal()
-    try:
-        logs = db.query(AttackLog).order_by(AttackLog.timestamp.desc()).all()
-        logger.info(f"PNQL: Retrieved {len(logs)} logs from AttackLog table.")
-        return [
-            {
-                "id": log.id,
-                "timestamp": log.timestamp.isoformat(),
-                "ip": log.ip,
-                "port": log.port,
-                "data": log.data,
-                "attack_type": log.attack_type,
-                "confidence_score": log.confidence_score,
-                "is_anomaly": log.is_anomaly,
-                "anomaly_score": log.anomaly_score,
-                "is_verified_threat": log.is_verified_threat,
-                "is_blacklisted": log.is_blacklisted,
-            }
-            for log in logs
-        ]
-    finally:
-        db.close()
 
-def get_threats_pnql():
-    return []
 
-def get_assets_pnql(db: Session = Depends(get_db)): # Added db dependency
-    return []
-
-def execute_plugins_pnql(query_parsed_for_plugins: Dict[str, Any]):
-    target = query_parsed_for_plugins.get("target")
-    plugins_to_use = query_parsed_for_plugins.get("plugins", [])
-
-    results = []
-    for plugin_name in plugins_to_use:
-        if (
-            plugin_manager.available_plugins.get(plugin_name)
-            and plugin_manager.available_plugins[plugin_name]["status"] != "loaded"
-        ):
-            plugin_manager.load_plugin(plugin_name)
-
-        if (
-            plugin_manager.available_plugins.get(plugin_name)
-            and plugin_manager.available_plugins[plugin_name]["status"] == "loaded"
-            and plugin_manager.available_plugins[plugin_name]["manifest"]["type"]
-            == "scanner"
-        ):
-            print(
-                f"Executing scanner plugin '{plugin_name}' on target '{target}' via PNQL."
-            )
-            func_name = (
-                "run_kerbrute_scan"
-                if "kerbrute" in plugin_name.lower()
-                else "run_scanner"
-            )
-
-            plugin_result = plugin_manager.execute_plugin_function(
-                plugin_name, func_name, target
-            )
-            results.append(
-                {"plugin": plugin_name, "target": target, "result": plugin_result}
-            )
-        else:
-            results.append(
-                {
-                    "plugin": plugin_name,
-                    "target": target,
-                    "error": "Plugin not found, not loaded, or not a scanner type.",
-                }
-            )
-    return results
-
-pnql_data_sources = {
-    "logs": get_logs_pnql,
-    "threats": get_threats_pnql,
-    "assets": get_assets_pnql,
-    "scan_plugins": execute_plugins_pnql,
-}
-pnql_engine = PnqlEngine(pnql_data_sources)
 
 def get_telemetry_ingest_service() -> TelemetryIngestService:
     return event_stream_processor.telemetry_ingest_service

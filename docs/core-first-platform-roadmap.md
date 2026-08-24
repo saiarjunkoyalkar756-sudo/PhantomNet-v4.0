@@ -1019,3 +1019,12 @@ The obsolete Python 3.9 container build and root development-Compose service for
 Regression coverage preserves the explicit fail-closed legacy routes and prevents restoration of the SIEM-ingest container or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove source authentication, telemetry delivery, raw-evidence durability, tenant isolation under live load, Wazuh integration, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: shared PNQL scanner-registry retirement
+
+The shared service registry no longer constructs an unreachable PNQL data-source registry that exposed globally scoped raw-log access and loaded scanner plugins against caller-supplied targets. The active canonical telemetry-ingest accessor remains available to the authenticated telemetry route. The standalone legacy PhantomQL compatibility boundary and governed threat-hunting analysis path remain unchanged.
+
+Regression coverage preserves the telemetry accessor dependency while preventing restoration of PNQL raw-data helpers, scanner-plugin execution wiring, or the shared PNQL registry.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove telemetry source authentication, raw-evidence durability, tenant isolation under live load, threat-hunting behavior, scanner operation, target authorization, Docker-host operation, investigation efficacy, or defensive efficacy.
