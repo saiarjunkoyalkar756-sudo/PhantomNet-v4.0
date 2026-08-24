@@ -9,6 +9,16 @@ LEGACY_ALERT_MANAGER = ROOT / "backend_api/gateway_service/alert_manager_api.py"
 LEGACY_RAW_PNQL_DASHBOARD = ROOT / "backend_api/gateway_service/dashboard_api.py"
 LEGACY_FIXTURE_DASHBOARD = ROOT / "backend_api/gateway_service/routes/dashboard_api.py"
 LEGACY_GATEWAY_WEBSOCKET_API = ROOT / "backend_api/gateway_service/websocket_api.py"
+LEGACY_GATEWAY_POLICY_API = ROOT / "backend_api/gateway_service/policy_api.py"
+
+
+def test_orphaned_gateway_policy_router_remains_removed():
+    """Do not restore unscoped policy CRUD without authorization and durable governance."""
+    assert not LEGACY_GATEWAY_POLICY_API.exists()
+
+    gateway_source = GATEWAY_MAIN.read_text(encoding="utf-8")
+    assert "policy_api" not in gateway_source
+    assert "include_router(policy" not in gateway_source
 
 
 def test_orphaned_gateway_websocket_router_remains_removed():

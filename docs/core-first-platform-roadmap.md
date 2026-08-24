@@ -605,3 +605,10 @@ Two unmounted legacy gateway dashboard modules have been removed after source tr
 The unmounted `gateway_service/websocket_api.py` router has been removed after reachability tracing confirmed no imports or router inclusion. It accepted JWTs in query parameters and exposed event and log streams without tenant or capability controls. The gateway background event and log helpers remain unchanged because they are separately referenced, and separately routed WebSocket modules outside this orphan gateway router were not altered. This increment only prevents accidental remounting of the legacy query-token stream surface.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate any remaining WebSocket route, authentication, authorization, token confidentiality, tenant isolation, event or log provenance, stream integrity, delivery, retention, broker connectivity, operational monitoring, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: orphaned gateway policy-router retirement
+
+The unmounted `gateway_service/policy_api.py` router has been removed after reachability tracing confirmed no imports or router inclusion. It allowed in-memory policy creation, update, deletion, and disclosure without authentication, authorization, tenant scope, durable storage, approval, audit, verification, or rollback. The removal does not change separately governed capability-protected configuration controls or approved response governance; it prevents accidental remounting of an unscoped policy-control surface.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate remaining configuration controls, policy evaluation, authorization, tenant isolation, persistence, audit durability, approval, verification, rollback, enforcement, Docker-host operation, or defensive efficacy.
