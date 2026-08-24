@@ -633,3 +633,10 @@ The source-reachable standalone log-service retained global raw attack-log and S
 The source-reachable standalone SIEM ingestion service exposed unauthenticated single and batch raw-log ingestion plus global raw-record lookup and listing. Its legacy data model did not establish source identity, tenant scope, or durable evidence provenance, and the service is absent from the hardened self-hosted reference. The four compatibility routes now return a distinct 410 retirement contract and the service status reports the retired state. This does not alter the separately governed endpoint-inventory telemetry integration, which uses capability checks and tenant-scoped Wazuh ingestion and evidence handling.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate a replacement SIEM deployment, telemetry ingestion, forwarder authentication, tenant isolation, source provenance, data durability, broker operation, evidence handling, alert correlation, analyst retrieval, Wazuh integration, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy log-normalizer retirement
+
+The source-reachable standalone log-normalizer service exposed unauthenticated single and batch raw-log normalization without source identity, tenant scope, or evidence provenance. Its helper functions and HTTP routes had no external imports, and the service is separate from the canonical event-normalizer pipeline. The two compatibility routes now return a distinct 410 retirement contract and the service status reports the retired state. This change does not alter the canonical pipeline’s versioned event handling; it prevents accidental reuse of unscoped HTTP normalization as a SOC telemetry boundary.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate the canonical normalization pipeline, telemetry ingestion, source authentication, tenant isolation, schema mapping, event fidelity, broker connectivity, data durability, downstream correlation, detection efficacy, Docker-host operation, or defensive efficacy.
