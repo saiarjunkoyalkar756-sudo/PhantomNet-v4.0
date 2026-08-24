@@ -12,6 +12,7 @@ from backend_api.soc_copilot_service import main as legacy_soc_copilot
 ROOT = Path(__file__).resolve().parents[1]
 SOC_COPILOT_APP_PATH = ROOT / "backend_api/soc_copilot_service/app.py"
 SOC_COPILOT_MAIN_PATH = ROOT / "backend_api/soc_copilot_service/main.py"
+SOC_COPILOT_CONTEXT_BUILDER_PATH = ROOT / "backend_api/soc_copilot_service/context_builder/main.py"
 
 
 def test_legacy_soc_copilot_has_no_required_upstream_dependencies():
@@ -28,6 +29,7 @@ def test_legacy_soc_copilot_sources_do_not_retain_context_or_generation_componen
     assert "auto_investigate" not in source
     assert "generate_detection_rule" not in source
     assert "generate_threat_report" not in source
+    assert not SOC_COPILOT_CONTEXT_BUILDER_PATH.exists()
 
 
 @pytest.mark.asyncio

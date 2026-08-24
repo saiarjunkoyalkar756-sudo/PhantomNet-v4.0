@@ -758,3 +758,12 @@ The unmounted enrichment service and its Docker build surface are removed after 
 The separately supported threat-intelligence service remains the bounded advisory replacement: it requires `alerts:read`, limits indicator types and bulk input, and sanitizes provider availability output. This retirement does not modify the active behavioral consumer’s separate topic contract or establish enrichment accuracy, source delivery, or production provider behavior.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove external provider authorization, enrichment accuracy, source-event delivery, broker connectivity, tenant isolation under live load, advisory quality, analyst authorization in production, Docker-host operation, or detection efficacy.
+
+
+## Completed bounded increment: simulated SOC copilot context-builder retirement
+
+The unmounted SOC copilot context builder is removed after tracked-source tracing found no caller, service mount, deployment reference, or governed advisory dependency. It simulated cross-service event, vulnerability, asset, and context retrieval through legacy direct CRUD assumptions, had no tenant scope or provenance controls, and lacked evidence-bound policy gates, authorization, or supported advisory contract.
+
+The separately retained SOC copilot router remains an explicit `410 LEGACY_SOC_COPILOT_API_RETIRED` compatibility boundary. This retirement does not alter the governed tenant-scoped threat-intelligence, endpoint-inventory, case, attack-path, or evidence workflows.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove SOC copilot functionality, context retrieval, cross-service connectivity, data provenance, analyst authorization, tenant isolation under live load, advisory quality, Docker-host operation, or defensive efficacy.
