@@ -767,3 +767,12 @@ The unmounted SOC copilot context builder is removed after tracked-source tracin
 The separately retained SOC copilot router remains an explicit `410 LEGACY_SOC_COPILOT_API_RETIRED` compatibility boundary. This retirement does not alter the governed tenant-scoped threat-intelligence, endpoint-inventory, case, attack-path, or evidence workflows.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove SOC copilot functionality, context retrieval, cross-service connectivity, data provenance, analyst authorization, tenant isolation under live load, advisory quality, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: mock vulnerability-management router retirement
+
+The unmounted vulnerability-management router is removed after source tracing confirmed that the root-compose service starts the separately fail-closed `main.py` entry point and no tracked import mounted the router. The deleted router returned fixture assets and simulated vulnerability scans, CVE resolution, prioritization, and patch recommendations without tenant scope, authorized asset ownership, validated finding provenance, evidence controls, change management, or approval-bound remediation.
+
+The service’s explicit `410 LEGACY_VULNERABILITY_API_RETIRED` compatibility boundary remains, as do the separately tested internal patch-prioritization utilities. This retirement does not turn those utilities into a supported assessment, scanner, inventory, CVE, or remediation workflow.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove asset discovery, scanner operation, CVE resolution, finding provenance, patch availability, recommendation quality, analyst authorization, tenant isolation under live load, remediation execution, Docker-host operation, or defensive efficacy.
