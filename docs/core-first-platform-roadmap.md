@@ -640,3 +640,10 @@ The source-reachable standalone SIEM ingestion service exposed unauthenticated s
 The source-reachable standalone log-normalizer service exposed unauthenticated single and batch raw-log normalization without source identity, tenant scope, or evidence provenance. Its helper functions and HTTP routes had no external imports, and the service is separate from the canonical event-normalizer pipeline. The two compatibility routes now return a distinct 410 retirement contract and the service status reports the retired state. This change does not alter the canonical pipeline’s versioned event handling; it prevents accidental reuse of unscoped HTTP normalization as a SOC telemetry boundary.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate the canonical normalization pipeline, telemetry ingestion, source authentication, tenant isolation, schema mapping, event fidelity, broker connectivity, data durability, downstream correlation, detection efficacy, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy network WebSocket retirement
+
+The source-reachable standalone network WebSocket service accepted telemetry after a fixed in-code agent-ID and client-supplied platform-hash check, then published arbitrary JSON directly to the normalized-event broker topic. It had no tenant scope, operator-provisioned credential, canonical signature verification, durable receipt, source provenance, or governed adapter boundary. The WebSocket now closes with a policy-violation retirement reason before accepting a connection or telemetry, and startup no longer connects a direct broker producer. This does not modify separately governed signed telemetry credential controls or tenant-scoped forwarder integrations.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate signed telemetry, agent identity, credential provisioning, tenant isolation, broker connectivity, event delivery, durability, source provenance, forwarder integration, Wazuh integration, Docker-host operation, or defensive efficacy.
