@@ -318,19 +318,6 @@ services:
       ENVIRONMENT: 'development'
       APP_PORT: '8000'
 
-  auto-response-engine:
-    build:
-      context: ./backend_api/auto_response_engine
-      dockerfile: Dockerfile
-    ports:
-      - "8018:8000"
-    depends_on:
-      - soar-playbook-engine
-    environment:
-      SERVICE_NAME: 'auto-response-engine'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-
   siem-ingest-service:
     build:
       context: ./backend_api/siem_ingest_service

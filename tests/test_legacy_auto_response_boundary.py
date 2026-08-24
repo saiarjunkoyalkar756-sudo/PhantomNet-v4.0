@@ -11,6 +11,13 @@ from backend_api.auto_response_engine import main as legacy_auto_response
 
 ROOT = Path(__file__).resolve().parents[1]
 AUTO_RESPONSE_APP_PATH = ROOT / "backend_api/auto_response_engine/main.py"
+AUTO_RESPONSE_DOCKERFILE_PATH = ROOT / "backend_api/auto_response_engine/Dockerfile"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+
+
+def test_legacy_auto_response_has_no_deployable_container_or_compose_service():
+    assert not AUTO_RESPONSE_DOCKERFILE_PATH.exists()
+    assert "auto-response-engine:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_auto_response_has_no_required_upstream_dependencies():

@@ -803,3 +803,12 @@ The legacy autonomous blue-team Kafka worker, direct defense helpers, container 
 The retained autonomous blue-team HTTP boundary remains an explicit `410 LEGACY_AUTONOMOUS_BLUE_TEAM_API_RETIRED` response. This does not alter the separately governed containment lifecycle, which remains request → human approval → signed audit → controlled adapter → verification → rollback.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove containment execution, adapter availability, firewall or endpoint operation, alert delivery, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy auto-response deployment retirement
+
+The legacy auto-response package retains only its explicit `410 LEGACY_AUTO_RESPONSE_API_RETIRED` compatibility boundary. Its obsolete Python 3.9 container build surface and root development-Compose service are removed, so the retired ASGI boundary is no longer deployed from the broad legacy topology. Source tracing found no tracked caller of the package beyond that Compose exposure, and the hardened self-hosted reference topology contains no legacy auto-response service.
+
+The retained boundary does not execute playbooks, issue agent commands, or invoke security controls. High-impact response remains limited to the separate governed containment lifecycle: request → human approval → HMAC-signed audit → controlled adapter execution → verification → rollback. Regression coverage preserves both the `410` route contract and the absence of the legacy Dockerfile and root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, migration of legacy callers, or defensive efficacy.
