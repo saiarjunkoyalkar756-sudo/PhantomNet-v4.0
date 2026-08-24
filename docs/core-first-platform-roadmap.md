@@ -947,3 +947,12 @@ The obsolete Python 3.9 container build and root development-Compose service for
 Regression coverage prevents restoration of the legacy container and root-Compose service while preserving the explicit fail-closed API contract and the required governed audit imports.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove audit persistence, cryptographic-key handling, chain durability, adapter execution, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy log-normalizer deployment retirement
+
+The unreferenced legacy normalizer event schema, obsolete Python 3.9 container build, and root development-Compose service are removed. The exposed service had already been reduced to the fail-closed `410 LEGACY_LOG_NORMALIZER_API_RETIRED` boundary, but its deployment continued to publish a port for an intentionally unavailable unauthenticated normalization API. The separate canonical tenant-aware event-normalization pipeline remains unchanged.
+
+Regression coverage preserves the fail-closed compatibility routes and prevents restoration of the legacy schema, container, or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove normalization accuracy, source authentication, tenant isolation under live load, event delivery, canonical-schema conformance for external traffic, Docker-host operation, or defensive efficacy.

@@ -6,6 +6,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_NORMALIZER_MAIN = ROOT / "backend_api/log_normalizer/main.py"
 CANONICAL_NORMALIZER_MAIN = ROOT / "backend_api/event_normalizer/main.py"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+LEGACY_NORMALIZER_RETIRED_PATHS = (
+    ROOT / "backend_api/log_normalizer/event_schema.py",
+    ROOT / "backend_api/log_normalizer/Dockerfile",
+)
+
+
+def test_legacy_normalizer_has_no_schema_or_deployment_surface():
+    assert all(not path.exists() for path in LEGACY_NORMALIZER_RETIRED_PATHS)
+    assert "log-normalizer:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_http_log_normalizer_routes_fail_closed():

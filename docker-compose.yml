@@ -274,17 +274,6 @@ services:
     env_file:
       - .env
 
-  log-normalizer:
-    build:
-      context: ./backend_api/log_normalizer
-      dockerfile: Dockerfile
-    ports:
-      - "8021:8000"
-    environment:
-      SERVICE_NAME: 'log-normalizer'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-
   phantomql-engine:
     build:
       context: .
