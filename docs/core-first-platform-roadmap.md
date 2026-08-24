@@ -884,3 +884,12 @@ The unmounted legacy event-stream raw Kafka consumer, direct PostgreSQL helper, 
 The supported `backend_api.shared.event_stream_processor` used by gateway and shared-service paths is separate and unchanged. Regression coverage requires the retired consumer, database helper, and container to remain absent while preserving the zero-dependency fail-closed compatibility route.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove telemetry delivery, broker authorization, source authentication, database availability, canonical normalization, alert generation, tenant isolation under live load, Docker-host operation, detection efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy SOAR playbook implementation retirement
+
+The unmounted legacy SOAR playbook CRUD, database session helper, playbook model, obsolete Python 3.9 container build, and root development-Compose service are removed. They maintained playbooks, runs, and approvals in a separate schema and deployment path outside tenant-owned evidence, authenticated approver identity, HMAC-signed audit evidence, controlled adapter execution, verification, and governed rollback. The root service exposed only the retained `410 LEGACY_SOAR_PLAYBOOK_API_RETIRED` boundary; source tracing found no tracked caller of the deleted implementation modules.
+
+The retained SOAR control plane remains the separately mounted tenant-scoped governed containment API. Regression coverage preserves the fail-closed legacy routes and prevents restoration of the legacy implementation and deployment surfaces.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove playbook migration, approval authorization, containment execution, adapter availability, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.

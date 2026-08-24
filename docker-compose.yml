@@ -255,35 +255,6 @@ services:
     env_file:
       - .env
 
-  soar-playbook-engine:
-    build:
-      context: .
-      dockerfile: backend_api/soar_playbook_engine/Dockerfile
-    ports:
-      - "8016:8000"
-    depends_on:
-      - postgres
-      - redpanda # Add redpanda dependency
-    environment:
-      DB_HOST: 'postgres'
-      DB_NAME: 'phantomnet_db'
-      DB_USER: 'phantomnet'
-      DB_PASSWORD: '${DB_PASSWORD}'
-      SERVICE_NAME: 'soar-playbook-engine'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-      KAFKA_BOOTSTRAP_SERVERS: 'redpanda:29092' # Add Kafka config
-      SOAR_ALERT_TOPIC: 'soar-alerts' # Add Kafka config
-      SOAR_KAFKA_GROUP_ID: 'soar-engine-group' # Add Kafka config
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3).read()\""]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-    env_file:
-      - .env
-
   playbook-flow-builder:
     build:
       context: ./backend_api/playbook_flow_builder
