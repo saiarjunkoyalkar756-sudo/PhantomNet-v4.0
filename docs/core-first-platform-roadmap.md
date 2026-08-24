@@ -1055,3 +1055,12 @@ The unreachable shared BlueTeamAI module that fabricated anomaly outcomes and pr
 Regression coverage prevents restoration of the simulated BlueTeamAI module or background startup wiring while retaining the distinct governed containment boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI analysis, event delivery, source authentication, authorization, tenant isolation, containment execution, verification, rollback behavior, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: shared PNQL simulation-engine retirement
+
+The unreachable shared PNQL engine and its direct unit tests are removed, together with an unused gateway import. The removed engine contained simulated plugin-query output and did not own the supported analyst workflow. The separate fail-closed PhantomQL compatibility boundary and governed tenant-scoped threat-hunting service remain unchanged.
+
+Regression coverage prevents restoration of the shared PNQL implementation or its obsolete tests while retaining the distinct retirement and governed hunting boundaries.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove query execution, tenant isolation, authorization, evidence provenance, threat-hunting behavior, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
