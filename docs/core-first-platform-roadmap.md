@@ -661,3 +661,10 @@ The source-reachable standalone command-dispatcher service started a direct cons
 The unmounted forensic evidence-collector router has been removed after source tracing confirmed no application import, router inclusion, deployment reference, or test dependency. It accepted arbitrary asset and job identifiers without authentication or tenant scope, fabricated memory dumps, archives, registry hives, storage paths, sizes, artifact identities, and completion claims, and logged simulated collection data. The separately fail-closed forensics-engine boundary and governed tenant-scoped evidence-intake path remain unchanged.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate forensic collection, asset identity, authorization, tenant isolation, evidence provenance, storage, chain of custody, integrity verification, analyst workflow, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: simulated forensic timeline-builder retirement
+
+The unmounted forensic timeline-builder router has been removed after source tracing confirmed no application import or router inclusion. It accepted arbitrary asset identifiers and fabricated malware process, C2 network, filesystem, identity, timestamp, and completed-timeline claims without authentication, tenant scope, evidence provenance, or actual data collection. The legacy root development compose reference may still instantiate the already fail-closed forensics engine, but does not mount this module. The separately fail-closed forensics-engine boundary and governed tenant-scoped evidence-intake path remain unchanged.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate forensic timeline construction, asset identity, authorization, tenant isolation, evidence provenance, source collection, chain of custody, integrity verification, analyst workflow, Docker-host operation, or defensive efficacy.
