@@ -3,7 +3,6 @@ from .plugin_manager import PluginManager
 from .event_stream_processor import EventStreamProcessor
 from .dfir_toolkit import DFIRToolkit
 from .compliance_engine import ComplianceEngine
-from .bas_simulator import BASSimulator
 from .telemetry_ingest import TelemetryIngestService, TelemetryIngestConfig
 from .database import get_db
 from backend_api.log_streaming.websocket_broadcaster import broadcaster
@@ -34,7 +33,6 @@ event_stream_processor = EventStreamProcessor(
 
 dfir_toolkit = DFIRToolkit()
 compliance_engine = ComplianceEngine()
-bas_simulator = BASSimulator()
 
 
 

@@ -47,11 +47,6 @@ from backend_api.shared.compliance_engine import (
     ComplianceEngine,
     ComplianceReport,
 )  # Import Compliance Engine components
-from backend_api.shared.bas_simulator import (
-    BASSimulator,
-    AttackScenario,
-    SimulationResult,
-)  # Import BAS Simulator components
 from typing import (
     Optional,
     List,

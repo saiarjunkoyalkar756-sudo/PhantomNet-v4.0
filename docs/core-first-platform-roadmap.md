@@ -1073,3 +1073,12 @@ The unreachable shared command dispatcher that fabricated successful agent-comma
 Regression coverage prevents restoration of the simulated shared dispatcher while retaining the separate fail-closed and governed containment boundaries.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove command delivery, signing-material provisioning, authorization, tenant isolation, adapter execution, verification, rollback behavior, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: fabricated BAS simulation retirement
+
+The unmounted BAS simulator that fabricated attack outcomes and persisted local simulation-result files is removed with its unused gateway and shared-registry imports. Controlled baseline scenarios continue to emit safe canonical event fixtures for detection validation; no external target or response execution path is added.
+
+Regression coverage prevents restoration of the fabricated BAS simulator modules while preserving the separate baseline-fixture pipeline.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove attack simulation, scanning, exploitation, external-target authorization, event delivery, detection accuracy, tenant isolation under live load, Docker-host operation, investigation efficacy, or defensive efficacy.
