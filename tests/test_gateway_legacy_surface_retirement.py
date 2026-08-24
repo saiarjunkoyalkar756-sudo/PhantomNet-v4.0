@@ -10,6 +10,16 @@ LEGACY_RAW_PNQL_DASHBOARD = ROOT / "backend_api/gateway_service/dashboard_api.py
 LEGACY_FIXTURE_DASHBOARD = ROOT / "backend_api/gateway_service/routes/dashboard_api.py"
 LEGACY_GATEWAY_WEBSOCKET_API = ROOT / "backend_api/gateway_service/websocket_api.py"
 LEGACY_GATEWAY_POLICY_API = ROOT / "backend_api/gateway_service/policy_api.py"
+LEGACY_GATEWAY_THREAT_INTELLIGENCE_API = ROOT / "backend_api/gateway_service/threat_intelligence_api.py"
+
+
+def test_orphaned_gateway_threat_intelligence_router_remains_removed():
+    """Do not restore unauthenticated in-memory IOC or feedback intake by accident."""
+    assert not LEGACY_GATEWAY_THREAT_INTELLIGENCE_API.exists()
+
+    gateway_source = GATEWAY_MAIN.read_text(encoding="utf-8")
+    assert "threat_intelligence_api" not in gateway_source
+    assert "include_router(threat_intelligence" not in gateway_source
 
 
 def test_orphaned_gateway_policy_router_remains_removed():

@@ -612,3 +612,10 @@ The unmounted `gateway_service/websocket_api.py` router has been removed after r
 The unmounted `gateway_service/policy_api.py` router has been removed after reachability tracing confirmed no imports or router inclusion. It allowed in-memory policy creation, update, deletion, and disclosure without authentication, authorization, tenant scope, durable storage, approval, audit, verification, or rollback. The removal does not change separately governed capability-protected configuration controls or approved response governance; it prevents accidental remounting of an unscoped policy-control surface.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate remaining configuration controls, policy evaluation, authorization, tenant isolation, persistence, audit durability, approval, verification, rollback, enforcement, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: orphaned gateway threat-intelligence-router retirement
+
+The unmounted `gateway_service/threat_intelligence_api.py` router has been removed after source tracing confirmed no imports or router inclusion. It accepted unauthenticated IOC submissions and alert feedback, hard-coded the submitting identity, and retained records only in process memory while presenting a conceptual threat-intelligence and AI-feedback lifecycle. The removal does not change separately governed intelligence, detection, or analyst workflows; it prevents accidental remounting of an unscoped and non-durable intake surface.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate intelligence ingestion, IOC vetting, source authorization, tenant isolation, provenance, persistence, data quality, feedback handling, AI learning, detection efficacy, analyst workflows, Docker-host operation, or defensive efficacy.
