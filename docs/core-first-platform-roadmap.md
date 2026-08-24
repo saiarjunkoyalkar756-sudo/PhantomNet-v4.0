@@ -965,3 +965,12 @@ The obsolete Python 3.9 container build and root development-Compose service for
 Regression coverage preserves the fail-closed compatibility routes and prevents restoration of the PhantomQL container or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove query execution, event delivery, analyst identity, authorization enforcement, tenant isolation, evidence provenance, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy lateral-movement deployment retirement
+
+The obsolete Python 3.9 container build and root development-Compose service for the fail-closed legacy lateral-movement detector are removed. The service exposed only `410 LEGACY_LATERAL_MOVEMENT_API_RETIRED` for arbitrary untenant-scoped event-batch analysis, yet its legacy deployment continued to publish a network port. Governed tenant-scoped detection, correlation, and analyst investigation workflows remain unchanged.
+
+Regression coverage preserves the fail-closed compatibility route and prevents restoration of the lateral-movement container or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove event delivery, lateral-movement detection, analyst authorization, tenant isolation under live load, correlation accuracy, Docker-host operation, investigation efficacy, or defensive efficacy.

@@ -292,17 +292,6 @@ services:
     env_file:
       - .env
 
-  lateral-movement-detector:
-    build:
-      context: ./backend_api/lateral_movement_detector
-      dockerfile: Dockerfile
-    ports:
-      - "8024:8000"
-    environment:
-      SERVICE_NAME: 'lateral-movement-detector'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-
   forensics-engine:
     build:
       context: ./backend_api/forensics_engine

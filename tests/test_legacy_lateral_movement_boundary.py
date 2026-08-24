@@ -11,6 +11,13 @@ from backend_api.lateral_movement_detector import main as legacy_lateral_movemen
 
 ROOT = Path(__file__).resolve().parents[1]
 LATERAL_MOVEMENT_APP_PATH = ROOT / "backend_api/lateral_movement_detector/main.py"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+LATERAL_MOVEMENT_DOCKERFILE = ROOT / "backend_api/lateral_movement_detector/Dockerfile"
+
+
+def test_legacy_lateral_movement_has_no_container_or_compose_surface():
+    assert not LATERAL_MOVEMENT_DOCKERFILE.exists()
+    assert "lateral-movement-detector:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_lateral_movement_has_no_required_upstream_dependencies():
