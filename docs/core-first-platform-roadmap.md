@@ -911,3 +911,12 @@ The unmounted raw-log route is removed. It queried shared attack-log rows and le
 Regression coverage prevents restoration of the unmounted route while preserving the mounted fail-closed compatibility contract.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove analyst-evidence availability, tenant isolation under live load, source authentication, raw-log retention, authorization correctness, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy DFIR utility retirement
+
+The unmounted legacy DFIR host-analysis utility and obsolete container build are removed. The utility accepted local server paths, invoked a host-installed Volatility command, parsed PCAP files, scanned memory bytes, and reconstructed timelines without tenant-owned evidence intake, file provenance, analyst authorization, sandboxing, bounded resource controls, or an immutable evidence contract. Source tracing found no tracked caller or deployment; the retained API remains explicit `410 LEGACY_DFIR_API_RETIRED`.
+
+The separate shared DFIR implementation remains the supported evidence-analysis boundary and is unchanged. Regression coverage prevents restoration of the legacy utility and container while preserving the zero-dependency fail-closed compatibility route.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove forensic intake, file provenance, analyst authorization, tool availability, sandboxing, analysis accuracy, evidence durability, Docker-host operation, or defensive efficacy.

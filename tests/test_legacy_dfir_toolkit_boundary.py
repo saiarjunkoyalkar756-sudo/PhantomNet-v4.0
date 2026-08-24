@@ -11,6 +11,14 @@ from backend_api.dfir_toolkit import app as legacy_dfir
 
 ROOT = Path(__file__).resolve().parents[1]
 DFIR_APP_PATH = ROOT / "backend_api/dfir_toolkit/app.py"
+DFIR_RETIRED_PATHS = (
+    ROOT / "backend_api/dfir_toolkit/tools.py",
+    ROOT / "backend_api/dfir_toolkit/Dockerfile",
+)
+
+
+def test_legacy_dfir_toolkit_has_no_utility_or_container_surface():
+    assert all(not path.exists() for path in DFIR_RETIRED_PATHS)
 
 
 def test_legacy_dfir_toolkit_has_no_required_upstream_dependencies():
