@@ -974,3 +974,12 @@ The obsolete Python 3.9 container build and root development-Compose service for
 Regression coverage preserves the fail-closed compatibility route and prevents restoration of the lateral-movement container or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove event delivery, lateral-movement detection, analyst authorization, tenant isolation under live load, correlation accuracy, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy forensics-engine deployment retirement
+
+The obsolete Python 3.9 container build and root development-Compose service for the fail-closed legacy forensics engine are removed. The retired service carried database credentials and a network port despite returning `410 LEGACY_FORENSICS_API_RETIRED` for its historical timeline interface. The separate governed tenant-scoped evidence-intake path remains unchanged.
+
+Regression coverage preserves the explicit fail-closed legacy route and prevents restoration of the forensics container or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove forensic timeline construction, asset identity, authorization, tenant isolation, evidence provenance, source collection, chain of custody, integrity verification, Docker-host operation, investigation efficacy, or defensive efficacy.
