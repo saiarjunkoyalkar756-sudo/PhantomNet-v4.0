@@ -731,3 +731,12 @@ The duplicate unmounted IP-information route and standalone IP-info service are 
 The separately supported threat-intelligence service remains the bounded alternative: it requires `alerts:read`, limits public indicator types and bulk input, and provides sanitized provider availability summaries rather than relaying raw provider data. This change does not assert live provider authorization, source attribution, enrichment accuracy, or detection efficacy.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove external provider authorization, indicator enrichment, source provenance, analyst authorization in production, tenant isolation under live load, provider privacy handling, Docker-host operation, or detection efficacy.
+
+
+## Completed bounded increment: ungoverned dashboard aggregation retirement
+
+The source-reachable unified-stack dashboard service no longer mounts unauthenticated incident aggregation or an executive-summary endpoint with fabricated remediation, risk, escalation, and attack-vector metrics. The removed router made direct downstream calls using legacy localhost assumptions, returned raw alert details without tenant or capability scope, and framed low-impact cases as `AUTO_EXECUTE` without the governed approval, signed audit, verification, or rollback lifecycle.
+
+The mounted dashboard service now provides only an explicit `410 LEGACY_DASHBOARD_API_RETIRED` compatibility boundary. This change does not alter the separately governed tenant-scoped analyst, threat-hunting, attack-path, case, telemetry, evidence, or containment workflows.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove dashboard availability, analyst authorization in production, tenant isolation under live load, downstream service connectivity, telemetry completeness, incident correlation, metric accuracy, containment execution, Docker-host operation, or defensive efficacy.
