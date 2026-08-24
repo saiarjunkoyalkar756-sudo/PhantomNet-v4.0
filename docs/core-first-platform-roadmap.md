@@ -875,3 +875,12 @@ The legacy AI behavioral raw Kafka consumer, obsolete Python 3.9 container build
 The retained `app.py` and `main.py` boundaries continue to return `410 LEGACY_AI_BEHAVIORAL_API_RETIRED`. The separate defensive-evaluation implementation remains the supported tenant-scoped, evidence-bound, advisory-only evaluation path and is not altered. Regression coverage preserves both fail-closed ASGI boundaries and requires the raw consumer, container build, and root-Compose service to remain absent. The event-schema and tenant-isolation documentation no longer identify the retired service as a producer or consumer.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, source-event delivery, behavioral analysis, forecasting, model quality, telemetry provenance, tenant isolation under live load, alert production, Docker-host operation, detection efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy event-stream raw-worker retirement
+
+The unmounted legacy event-stream raw Kafka consumer, direct PostgreSQL helper, and obsolete Python 3.9 container build are removed. The worker accepted raw telemetry without a tenant requirement, created an unscoped `events` table, stored raw event payloads, and emitted low-severity alerts from a string match without source provenance, canonical event validation, tenant isolation, authenticated analyst context, deterministic governed detection content, or alert-workflow controls. Source tracing found no tracked caller or deployment for the package; the separately retained ASGI boundary remains explicit `410 LEGACY_EVENT_STREAM_PROCESSOR_API_RETIRED`.
+
+The supported `backend_api.shared.event_stream_processor` used by gateway and shared-service paths is separate and unchanged. Regression coverage requires the retired consumer, database helper, and container to remain absent while preserving the zero-dependency fail-closed compatibility route.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove telemetry delivery, broker authorization, source authentication, database availability, canonical normalization, alert generation, tenant isolation under live load, Docker-host operation, detection efficacy, or defensive efficacy.

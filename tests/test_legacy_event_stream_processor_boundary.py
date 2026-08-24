@@ -11,6 +11,15 @@ from backend_api.event_stream_processor import app as legacy_event_stream_proces
 
 ROOT = Path(__file__).resolve().parents[1]
 EVENT_STREAM_PROCESSOR_APP_PATH = ROOT / "backend_api/event_stream_processor/app.py"
+EVENT_STREAM_PROCESSOR_RETIRED_PATHS = (
+    ROOT / "backend_api/event_stream_processor/consumer.py",
+    ROOT / "backend_api/event_stream_processor/database.py",
+    ROOT / "backend_api/event_stream_processor/Dockerfile",
+)
+
+
+def test_legacy_event_stream_processor_has_no_raw_consumer_database_or_container():
+    assert all(not path.exists() for path in EVENT_STREAM_PROCESSOR_RETIRED_PATHS)
 
 
 def test_legacy_event_stream_processor_has_no_required_upstream_dependencies():
