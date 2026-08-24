@@ -15,6 +15,13 @@ ROOT = Path(__file__).resolve().parents[1]
 AUDIT_COLLECTOR_PATH = ROOT / "backend_api/audit_log_collector/main.py"
 GOVERNED_CONTAINMENT_PATH = ROOT / "backend_api/soar_engine/governed_containment.py"
 GOVERNED_API_PATH = ROOT / "backend_api/soar_engine/governed_api.py"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+AUDIT_COLLECTOR_DOCKERFILE = ROOT / "backend_api/audit_log_collector/Dockerfile"
+
+
+def test_retired_audit_log_collector_has_no_container_or_compose_surface():
+    assert not AUDIT_COLLECTOR_DOCKERFILE.exists()
+    assert "audit-log-collector:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_retired_audit_log_collector_has_no_required_upstream_dependencies_or_mutation_dependencies():

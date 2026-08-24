@@ -938,3 +938,12 @@ The unmounted legacy compliance CRUD, database helper, model, obsolete Python 3.
 The separate shared compliance analysis engine remains unchanged. Regression coverage prevents restoration of the legacy persistence and deployment surfaces while preserving the zero-dependency fail-closed compatibility route.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove compliance assessment accuracy, evidence provenance, tenant isolation under live load, authorization correctness, remediation execution, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy audit-log collector deployment retirement
+
+The obsolete Python 3.9 container build and root development-Compose service for the fail-closed legacy audit-log collector are removed. That service exposed only the retained `410 LEGACY_AUDIT_LOG_COLLECTOR_API_RETIRED` boundary, while its deployment topology unnecessarily carried PostgreSQL credentials and a network port for an intentionally unavailable API. The package’s integrity and verification modules are retained because governed containment imports them for HMAC-bound audit chain append and verification.
+
+Regression coverage prevents restoration of the legacy container and root-Compose service while preserving the explicit fail-closed API contract and the required governed audit imports.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove audit persistence, cryptographic-key handling, chain durability, adapter execution, verification, rollback, Docker-host operation, or defensive efficacy.

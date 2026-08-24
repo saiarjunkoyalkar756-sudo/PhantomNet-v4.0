@@ -59,7 +59,8 @@ def test_ci_uses_committed_frontend_lockfiles_and_legacy_compose_is_explicitly_n
     assert "Legacy broad development topology" in compose
     assert "deploy/self-hosted/docker-compose.yml" in compose
     assert "SERVICE_name" not in compose
-    assert "SERVICE_NAME: 'audit-log-collector'" in compose
+    assert "SERVICE_NAME: 'audit-log-collector'" not in compose
+    assert "audit-log-collector:" not in compose
 
 
 def test_portable_agent_source_contract_is_explicit_about_its_limits_and_passes_for_current_tree():
