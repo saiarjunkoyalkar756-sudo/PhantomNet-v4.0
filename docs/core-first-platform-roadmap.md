@@ -776,3 +776,12 @@ The unmounted vulnerability-management router is removed after source tracing co
 The service’s explicit `410 LEGACY_VULNERABILITY_API_RETIRED` compatibility boundary remains, as do the separately tested internal patch-prioritization utilities. This retirement does not turn those utilities into a supported assessment, scanner, inventory, CVE, or remediation workflow.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove asset discovery, scanner operation, CVE resolution, finding provenance, patch availability, recommendation quality, analyst authorization, tenant isolation under live load, remediation execution, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: public user-portal truthfulness boundary
+
+The source-reachable static `/user` portal page no longer displays fabricated endpoint posture, telemetry, honeypot state, security tokens, vulnerability data, cryptographic audit results, or response controls. The retired page made direct requests to legacy or fail-closed service paths, generated local fallback values and pseudo tokens, cycled random security events, and represented simulated results as operational user security controls.
+
+The route now states plainly that it is non-operational and directs users to authenticated, tenant-scoped governed service boundaries. This change does not alter any governed analyst workflow or claim that the public portal provides operational SOC functionality.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove public portal availability, endpoint posture, telemetry ingestion, honeypot operation, cryptographic audit status, authentication, tenant isolation, containment execution, Docker-host operation, or defensive efficacy.
