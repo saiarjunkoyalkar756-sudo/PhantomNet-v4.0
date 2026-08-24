@@ -812,3 +812,12 @@ The legacy auto-response package retains only its explicit `410 LEGACY_AUTO_RESP
 The retained boundary does not execute playbooks, issue agent commands, or invoke security controls. High-impact response remains limited to the separate governed containment lifecycle: request → human approval → HMAC-signed audit → controlled adapter execution → verification → rollback. Regression coverage preserves both the `410` route contract and the absence of the legacy Dockerfile and root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, migration of legacy callers, or defensive efficacy.
+
+
+## Completed bounded increment: raw SOAR direct-action worker retirement
+
+The unmounted raw SOAR worker, its alert-name-to-playbook helper, direct Kafka agent-command publisher, obsolete standalone container, and direct-action test are removed. The worker consumed raw broker alerts and turned a port-scan rule into an unsigned `block_network_address` command without tenant validation, request creation, human approval, HMAC-signed audit evidence, controlled adapter selection, verification, or rollback. Source tracing found no tracked deployment or caller for the worker beyond a stale manual startup instruction.
+
+The retained `backend_api/soar_engine/app.py` control plane remains separate: it mounts the tenant-scoped governed containment router, requires its durable database store, and rejects legacy API routes with `410 LEGACY_SOAR_API_RETIRED`. The deployment guide and architecture description now name the governed ASGI control plane rather than the deleted worker. Regression coverage preserves both the worker/container absence and the approval-bound governed containment route.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, alert delivery, containment execution, endpoint or firewall operation, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.

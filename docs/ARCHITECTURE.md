@@ -140,5 +140,5 @@ The PhantomNet agent is a modular application that consists of:
 2.  **Ingestion and Normalization:** The `siem_ingest_service` receives the raw telemetry and stores it. The `log_normalizer` then processes the raw data, normalizes it into a common schema, and stores it in the `phantomql_engine`'s database.
 3.  **Analysis and Detection:** The `lateral_movement_detector`, `ai_behavioral_engine`, and other analysis services process the normalized data to detect threats.
 4.  **Alerting:** When a threat is detected, an alert is generated and stored in the `alert_storage` service.
-5.  **Response:** The `soar_playbook_engine` can be triggered to execute a playbook in response to an alert. The `auto_response_engine` then executes the response actions, which may involve sending commands to the agent.
+5.  **Governed response:** High-impact containment is not automatically triggered by an alert. The retained `soar_engine` control plane records a request and requires human approval, HMAC-signed audit evidence, controlled-adapter execution, verification, and rollback. Legacy playbook and auto-response execution boundaries fail closed and do not issue agent commands.
 6.  **Visualization:** The `dashboard_frontend` provides a user interface for viewing alerts, dashboards, and interacting with the platform's various features.

@@ -11,6 +11,16 @@ from backend_api.soar_engine import app as soar_engine
 
 ROOT = Path(__file__).resolve().parents[1]
 SOAR_ENGINE_PATH = ROOT / "backend_api/soar_engine/app.py"
+RAW_SOAR_WORKER_PATHS = (
+    ROOT / "backend_api/soar_engine/main.py",
+    ROOT / "backend_api/soar_engine/playbooks.py",
+    ROOT / "backend_api/soar_engine/countermeasures.py",
+    ROOT / "backend_api/soar_engine/Dockerfile",
+)
+
+
+def test_soar_engine_has_no_raw_kafka_direct_action_worker_or_container():
+    assert all(not path.exists() for path in RAW_SOAR_WORKER_PATHS)
 
 
 def test_soar_engine_declares_database_only_readiness_for_retained_governed_containment():
