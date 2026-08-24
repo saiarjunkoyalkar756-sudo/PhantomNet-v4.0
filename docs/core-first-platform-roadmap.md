@@ -1001,3 +1001,12 @@ The obsolete container build and root development-Compose service for the fail-c
 Regression coverage preserves the explicit fail-closed legacy route and prevents restoration of the AI-agent orchestrator container or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove agent planning, model operation, analyst authorization, tenant isolation, evidence provenance, playbook execution, graph analysis, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy BAS deployment retirement
+
+The obsolete container build and root development-Compose service for the fail-closed legacy BAS API are removed. The retired service published a network port although its historical simulation and local-result routes return `410 LEGACY_BAS_API_RETIRED`. Separately tested controlled baseline scenarios continue to emit safe canonical event fixtures for detection-validation paths; no external target or response execution path is changed.
+
+Regression coverage preserves the explicit fail-closed legacy routes and prevents restoration of the BAS container or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove attack simulation, scanning, exploitation, external-target authorization, event delivery, detection accuracy, tenant isolation under live load, Docker-host operation, investigation efficacy, or defensive efficacy.

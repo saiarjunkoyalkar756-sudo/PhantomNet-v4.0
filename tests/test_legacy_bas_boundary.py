@@ -11,10 +11,17 @@ from backend_api.bas_engine import main as legacy_bas
 
 ROOT = Path(__file__).resolve().parents[1]
 BAS_APP_PATH = ROOT / "backend_api/bas_engine/main.py"
+BAS_DOCKERFILE_PATH = ROOT / "backend_api/bas_engine/Dockerfile"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
 
 
 def test_legacy_bas_has_no_required_upstream_dependencies():
     assert legacy_bas.app.state.required_dependencies == ()
+
+
+def test_legacy_bas_has_no_container_or_root_compose_surface():
+    assert not BAS_DOCKERFILE_PATH.exists()
+    assert "bas-engine:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_bas_entrypoint_does_not_retain_simulation_or_local_result_components():

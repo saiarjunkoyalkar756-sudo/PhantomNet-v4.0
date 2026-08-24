@@ -273,18 +273,6 @@ services:
     env_file:
       - .env
 
-  bas-engine:
-    build:
-      context: ./backend_api/bas_engine
-      dockerfile: Dockerfile
-    ports:
-      - "8028:8000"
-    environment:
-      SERVICE_NAME: 'bas-engine'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-
-
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:latest
     command:
