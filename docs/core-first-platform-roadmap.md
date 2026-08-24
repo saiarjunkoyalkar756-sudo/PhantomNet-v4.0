@@ -1037,3 +1037,12 @@ The unreachable shared OSINT module that generated randomized, fabricated Shodan
 Regression coverage prevents restoration of the randomized simulation or unused imports while retaining the distinct governed threat-intelligence and telemetry boundaries.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove external enrichment, source authentication, target authorization, target discovery, threat-intelligence accuracy, telemetry delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: deterministic event-stream advisory fallback
+
+The shared event-stream processor no longer fabricates randomized anomaly scores, classifications, or investigation recommendations when an advisory plugin is unavailable. It now records no advisory anomaly result in that condition while retaining deterministic rule correlation, threat-intelligence matching, and UEBA handling. This change does not add response authority or alter governed containment.
+
+Regression coverage prevents restoration of the runtime randomized fallback while preserving the deterministic analysis boundaries.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove event delivery, source authentication, rule accuracy, threat-intelligence accuracy, UEBA calibration, tenant isolation under live load, plugin behavior, Docker-host operation, investigation efficacy, or defensive efficacy.

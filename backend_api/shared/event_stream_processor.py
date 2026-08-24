@@ -577,16 +577,10 @@ class EventStreamProcessor:
             suggested_action = plugin_anomaly_result.get("suggested_action", "Investigate")
             detection_type = plugin_anomaly_result.get("detection_type", "anomaly") # e.g., "anomaly", "signature"
         else:
-            # Fallback to simple AI simulation if plugin is not loaded or fails
-            ai_score_sim = random.uniform(0.0, 0.4)
-            if random.random() < 0.1: # 10% chance of random AI anomaly
-                ai_score_sim = random.uniform(0.7, 1.0)
-                is_anomaly = True
-                suggested_action = "Simulated AI Investigate"
-                detection_type = random.choice(["anomaly", "signature"]) # Randomly assign for simulation
-            
-            ai_score = max(ai_score, ai_score_sim) # Take the max score
-            is_anomaly = is_anomaly or (ai_score > 0.7)
+            logger.info(
+                "AI correlation plugin is unavailable; retaining deterministic rule, "
+                "threat-intelligence, and UEBA analysis without an advisory anomaly result."
+            )
 
 
         # Prioritize UEBA findings if they indicate a stronger anomaly
