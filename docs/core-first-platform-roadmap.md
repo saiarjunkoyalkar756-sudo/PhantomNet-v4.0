@@ -668,3 +668,12 @@ The unmounted forensic evidence-collector router has been removed after source t
 The unmounted forensic timeline-builder router has been removed after source tracing confirmed no application import or router inclusion. It accepted arbitrary asset identifiers and fabricated malware process, C2 network, filesystem, identity, timestamp, and completed-timeline claims without authentication, tenant scope, evidence provenance, or actual data collection. The legacy root development compose reference may still instantiate the already fail-closed forensics engine, but does not mount this module. The separately fail-closed forensics-engine boundary and governed tenant-scoped evidence-intake path remain unchanged.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate forensic timeline construction, asset identity, authorization, tenant isolation, evidence provenance, source collection, chain of custody, integrity verification, analyst workflow, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: standalone audit-log collector API retirement
+
+The root-compose-exposed standalone audit-log collector HTTP surface is now an explicit fail-closed compatibility boundary. Its former unauthenticated single and batch ingestion paths accepted client-asserted audit fields and wrote mutable records; its log-list path returned globally scoped records without tenant scope, authorization, source provenance, or immutable-audit enforcement. Each former data path now returns `410 LEGACY_AUDIT_LOG_COLLECTOR_API_RETIRED`, while the compatibility status explicitly reports retirement.
+
+The `audit_log_collector` package's integrity and verification modules remain intact because the separately governed containment lifecycle imports them for its approval-bound, HMAC-audited execution evidence. The retired standalone HTTP process no longer initializes a collector schema or depends on a database; only generic non-mutating operational probes remain.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove audit-event ingestion, authorization, tenant isolation, durable storage, append-only behavior, source provenance, HMAC material provisioning, audit-chain integrity, containment approval or execution, Docker-host operation, recovery, or defensive efficacy.
