@@ -10,7 +10,8 @@ from backend_api.analyzer import app as legacy_analyzer
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ANALYZER_APP_PATH = ROOT / "backend_api/analyzer/app.py"
+ANALYZER_DIR = ROOT / "backend_api/analyzer"
+ANALYZER_APP_PATH = ANALYZER_DIR / "app.py"
 
 
 def test_legacy_analyzer_has_no_required_upstream_dependencies():
@@ -24,6 +25,11 @@ def test_legacy_analyzer_entrypoint_does_not_retain_chat_or_consumer_components(
     assert "brain.chat" not in source
     assert "threading.Thread" not in source
     assert "consumer.main" not in source
+    assert not (ANALYZER_DIR / "consumer.py").exists()
+    assert not (ANALYZER_DIR / "model.py").exists()
+    assert not (ANALYZER_DIR / "neural_threat_brain.py").exists()
+    assert not (ANALYZER_DIR / "Dockerfile").exists()
+    assert not (ANALYZER_DIR / "requirements.txt").exists()
 
 
 @pytest.mark.asyncio

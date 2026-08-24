@@ -65,28 +65,11 @@ If you prefer to run each component separately, follow the detailed instructions
     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ```
 
-#### 2.2. Analyzer (`backend_api/analyzer`)
+#### 2.2. Retired legacy analyzer boundary (`backend_api/analyzer`)
 
-**Prerequisites:** Python 3.10+, `pip`
+The fixture-backed RabbitMQ analyzer consumer, mock training helpers, simulated neural helper, and standalone container build surface are retired. The remaining `app.py` is an explicit fail-closed compatibility boundary; it does not provide an analyzer service, accept raw telemetry, call external enrichment, create alerts, train models, or execute response actions.
 
-1.  **Navigate to the analyzer directory:**
-    ```bash
-    cd backend_api/analyzer
-    ```
-2.  **Create and activate a virtual environment:**
-    ```bash
-    python -m venv venv_analyzer
-    # Windows: .\venv_analyzer\Scripts\activate
-    # macOS/Linux: source venv_analyzer/bin/activate
-    ```
-3.  **Install Python dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Run the FastAPI application:**
-    ```bash
-    uvicorn app:app --host 0.0.0.0 --port 8001 --reload # Use a different port than backend_api
-    ```
+Use the governed tenant-scoped ingestion, detection, correlation, and analyst investigation workflows instead. Do not configure or deploy the retired analyzer as a service.
 
 #### 2.3. Frontend (`dashboard_frontend`)
 

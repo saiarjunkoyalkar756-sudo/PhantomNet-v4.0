@@ -704,3 +704,12 @@ The unmounted standalone `backend_api/collector` application and its Docker buil
 The supported telemetry boundaries remain separate: authenticated canonical telemetry ingestion and capability-protected tenant-scoped endpoint/Wazuh evidence intake. This retirement does not alter those services, the shared database model, historical database rows, or unrelated inactive RabbitMQ analyzer modules.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove telemetry ingestion, agent identity, tenant isolation, schema fidelity, broker connectivity, data durability, historical-row handling, analyzer behavior, Docker-host operation, or detection efficacy.
+
+
+## Completed bounded increment: fixture-backed legacy analyzer retirement
+
+The unmounted analyzer package no longer contains its raw RabbitMQ `attack_logs` consumer, fixture-trained random-forest and isolation-forest helpers, simulated neural helper, dependency manifest, or standalone Docker build surface. These components accepted and mutated unscoped raw log data, made unproven AI and external-enrichment decisions, sent direct gateway alerts, and included a mock blacklist path without tenant scope, canonical evidence linkage, policy gates, approval, signed audit, verification, or rollback.
+
+The retained analyzer `app.py` remains an explicit `410 LEGACY_ANALYZER_API_RETIRED` compatibility boundary. This retirement does not modify the separately governed tenant-scoped telemetry, detection, correlation, advisory, or analyst-investigation workflows.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove model training, external enrichment authorization, telemetry ingestion, alert correlation, analyst authorization, tenant isolation, broker or gateway connectivity, containment, Docker-host operation, or detection efficacy.
