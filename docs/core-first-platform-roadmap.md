@@ -1064,3 +1064,12 @@ The unreachable shared PNQL engine and its direct unit tests are removed, togeth
 Regression coverage prevents restoration of the shared PNQL implementation or its obsolete tests while retaining the distinct retirement and governed hunting boundaries.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove query execution, tenant isolation, authorization, evidence provenance, threat-hunting behavior, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: shared simulated command-dispatcher retirement
+
+The unreachable shared command dispatcher that fabricated successful agent-command responses is removed. The separate fail-closed direct command-dispatcher boundary remains, while canonical signed agent commands and the governed request, approval, signed audit, controlled adapter, verification, and rollback lifecycle remain unchanged.
+
+Regression coverage prevents restoration of the simulated shared dispatcher while retaining the separate fail-closed and governed containment boundaries.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove command delivery, signing-material provisioning, authorization, tenant isolation, adapter execution, verification, rollback behavior, Docker-host operation, investigation efficacy, or defensive efficacy.
