@@ -893,3 +893,12 @@ The unmounted legacy SOAR playbook CRUD, database session helper, playbook model
 The retained SOAR control plane remains the separately mounted tenant-scoped governed containment API. Regression coverage preserves the fail-closed legacy routes and prevents restoration of the legacy implementation and deployment surfaces.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove playbook migration, approval authorization, containment execution, adapter availability, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy playbook-flow conversion retirement
+
+The unmounted legacy playbook-flow converter, schema, obsolete Python 3.9 container build, and root development-Compose service are removed. The converter transformed user-supplied flow nodes into linear action, approval, and condition steps, selected an arbitrary path through branching, and represented approval as a generic action without tenant-owned evidence, authenticated approver identity, HMAC-signed audit evidence, controlled adapter execution, verification, or governed rollback. The retained API remains explicit `410 LEGACY_PLAYBOOK_FLOW_BUILDER_API_RETIRED`; source tracing found no tracked caller of the deleted implementation.
+
+The separately mounted SOAR control plane remains the tenant-scoped governed containment API. Regression coverage preserves the fail-closed compatibility route and prevents restoration of the converter, schema, container, or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove playbook migration, approval authorization, containment execution, adapter availability, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.

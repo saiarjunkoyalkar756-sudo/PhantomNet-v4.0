@@ -11,6 +11,17 @@ from backend_api.playbook_flow_builder import main as legacy_playbook_builder
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAYBOOK_BUILDER_APP_PATH = ROOT / "backend_api/playbook_flow_builder/main.py"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+PLAYBOOK_BUILDER_RETIRED_PATHS = (
+    ROOT / "backend_api/playbook_flow_builder/flow_converter.py",
+    ROOT / "backend_api/playbook_flow_builder/flow_schema.py",
+    ROOT / "backend_api/playbook_flow_builder/Dockerfile",
+)
+
+
+def test_legacy_playbook_builder_has_no_converter_schema_or_deployment_surface():
+    assert all(not path.exists() for path in PLAYBOOK_BUILDER_RETIRED_PATHS)
+    assert "playbook-flow-builder:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_playbook_builder_has_no_required_upstream_dependencies():

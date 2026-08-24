@@ -255,17 +255,6 @@ services:
     env_file:
       - .env
 
-  playbook-flow-builder:
-    build:
-      context: ./backend_api/playbook_flow_builder
-      dockerfile: Dockerfile
-    ports:
-      - "8017:8000"
-    environment:
-      SERVICE_NAME: 'playbook-flow-builder'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-
   siem-ingest-service:
     build:
       context: ./backend_api/siem_ingest_service
