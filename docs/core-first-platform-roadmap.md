@@ -983,3 +983,12 @@ The obsolete Python 3.9 container build and root development-Compose service for
 Regression coverage preserves the explicit fail-closed legacy route and prevents restoration of the forensics container or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove forensic timeline construction, asset identity, authorization, tenant isolation, evidence provenance, source collection, chain of custody, integrity verification, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy vulnerability-management deployment retirement
+
+The obsolete Python 3.9 container build and root development-Compose service for the fail-closed legacy vulnerability-management API are removed. The retired service published a network port and carried database credentials although its historical routes return `410 LEGACY_VULNERABILITY_API_RETIRED`. Separately tested vulnerability data contracts and non-executing recommendation utilities remain source-controlled; governed tenant-scoped asset and remediation integrations remain unchanged.
+
+Regression coverage preserves the explicit fail-closed legacy route and prevents restoration of the vulnerability-management container or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove vulnerability discovery, CVE accuracy, asset identity, authorization, tenant isolation, remediation accuracy, source collection, Docker-host operation, investigation efficacy, or defensive efficacy.
