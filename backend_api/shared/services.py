@@ -1,7 +1,6 @@
 import asyncio
 from .plugin_manager import PluginManager
 from .blue_team_ai import BlueTeamAI
-from .osint_engine import OsintEngine
 from .event_stream_processor import EventStreamProcessor
 from .dfir_toolkit import DFIRToolkit
 from .compliance_engine import ComplianceEngine
@@ -19,7 +18,6 @@ background_tasks: Dict[str, asyncio.Task] = {}
 # Initialize all services here
 plugin_manager = PluginManager()
 blue_team_ai = BlueTeamAI(plugin_manager)
-osint_engine = OsintEngine()
 
 telemetry_ingest_config_instance = TelemetryIngestConfig()
 raw_event_queue_instance = asyncio.Queue()

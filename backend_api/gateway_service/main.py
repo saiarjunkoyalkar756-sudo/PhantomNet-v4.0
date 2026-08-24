@@ -32,11 +32,6 @@ from backend_api.shared.attack_path_generator import (
     generate_simulated_attack_path,
     AttackPathGraph,
 )  # Import Attack Path Generator
-from backend_api.shared.osint_engine import (
-    OsintEngine,
-    OsintQuery,
-    OsintResult,
-)  # Import OSINT Engine components
 from backend_api.shared.event_stream_processor import (
     EventStreamProcessor,
     RawEvent,

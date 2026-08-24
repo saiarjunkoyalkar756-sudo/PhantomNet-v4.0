@@ -1028,3 +1028,12 @@ The shared service registry no longer constructs an unreachable PNQL data-source
 Regression coverage preserves the telemetry accessor dependency while preventing restoration of PNQL raw-data helpers, scanner-plugin execution wiring, or the shared PNQL registry.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove telemetry source authentication, raw-evidence durability, tenant isolation under live load, threat-hunting behavior, scanner operation, target authorization, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: shared randomized OSINT simulation retirement
+
+The unreachable shared OSINT module that generated randomized, fabricated Shodan, Censys, Spyse, Chaos, GitHub-secret, and Google-dork results is removed, together with its unused gateway and shared-registry imports. The separately governed threat-intelligence service and the canonical telemetry accessor remain source-controlled and unchanged.
+
+Regression coverage prevents restoration of the randomized simulation or unused imports while retaining the distinct governed threat-intelligence and telemetry boundaries.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove external enrichment, source authentication, target authorization, target discovery, threat-intelligence accuracy, telemetry delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
