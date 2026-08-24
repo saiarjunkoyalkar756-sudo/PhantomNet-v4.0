@@ -584,3 +584,10 @@ The unmounted dashboard MFA-setup page has been removed. It was not registered i
 The unmounted dashboard AI-console page has been removed. Although its embedded advisory component now accurately states that integration is pending, the page itself still claimed an interactive AI security analyst was online. No router registered the page and no source imported it. Removing the stale availability framing preserves the separate governed advisory-integration notice, which remains policy-gated and non-executing, while preventing an unreachable component from being mistaken for a live conversational defensive capability.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not provide advisory AI availability, model behavior, prompt handling, evidence authorization, tenant isolation, recommendation quality, provider authorization, analyst workflow integration, containment authority, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: orphaned gateway alert-manager retirement
+
+The unmounted `gateway_service/alert_manager_api.py` module has been removed after source tracing confirmed no imports, router inclusion, or test dependency. It maintained in-memory alert and agent-status stores, exposed unauthenticated alert and agent-status WebSockets, assumed a localhost Kafka path, and allowed caller-driven alert simulation. This retirement does not modify the separately active alert-storage service or governed analyst workflows; it removes only a dormant legacy gateway module that could be accidentally remounted or misrepresented as an operational alert-control plane.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not prove the active alert-storage service’s deployment, broker connectivity, data durability, authorization, tenant isolation, alert evidence provenance, stream integrity, real-time delivery, analyst workflow behavior, containment, response execution, or defensive efficacy.
