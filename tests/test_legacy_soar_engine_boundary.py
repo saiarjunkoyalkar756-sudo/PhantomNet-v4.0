@@ -17,10 +17,12 @@ RAW_SOAR_WORKER_PATHS = (
     ROOT / "backend_api/soar_engine/countermeasures.py",
     ROOT / "backend_api/soar_engine/Dockerfile",
     ROOT / "backend_api/soar_engine/consumer.py",
+    ROOT / "backend_api/soar_engine/auto_response_engine.py",
+    ROOT / "backend_api/soar_engine/soar_playbook_engine.py",
 )
 
 
-def test_soar_engine_has_no_raw_kafka_direct_action_worker_or_container():
+def test_soar_engine_has_no_legacy_direct_action_or_autonomous_execution_modules():
     assert all(not path.exists() for path in RAW_SOAR_WORKER_PATHS)
 
 

@@ -830,3 +830,12 @@ The unmounted legacy SOAR consumer and its direct-action tests are removed. The 
 The retained SOAR ASGI service remains limited to the tenant-scoped governed containment router and durable store initialization. Its high-impact control path continues to require a request, human approval, HMAC-signed audit, controlled adapter execution, verification, and rollback; legacy `/api/soar` routes continue to fail closed. Regression coverage now requires the raw consumer to remain absent and preserves the governed route and boundary assertions.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, alert delivery, playbook migration, ITSM integration, endpoint or firewall operation, containment execution, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: SOAR autonomous-execution module retirement
+
+The unmounted `AutoResponseEngine` and `SOARPlaybookEngine` modules are removed. Together, they selected and simulated playbooks, permitted confidence-and-impact-threshold-based autonomous execution, issued direct localhost agent-isolation requests, created simulated external-response results, performed state capture or temporal reset calls, and wrote conceptual queue records. They did not bind actions to tenant-owned evidence, a containment request, human approval, HMAC-signed audit evidence, controlled adapter execution, verification, or governed rollback. Source tracing found no mounted route, startup hook, deployment, or tracked caller for either module.
+
+The mounted SOAR service remains the separate tenant-scoped governed containment API. It continues to initialize its durable store, exposes the approval-bound request lifecycle, and returns `410 LEGACY_SOAR_API_RETIRED` for legacy route families. Regression coverage now requires the legacy raw worker, consumer, autonomous executor, auto-response helper, and obsolete container to remain absent.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, alert delivery, AI-policy quality, asset-context accuracy, containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
