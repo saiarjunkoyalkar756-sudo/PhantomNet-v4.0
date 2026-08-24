@@ -857,3 +857,12 @@ The unreferenced internal `AIPlaybookGenerator` is removed. It converted inciden
 The separate legacy playbook-flow-builder service remains an explicit fail-closed boundary, while the retained SOAR control plane remains the tenant-scoped governed containment API. Regression coverage requires the generator and the prior raw worker, consumer, autonomous execution, simulation, and conceptual-human-loop modules to remain absent.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI generation quality, enrichment authorization or accuracy, ticketing integration, identity or password-management operation, firewall or endpoint operation, containment execution, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: orphaned SOAR playbook-model retirement
+
+The now-unreferenced legacy SOAR playbook-model module is removed after source tracing found no tracked caller, deployment, startup hook, or test dependency remaining after retirement of the legacy worker, consumer, autonomous-execution, simulation, human-loop, and AI-generator modules. Its schemas still defined automated remediation actions including firewall blocks, host isolation, process kill, password reset, custom scripts, agent-command dispatch, and temporal rollback or snapshot behavior outside the retained governed containment contracts.
+
+The mounted SOAR service remains limited to the tenant-scoped governed containment API and durable-store startup path. Its high-impact lifecycle does not import these legacy playbook models and continues to require request creation, human approval, HMAC-signed audit evidence, controlled adapter execution, verification, and rollback. Regression coverage prevents restoration of the model module together with its retired execution paths.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove containment execution, adapter availability, command delivery, identity or password-management operation, firewall or endpoint operation, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
