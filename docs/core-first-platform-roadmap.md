@@ -992,3 +992,12 @@ The obsolete Python 3.9 container build and root development-Compose service for
 Regression coverage preserves the explicit fail-closed legacy route and prevents restoration of the vulnerability-management container or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove vulnerability discovery, CVE accuracy, asset identity, authorization, tenant isolation, remediation accuracy, source collection, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy AI-agent orchestrator deployment retirement
+
+The obsolete container build and root development-Compose service for the fail-closed legacy AI-agent orchestrator are removed. The retired service published a network port and depended on legacy playbook and graph services although its historical task route returns `410 LEGACY_AI_AGENT_ORCHESTRATOR_API_RETIRED`. Governed evidence-grounded advisory decisions, analyst investigation, and approval-bound containment workflows remain unchanged.
+
+Regression coverage preserves the explicit fail-closed legacy route and prevents restoration of the AI-agent orchestrator container or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove agent planning, model operation, analyst authorization, tenant isolation, evidence provenance, playbook execution, graph analysis, Docker-host operation, investigation efficacy, or defensive efficacy.

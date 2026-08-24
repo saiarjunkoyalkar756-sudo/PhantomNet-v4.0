@@ -285,22 +285,6 @@ services:
       APP_PORT: '8000'
 
 
-  ai-agent-orchestrator:
-    build:
-      context: .
-      dockerfile: backend_api/ai_agent_orchestrator/Dockerfile
-    ports:
-      - "8030:8000"
-    depends_on:
-      - soar-playbook-engine
-      - graph-intelligence-service
-    environment:
-      SERVICE_NAME: 'ai-agent-orchestrator'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-    env_file:
-      - .env
-
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:latest
     command:

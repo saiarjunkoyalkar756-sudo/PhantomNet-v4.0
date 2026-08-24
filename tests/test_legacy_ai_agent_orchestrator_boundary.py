@@ -11,10 +11,17 @@ from backend_api.ai_agent_orchestrator import main as legacy_ai_agent_orchestrat
 
 ROOT = Path(__file__).resolve().parents[1]
 AI_AGENT_ORCHESTRATOR_APP_PATH = ROOT / "backend_api/ai_agent_orchestrator/main.py"
+AI_AGENT_ORCHESTRATOR_DOCKERFILE_PATH = ROOT / "backend_api/ai_agent_orchestrator/Dockerfile"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
 
 
 def test_legacy_ai_agent_orchestrator_has_no_required_upstream_dependencies():
     assert legacy_ai_agent_orchestrator.app.state.required_dependencies == ()
+
+
+def test_legacy_ai_agent_orchestrator_has_no_container_or_root_compose_surface():
+    assert not AI_AGENT_ORCHESTRATOR_DOCKERFILE_PATH.exists()
+    assert "ai-agent-orchestrator:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_ai_agent_orchestrator_entrypoint_does_not_retain_agent_planning_components():
