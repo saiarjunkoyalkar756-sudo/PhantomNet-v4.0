@@ -821,3 +821,12 @@ The unmounted raw SOAR worker, its alert-name-to-playbook helper, direct Kafka a
 The retained `backend_api/soar_engine/app.py` control plane remains separate: it mounts the tenant-scoped governed containment router, requires its durable database store, and rejects legacy API routes with `410 LEGACY_SOAR_API_RETIRED`. The deployment guide and architecture description now name the governed ASGI control plane rather than the deleted worker. Regression coverage preserves both the worker/container absence and the approval-bound governed containment route.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, alert delivery, containment execution, endpoint or firewall operation, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy SOAR consumer retirement
+
+The unmounted legacy SOAR consumer and its direct-action tests are removed. The consumer contained duplicate response helpers, accepted raw Kafka alerts, evaluated playbook conditions, dispatched localhost agent commands and external response calls, and marked playbook runs completed. Its source-only tests validated dry-run blocking, synthetic ticket generation, and critical-alert execution rather than the supported containment lifecycle. Source tracing found no mounted startup hook, deployment reference, or caller outside those tests.
+
+The retained SOAR ASGI service remains limited to the tenant-scoped governed containment router and durable store initialization. Its high-impact control path continues to require a request, human approval, HMAC-signed audit, controlled adapter execution, verification, and rollback; legacy `/api/soar` routes continue to fail closed. Regression coverage now requires the raw consumer to remain absent and preserves the governed route and boundary assertions.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, alert delivery, playbook migration, ITSM integration, endpoint or firewall operation, containment execution, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.

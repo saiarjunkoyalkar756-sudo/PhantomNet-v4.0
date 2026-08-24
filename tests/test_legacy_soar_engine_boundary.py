@@ -16,6 +16,7 @@ RAW_SOAR_WORKER_PATHS = (
     ROOT / "backend_api/soar_engine/playbooks.py",
     ROOT / "backend_api/soar_engine/countermeasures.py",
     ROOT / "backend_api/soar_engine/Dockerfile",
+    ROOT / "backend_api/soar_engine/consumer.py",
 )
 
 
