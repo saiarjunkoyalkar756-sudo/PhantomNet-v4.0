@@ -740,3 +740,12 @@ The source-reachable unified-stack dashboard service no longer mounts unauthenti
 The mounted dashboard service now provides only an explicit `410 LEGACY_DASHBOARD_API_RETIRED` compatibility boundary. This change does not alter the separately governed tenant-scoped analyst, threat-hunting, attack-path, case, telemetry, evidence, or containment workflows.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove dashboard availability, analyst authorization in production, tenant isolation under live load, downstream service connectivity, telemetry completeness, incident correlation, metric accuracy, containment execution, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: unmounted local-agent configuration disclosure retirement
+
+The duplicate unmounted configuration route and standalone config service are removed after tracked-source tracing found no active router inclusion, unified-stack mount, deployment reference, or caller. They read and returned a local `phantomnet_agent/config.json` file in full, creating a reconnaissance and configuration-disclosure surface without tenant ownership, field filtering, evidence linkage, or a governed configuration lifecycle.
+
+The separately supported endpoint/Wazuh configuration workflows remain capability-protected with `config:write` and tenant identity checks. This retirement does not claim agent configuration management, local-file protection, tenant isolation under live load, configuration deployment, or runtime enforcement.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove configuration authorization in production, local-file protection, configuration deployment, agent behavior, tenant isolation under live load, audit durability, Docker-host operation, or defensive efficacy.
