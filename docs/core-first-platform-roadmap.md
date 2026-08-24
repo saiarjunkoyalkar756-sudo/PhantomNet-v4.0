@@ -654,3 +654,10 @@ The source-reachable standalone network WebSocket service accepted telemetry aft
 The source-reachable standalone command-dispatcher service started a direct consumer for the `agent-commands` broker topic and reported a command-dispatch lifecycle despite no canonical signature verification, tenant boundary, approval linkage, HMAC audit linkage, controlled adapter, verification, or rollback. The consumer and Kafka dependency are removed; its detailed status now reports the retired boundary. This does not modify the separate fail-closed direct agent-command API, canonical signing tests, or human-approved governed containment lifecycle.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate canonical signing in a deployed environment, agent identity, operator credential provisioning, authorization, tenant isolation, broker connectivity, audit durability, containment approval, adapter execution, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: simulated forensic evidence-collector retirement
+
+The unmounted forensic evidence-collector router has been removed after source tracing confirmed no application import, router inclusion, deployment reference, or test dependency. It accepted arbitrary asset and job identifiers without authentication or tenant scope, fabricated memory dumps, archives, registry hives, storage paths, sizes, artifact identities, and completion claims, and logged simulated collection data. The separately fail-closed forensics-engine boundary and governed tenant-scoped evidence-intake path remain unchanged.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate forensic collection, asset identity, authorization, tenant isolation, evidence provenance, storage, chain of custody, integrity verification, analyst workflow, Docker-host operation, or defensive efficacy.
