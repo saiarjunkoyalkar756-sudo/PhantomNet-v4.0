@@ -722,3 +722,12 @@ The unmounted standalone blockchain application, raw RabbitMQ consumer, Solidity
 The source-controlled containment path continues to use its separate tenant-scoped HMAC-signed audit-chain integrity and verification primitives. The local `blockchain.py` library is deliberately unchanged in this increment because it has direct legacy test dependencies; it is not an exposed or deployed service and is not evidence of a distributed or immutable ledger.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove a distributed ledger, consensus, immutability, cryptographic notarization, audit durability, broker connectivity, source-event ingestion, authorization, tenant isolation, containment execution, Docker-host operation, or compliance efficacy.
+
+
+## Completed bounded increment: unmounted external IP-information retirement
+
+The duplicate unmounted IP-information route and standalone IP-info service are removed after source tracing found no active router inclusion, deployment, or caller. They accepted arbitrary path-supplied IP addresses, called an external geolocation provider directly, and exposed provider responses and error text outside the project’s bounded advisory contract. Their role checks did not establish a tenant-scoped evidence, provenance, or retained advisory record boundary.
+
+The separately supported threat-intelligence service remains the bounded alternative: it requires `alerts:read`, limits public indicator types and bulk input, and provides sanitized provider availability summaries rather than relaying raw provider data. This change does not assert live provider authorization, source attribution, enrichment accuracy, or detection efficacy.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove external provider authorization, indicator enrichment, source provenance, analyst authorization in production, tenant isolation under live load, provider privacy handling, Docker-host operation, or detection efficacy.
