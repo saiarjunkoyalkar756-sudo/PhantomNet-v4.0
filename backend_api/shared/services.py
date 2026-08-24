@@ -1,6 +1,5 @@
 import asyncio
 from .plugin_manager import PluginManager
-from .blue_team_ai import BlueTeamAI
 from .event_stream_processor import EventStreamProcessor
 from .dfir_toolkit import DFIRToolkit
 from .compliance_engine import ComplianceEngine
@@ -17,7 +16,6 @@ background_tasks: Dict[str, asyncio.Task] = {}
 
 # Initialize all services here
 plugin_manager = PluginManager()
-blue_team_ai = BlueTeamAI(plugin_manager)
 
 telemetry_ingest_config_instance = TelemetryIngestConfig()
 raw_event_queue_instance = asyncio.Queue()
@@ -46,7 +44,6 @@ def get_telemetry_ingest_service() -> TelemetryIngestService:
 
 async def start_services():
     logger.info("Starting background services...")
-    background_tasks["blue_team_ai"] = asyncio.create_task(blue_team_ai.run_defense_cycle())
     background_tasks["event_stream_processor"] = asyncio.create_task(event_stream_processor.start())
     logger.info("Background services started.")
 

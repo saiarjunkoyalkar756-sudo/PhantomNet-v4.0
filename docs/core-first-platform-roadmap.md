@@ -1046,3 +1046,12 @@ The shared event-stream processor no longer fabricates randomized anomaly scores
 Regression coverage prevents restoration of the runtime randomized fallback while preserving the deterministic analysis boundaries.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove event delivery, source authentication, rule accuracy, threat-intelligence accuracy, UEBA calibration, tenant isolation under live load, plugin behavior, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: shared BlueTeamAI simulation retirement
+
+The unreachable shared BlueTeamAI module that fabricated anomaly outcomes and printed simulated defense actions is removed, together with unused gateway and shared-registry imports and startup wiring. Advisory-only AI boundaries and the separately governed request, human approval, signed audit, controlled adapter, verification, and rollback containment lifecycle remain unchanged.
+
+Regression coverage prevents restoration of the simulated BlueTeamAI module or background startup wiring while retaining the distinct governed containment boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI analysis, event delivery, source authentication, authorization, tenant isolation, containment execution, verification, rollback behavior, Docker-host operation, investigation efficacy, or defensive efficacy.
