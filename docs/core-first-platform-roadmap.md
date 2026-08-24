@@ -647,3 +647,10 @@ The source-reachable standalone log-normalizer service exposed unauthenticated s
 The source-reachable standalone network WebSocket service accepted telemetry after a fixed in-code agent-ID and client-supplied platform-hash check, then published arbitrary JSON directly to the normalized-event broker topic. It had no tenant scope, operator-provisioned credential, canonical signature verification, durable receipt, source provenance, or governed adapter boundary. The WebSocket now closes with a policy-violation retirement reason before accepting a connection or telemetry, and startup no longer connects a direct broker producer. This does not modify separately governed signed telemetry credential controls or tenant-scoped forwarder integrations.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate signed telemetry, agent identity, credential provisioning, tenant isolation, broker connectivity, event delivery, durability, source provenance, forwarder integration, Wazuh integration, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy command-dispatcher retirement
+
+The source-reachable standalone command-dispatcher service started a direct consumer for the `agent-commands` broker topic and reported a command-dispatch lifecycle despite no canonical signature verification, tenant boundary, approval linkage, HMAC audit linkage, controlled adapter, verification, or rollback. The consumer and Kafka dependency are removed; its detailed status now reports the retired boundary. This does not modify the separate fail-closed direct agent-command API, canonical signing tests, or human-approved governed containment lifecycle.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate canonical signing in a deployed environment, agent identity, operator credential provisioning, authorization, tenant isolation, broker connectivity, audit durability, containment approval, adapter execution, verification, rollback, Docker-host operation, or defensive efficacy.

@@ -11,7 +11,6 @@ CORE_INGESTION_SERVICES = {
     "backend_api/telemetry_ingestor/main.py": ("kafka",),
     "backend_api/event_normalizer/main.py": ("kafka",),
     "backend_api/alert_storage/main.py": ("database", "kafka"),
-    "backend_api/command_dispatcher/main.py": ("kafka",),
 }
 
 
