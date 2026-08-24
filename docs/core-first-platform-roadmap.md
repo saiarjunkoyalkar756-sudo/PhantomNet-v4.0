@@ -1010,3 +1010,12 @@ The obsolete container build and root development-Compose service for the fail-c
 Regression coverage preserves the explicit fail-closed legacy routes and prevents restoration of the BAS container or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove attack simulation, scanning, exploitation, external-target authorization, event delivery, detection accuracy, tenant isolation under live load, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: legacy SIEM-ingest deployment retirement
+
+The obsolete Python 3.9 container build and root development-Compose service for the fail-closed legacy SIEM-ingest API are removed. The retired service published a network port and carried database credentials although its unauthenticated raw-ingest and raw-log routes return `410 LEGACY_SIEM_INGEST_API_RETIRED`. Canonical telemetry ingestion and governed tenant-scoped endpoint integration paths remain unchanged.
+
+Regression coverage preserves the explicit fail-closed legacy routes and prevents restoration of the SIEM-ingest container or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove source authentication, telemetry delivery, raw-evidence durability, tenant isolation under live load, Wazuh integration, Docker-host operation, investigation efficacy, or defensive efficacy.

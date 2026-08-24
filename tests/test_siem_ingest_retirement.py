@@ -5,7 +5,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SIEM_MAIN = ROOT / "backend_api/siem_ingest_service/main.py"
+SIEM_DOCKERFILE = ROOT / "backend_api/siem_ingest_service/Dockerfile"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
 ENDPOINT_INVENTORY_MAIN = ROOT / "backend_api/endpoint_inventory_service/main.py"
+
+
+def test_legacy_siem_ingest_has_no_container_or_root_compose_surface():
+    assert not SIEM_DOCKERFILE.exists()
+    assert "siem-ingest-service:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_siem_ingest_and_raw_read_routes_fail_closed():
