@@ -11,6 +11,16 @@ from backend_api.asset_inventory import app as legacy_asset_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSET_INVENTORY_APP_PATH = ROOT / "backend_api/asset_inventory/app.py"
+ASSET_INVENTORY_RETIRED_PATHS = (
+    ROOT / "backend_api/asset_inventory/scanner.py",
+    ROOT / "backend_api/asset_inventory/database.py",
+    ROOT / "backend_api/asset_inventory/cve_mapper.py",
+    ROOT / "backend_api/asset_inventory/Dockerfile",
+)
+
+
+def test_legacy_asset_inventory_has_no_scanner_store_mapper_or_container_surface():
+    assert all(not path.exists() for path in ASSET_INVENTORY_RETIRED_PATHS)
 
 
 def test_legacy_asset_inventory_has_no_required_upstream_dependencies():

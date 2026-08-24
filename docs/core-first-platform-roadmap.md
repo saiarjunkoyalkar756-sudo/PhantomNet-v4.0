@@ -920,3 +920,12 @@ The unmounted legacy DFIR host-analysis utility and obsolete container build are
 The separate shared DFIR implementation remains the supported evidence-analysis boundary and is unchanged. Regression coverage prevents restoration of the legacy utility and container while preserving the zero-dependency fail-closed compatibility route.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove forensic intake, file provenance, analyst authorization, tool availability, sandboxing, analysis accuracy, evidence durability, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy asset-inventory implementation retirement
+
+The unmounted legacy asset-inventory scanner, database helper, CVE mapper, and obsolete container build are removed. The implementation exposed arbitrary scan targets, maintained a separate inventory store, and mapped CVEs without a tenant-owned asset contract, authorized-discovery control, source provenance, authenticated analyst context, rate or scope limits, or governed evidence lifecycle. Source tracing found no tracked caller or deployment; the retained API remains explicit `410 LEGACY_ASSET_INVENTORY_API_RETIRED`.
+
+Separate governed tenant-scoped inventory and authorized-discovery workflows remain the supported path and are unchanged. Regression coverage prevents restoration of the legacy scanner, storage, mapper, and container while preserving the zero-dependency fail-closed compatibility route.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove asset discovery, scan authorization, inventory accuracy, CVE coverage, tenant isolation under live load, evidence durability, Docker-host operation, or defensive efficacy.
