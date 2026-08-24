@@ -31,7 +31,7 @@ The only supported query input is a validated pair of canonical graph node ident
 | `POST /api/governed-attack-paths/refresh` | `config:write` | Projects a bounded snapshot of the authenticated tenant’s assets, integrity evidence, detections, alerts, and cases. |
 | `POST /api/governed-attack-paths/analyze` | `alerts:read` | Returns bounded evidence-backed paths for the authenticated tenant. |
 
-The prior unscoped legacy graph route remains present only as a deprecation boundary and returns HTTP `410 Gone`. Its event consumer is disabled unless `PHANTOMNET_LEGACY_ATTACK_GRAPH_ENABLED=true` is explicitly set; this setting should remain `false` in production.
+The prior unscoped legacy graph route remains only as an explicit compatibility boundary and returns HTTP `410 Gone`. Its direct event consumer, unscoped graph builder, and direct path analyzer are retired and have no enablement setting.
 
 ## Self-hosted backend configuration
 
@@ -42,7 +42,6 @@ PHANTOMNET_GRAPH_BACKEND=neo4j
 NEO4J_URI=bolt://neo4j:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=<environment-managed-secret>
-PHANTOMNET_LEGACY_ATTACK_GRAPH_ENABLED=false
 ```
 
 The Neo4j backend uses static, parameterized Cypher. Tenant identifiers, node identifiers, hop counts, and result limits are bound parameters; the API never passes caller-controlled Cypher or relationship syntax to Neo4j.
@@ -55,4 +54,4 @@ A graph result must be reviewed alongside the linked alert, case, integrity obse
 
 ## Validation status
 
-The isolated test coverage verifies evidence-bound paths, tenant isolation, cross-tenant projection refusal, bounded query validation, rejection of undeclared raw-query fields, governed router wiring, legacy-route disablement, and the absence of execution or rollback methods from the graph service. Neo4j connectivity and multi-container behavior remain pending validation on a Docker-capable host with a real self-hosted Neo4j instance.
+The isolated test coverage verifies evidence-bound paths, tenant isolation, cross-tenant projection refusal, bounded query validation, rejection of undeclared raw-query fields, governed router wiring, permanent legacy-route retirement, and the absence of execution or rollback methods from the graph service. Neo4j connectivity and multi-container behavior remain pending validation on a Docker-capable host with a real self-hosted Neo4j instance.

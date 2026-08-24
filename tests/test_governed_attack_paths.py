@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+
+import httpx
 import pytest
 from pydantic import ValidationError
 
@@ -179,12 +182,15 @@ def test_governed_attack_path_router_is_wired_under_the_api_prefix():
 
 
 @pytest.mark.asyncio
-async def test_legacy_unscoped_graph_route_is_disabled():
-    from fastapi import HTTPException
+async def test_legacy_unscoped_graph_route_is_retired():
+    from backend_api.attack_graph_engine.main import RETIREMENT_CODE, app
 
-    from backend_api.attack_graph_engine.main import PathRequest, find_attack_paths
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://attack-graph.test") as client:
+        response = await client.post(
+            "/api/attack-graph/find-paths",
+            json={"source_node": "legacy-source", "target_node": "legacy-target"},
+        )
 
-    with pytest.raises(HTTPException) as exc_info:
-        await find_attack_paths(PathRequest(source_node="legacy-source", target_node="legacy-target"))
-    assert exc_info.value.status_code == 410
-    assert "governed-attack-paths" in exc_info.value.detail
+    assert response.status_code == 410
+    assert json.loads(response.content)["error"]["code"] == RETIREMENT_CODE

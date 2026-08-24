@@ -686,3 +686,12 @@ The root-compose-exposed standalone compliance service is now an explicit fail-c
 This increment does not remove or expose the separately tested shared compliance-engine utility. No tenant-scoped compliance replacement is currently represented as an exposed API, so the retired boundary directs no caller toward an unsupported workflow.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove compliance control assessment, authorization, tenant isolation, evidence collection or provenance, report generation, durable storage, regulatory alignment, remediation, Docker-host operation, or compliance efficacy.
+
+
+## Completed bounded increment: unscoped attack-graph consumer retirement
+
+The root-compose-exposed attack-graph engine no longer provides an opt-in legacy consumer that read broker events into an unscoped in-memory graph or supported direct path analysis. The consumer, graph builder, path analyzer, and the `PHANTOMNET_LEGACY_ATTACK_GRAPH_ENABLED` setting are removed. The historical direct traversal URL remains only as a `410 LEGACY_UNSCOPED_ATTACK_GRAPH_RETIRED` compatibility boundary.
+
+The preserved governed router continues to require authenticated tenant identity and capabilities for evidence refresh and bounded, read-only attack-path analysis. This change does not alter the governed projection's tenant checks, evidence contracts, read-only semantics, or the separate human-approved containment lifecycle.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker access controls, graph-backend connectivity, Neo4j persistence, source-event delivery, evidence completeness, tenant isolation under a live multi-service deployment, analyst authorization in production, Docker-host operation, or attack-path analysis efficacy.
