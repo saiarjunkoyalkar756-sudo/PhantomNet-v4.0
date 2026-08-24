@@ -125,7 +125,6 @@ from backend_api.gateway_service.orchestrator_api import router as orchestrator_
 from backend_api.iam_service.api import router as iam_router
 from backend_api.gateway_service.routes.health import router as health_router
 from backend_api.shared.redis_client import redis_client
-from backend_api.blockchain_service.blockchain import Blockchain
 from starlette.datastructures import URL  # Import URL
 from uuid import uuid4  # Import uuid4
 from backend_api.shared.email_service import send_reset_email  # Import send_reset_email

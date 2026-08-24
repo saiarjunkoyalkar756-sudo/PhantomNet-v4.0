@@ -713,3 +713,12 @@ The unmounted analyzer package no longer contains its raw RabbitMQ `attack_logs`
 The retained analyzer `app.py` remains an explicit `410 LEGACY_ANALYZER_API_RETIRED` compatibility boundary. This retirement does not modify the separately governed tenant-scoped telemetry, detection, correlation, advisory, or analyst-investigation workflows.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove model training, external enrichment authorization, telemetry ingestion, alert correlation, analyst authorization, tenant isolation, broker or gateway connectivity, containment, Docker-host operation, or detection efficacy.
+
+
+## Completed bounded increment: standalone blockchain service retirement
+
+The unmounted standalone blockchain application, raw RabbitMQ consumer, Solidity contract artifact, and Docker build surface are removed. The retired process initialized a local database, consumed unscoped raw queues, constructed a local hash-chain representation, and reported an “immutable ledger” as operational without tenant identity, source authentication, canonical evidence linkage, durable distributed consensus, authorization, or governed containment controls. The gateway's unused direct blockchain import is also removed.
+
+The source-controlled containment path continues to use its separate tenant-scoped HMAC-signed audit-chain integrity and verification primitives. The local `blockchain.py` library is deliberately unchanged in this increment because it has direct legacy test dependencies; it is not an exposed or deployed service and is not evidence of a distributed or immutable ledger.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove a distributed ledger, consensus, immutability, cryptographic notarization, audit durability, broker connectivity, source-event ingestion, authorization, tenant isolation, containment execution, Docker-host operation, or compliance efficacy.
