@@ -839,3 +839,12 @@ The unmounted `AutoResponseEngine` and `SOARPlaybookEngine` modules are removed.
 The mounted SOAR service remains the separate tenant-scoped governed containment API. It continues to initialize its durable store, exposes the approval-bound request lifecycle, and returns `410 LEGACY_SOAR_API_RETIRED` for legacy route families. Regression coverage now requires the legacy raw worker, consumer, autonomous executor, auto-response helper, and obsolete container to remain absent.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker authorization, alert delivery, AI-policy quality, asset-context accuracy, containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: orphaned SOAR autonomy scaffolding retirement
+
+The unmounted `AISoarBrain`, `PlaybookStrategyEngine`, `SimulationBlastRadiusAnalyzer`, and `HumanInTheLoop` modules are removed. They exposed heuristic confidence scoring, hard-coded critical-asset exceptions, simulated playbook selection and impact analysis, direct asset-service calls, and conceptual in-memory approval/resume behavior. None had a mounted route, startup hook, deployment reference, or tracked caller after retirement of the legacy SOAR execution modules. They did not implement tenant-owned evidence, authenticated approval identity, HMAC-signed audit evidence, controlled adapter execution, verification, or governed rollback.
+
+The separately retained SOAR control plane remains the tenant-scoped governed containment API and durable-store startup path. It does not consume this legacy scaffolding and continues to reject legacy route families. Regression coverage prevents restoration of the complete raw-worker, consumer, autonomous-execution, simulation, heuristic, and conceptual-human-loop module set.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI-policy quality, asset inventory availability or accuracy, impact analysis, analyst approval authorization, alert delivery, containment execution, adapter availability, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.

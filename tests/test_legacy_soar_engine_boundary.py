@@ -19,6 +19,10 @@ RAW_SOAR_WORKER_PATHS = (
     ROOT / "backend_api/soar_engine/consumer.py",
     ROOT / "backend_api/soar_engine/auto_response_engine.py",
     ROOT / "backend_api/soar_engine/soar_playbook_engine.py",
+    ROOT / "backend_api/soar_engine/ai_soar_brain.py",
+    ROOT / "backend_api/soar_engine/pse.py",
+    ROOT / "backend_api/soar_engine/sbra.py",
+    ROOT / "backend_api/soar_engine/human_in_the_loop.py",
 )
 
 
