@@ -902,3 +902,12 @@ The unmounted legacy playbook-flow converter, schema, obsolete Python 3.9 contai
 The separately mounted SOAR control plane remains the tenant-scoped governed containment API. Regression coverage preserves the fail-closed compatibility route and prevents restoration of the converter, schema, container, or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove playbook migration, approval authorization, containment execution, adapter availability, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: unmounted raw-log route retirement
+
+The unmounted raw-log route is removed. It queried shared attack-log rows and legacy raw SIEM records, returned raw log payloads, and performed no tenant filter or tenant-owned evidence authorization. Although it declared a role dependency, source tracing found no router mount or tracked caller. The mounted log-service API remains a separate explicit `410 LEGACY_LOG_RETRIEVAL_API_RETIRED` boundary directing callers to governed tenant-scoped analyst-evidence workflows.
+
+Regression coverage prevents restoration of the unmounted route while preserving the mounted fail-closed compatibility contract.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove analyst-evidence availability, tenant isolation under live load, source authentication, raw-log retention, authorization correctness, Docker-host operation, or defensive efficacy.

@@ -6,6 +6,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LOG_API = ROOT / "backend_api/log_service/api.py"
 LOG_MAIN = ROOT / "backend_api/log_service/main.py"
+RAW_LOG_ROUTE = ROOT / "backend_api/routes/logs.py"
+
+
+def test_unmounted_raw_log_route_remains_retired():
+    assert not RAW_LOG_ROUTE.exists()
 
 
 def test_legacy_log_retrieval_routes_fail_closed_without_raw_data_access():
