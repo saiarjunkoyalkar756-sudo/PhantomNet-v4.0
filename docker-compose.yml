@@ -483,20 +483,6 @@ services:
       ENVIRONMENT: 'development'
       APP_PORT: '8000'
 
-  autonomous-blue-team:
-    build:
-      context: ./backend_api/autonomous_blue_team
-      dockerfile: Dockerfile
-    ports:
-      - "8029:8000"
-    depends_on:
-      - soar-playbook-engine
-    environment:
-      SERVICE_NAME: 'autonomous-blue-team'
-      ENVIRONMENT: 'development'
-      APP_PORT: '8000'
-    env_file:
-      - .env
 
   ai-agent-orchestrator:
     build:

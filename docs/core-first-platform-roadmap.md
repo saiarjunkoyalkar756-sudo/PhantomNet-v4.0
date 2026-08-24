@@ -794,3 +794,12 @@ The active alert-storage broker consumer no longer assigns broker records withou
 Invalid broker records remain visible through the existing error-and-rollback path; the change does not silently coerce them into a shared tenant or claim broker enforcement, durable delivery, source authentication, or production tenant isolation.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker access controls, source-event delivery, alert persistence, database availability, source authentication, tenant isolation under live load, operational alerting, Docker-host operation, or detection efficacy.
+
+
+## Completed bounded increment: autonomous blue-team direct-action worker retirement
+
+The legacy autonomous blue-team Kafka worker, direct defense helpers, container build surface, and root-Compose service are removed. The worker consumed raw alert payloads, mapped alert names to direct block, isolate, process-kill, account-lock, and rollback calls, posted directly to local gateway paths, and wrote file-based action reports. It had no tenant validation, human approval, HMAC-signed audit, controlled adapter gate, verification, or governed rollback contract.
+
+The retained autonomous blue-team HTTP boundary remains an explicit `410 LEGACY_AUTONOMOUS_BLUE_TEAM_API_RETIRED` response. This does not alter the separately governed containment lifecycle, which remains request → human approval → signed audit → controlled adapter → verification → rollback.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove containment execution, adapter availability, firewall or endpoint operation, alert delivery, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.

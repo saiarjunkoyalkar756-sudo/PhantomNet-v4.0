@@ -11,6 +11,10 @@ from backend_api.autonomous_blue_team import main as legacy_autonomous_blue_team
 
 ROOT = Path(__file__).resolve().parents[1]
 AUTONOMOUS_BLUE_TEAM_APP_PATH = ROOT / "backend_api/autonomous_blue_team/main.py"
+AUTONOMOUS_BLUE_TEAM_CONSUMER_PATH = ROOT / "backend_api/autonomous_blue_team/consumer.py"
+AUTONOMOUS_BLUE_TEAM_DEFENSE_MODULES_PATH = ROOT / "backend_api/autonomous_blue_team/defense_modules.py"
+AUTONOMOUS_BLUE_TEAM_DOCKERFILE_PATH = ROOT / "backend_api/autonomous_blue_team/Dockerfile"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
 
 
 def test_legacy_autonomous_blue_team_has_no_required_upstream_dependencies():
@@ -24,6 +28,10 @@ def test_legacy_autonomous_blue_team_entrypoint_does_not_retain_action_or_consum
     assert "ACTION_HISTORY_DIR" not in source
     assert "take_defensive_action" not in source
     assert "open(result_file" not in source
+    assert not AUTONOMOUS_BLUE_TEAM_CONSUMER_PATH.exists()
+    assert not AUTONOMOUS_BLUE_TEAM_DEFENSE_MODULES_PATH.exists()
+    assert not AUTONOMOUS_BLUE_TEAM_DOCKERFILE_PATH.exists()
+    assert "autonomous-blue-team:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 @pytest.mark.asyncio
