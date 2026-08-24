@@ -10,68 +10,6 @@ import time
 from typing import Dict, Any, Optional, List
 
 
-# --- Mock Docker Client for environments without Docker daemon ---
-class MockContainer:
-    def __init__(self, name, image, command, options):
-        self.name = name
-        self.image = image
-        self.command = command
-        self.options = options
-        self._logs = (
-            f"Mock container '{self.name}' run with image '{self.image}' and command: {self.command}\n"
-            f"Options: {self.options}\n"
-            f"Simulated plugin output: {{'mock_result': 'success', 'plugin_name': '{self.name}'}}"
-        )
-        print(f"Mocking: Container '{self.name}' started.")
-
-    def wait(self, timeout=300):
-        print(f"Mocking: Container '{self.name}' waited for {timeout} seconds.")
-        return {"StatusCode": 0}
-
-    def logs(self):
-        print(f"Mocking: Returning logs for container '{self.name}'.")
-        return self._logs.encode("utf-8")
-
-    def stop(self):
-        print(f"Mocking: Container '{self.name}' stopped.")
-
-    def remove(self):
-        print(f"Mocking: Container '{self.name}' removed.")
-
-
-class MockImage:
-    def __init__(self, name):
-        self.name = name
-
-    def remove(self):
-        print(f"Mocking: Image '{self.name}' removed.")
-
-
-class MockImages:
-    def build(self, path, tag, rm):
-        print(f"Mocking: Building image '{tag}' from path '{path}'.")
-        return [MockImage(tag)], None  # Return a dummy image and no build logs
-
-    def remove(self, image_name):
-        print(f"Mocking: Image '{image_name}' removed.")
-
-
-class MockContainers:
-    def run(self, image, command, **kwargs):
-        name = kwargs.get("name", "mock_container")
-        print(f"Mocking: Running container '{name}' with image '{image}'.")
-        return MockContainer(name, image, command, kwargs)
-
-
-class MockDockerClient:
-    def __init__(self):
-        print(
-            "Mocking: Initializing MockDockerClient. No real Docker daemon connected."
-        )
-        self.images = MockImages()
-        self.containers = MockContainers()
-        self.from_env_succeeded = False  # Flag to indicate that mocking is active
-
 
 class SandboxRunner:
     def __init__(self):
@@ -80,26 +18,26 @@ class SandboxRunner:
         self.base_image_name = "phantomnet-plugin-base"
 
     def _init_client(self):
-        if self.client is None:
-            try:
-                self.client = docker.from_env()
-                self.from_env_succeeded = True
-                print("Connected to Docker daemon.")
-                self.build_base_image()
-            except (docker.errors.DockerException, ConnectionError) as e:
-                print(
-                    f"Warning: Could not connect to Docker daemon: {e}. Using MockDockerClient."
-                )
-                self.client = MockDockerClient()
-                self.from_env_succeeded = False
+        if self.client is not None or self.from_env_succeeded:
+            return
+        if docker is None:
+            print("Plugin sandbox unavailable: Docker SDK is not installed.")
+            return
+        try:
+            self.client = docker.from_env()
+            self.from_env_succeeded = True
+            print("Connected to Docker daemon.")
+            self.build_base_image()
+        except (docker.errors.DockerException, ConnectionError) as exc:
+            print(f"Plugin sandbox unavailable: could not connect to Docker daemon: {exc}")
+            self.client = None
+            self.from_env_succeeded = False
 
 
     def build_base_image(self, force_build=False):
         self._init_client()
         if not self.from_env_succeeded:
-            print(
-                "Mocking: Skipping base Docker image build as MockDockerClient is in use."
-            )
+            print("Plugin sandbox unavailable: skipping base image build.")
             return
 
         # Check if image already exists
@@ -124,18 +62,10 @@ class SandboxRunner:
     ) -> Any:
         self._init_client()
         if not self.from_env_succeeded:
-            print(
-                f"Mocking: Running plugin '{plugin_name}' function '{function_name}' with MockDockerClient."
-            )
-            # Simulate plugin logic and return a mock result
-            mock_output = {
-                "is_anomaly": False,
-                "anomaly_score": 0.1,
-                "suggested_action": "Mocked Monitor",
-                "details": f"Simulated execution of {function_name} for {plugin_name}",
-                "simulated_logs": f"Plugin '{plugin_name}' (mocked) says: Hello from simulated sandbox!",
+            return {
+                "error": "PLUGIN_SANDBOX_UNAVAILABLE",
+                "detail": "Docker-backed plugin execution is unavailable; no plugin result was produced.",
             }
-            return mock_output
 
         """
         Runs a specific function from a plugin in a Docker sandbox.

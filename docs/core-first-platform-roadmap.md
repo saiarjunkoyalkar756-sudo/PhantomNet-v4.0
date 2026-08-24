@@ -1091,3 +1091,12 @@ The unmounted CVE resolver prototypes are removed: one fabricated CVE response A
 Regression coverage prevents restoration of the resolver prototypes while retaining the explicit `410` vulnerability-management boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove vulnerability enrichment, CVE accuracy, external-source authentication, asset identity, authorization, tenant isolation, remediation accuracy, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: fail-closed plugin sandbox unavailability
+
+The shared plugin sandbox no longer fabricates mock container or plugin results when the Docker SDK or daemon is unavailable. It now returns an explicit `PLUGIN_SANDBOX_UNAVAILABLE` error stating that no plugin result was produced. Plugin execution remains an advisory boundary and no response authority is added.
+
+Regression coverage prevents restoration of fabricated mock plugin output while retaining the plugin-manager sandbox boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove Docker isolation, plugin safety, plugin execution, source authentication, AI analysis, tenant isolation, response authorization, containment behavior, Docker-host operation, investigation efficacy, or defensive efficacy.
