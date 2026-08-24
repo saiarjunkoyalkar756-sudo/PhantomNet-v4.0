@@ -23,6 +23,7 @@ RAW_SOAR_WORKER_PATHS = (
     ROOT / "backend_api/soar_engine/pse.py",
     ROOT / "backend_api/soar_engine/sbra.py",
     ROOT / "backend_api/soar_engine/human_in_the_loop.py",
+    ROOT / "backend_api/soar_engine/playbook_flow_builder.py",
 )
 
 

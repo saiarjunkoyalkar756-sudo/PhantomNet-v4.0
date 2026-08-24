@@ -848,3 +848,12 @@ The unmounted `AISoarBrain`, `PlaybookStrategyEngine`, `SimulationBlastRadiusAna
 The separately retained SOAR control plane remains the tenant-scoped governed containment API and durable-store startup path. It does not consume this legacy scaffolding and continues to reject legacy route families. Regression coverage prevents restoration of the complete raw-worker, consumer, autonomous-execution, simulation, heuristic, and conceptual-human-loop module set.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI-policy quality, asset inventory availability or accuracy, impact analysis, analyst approval authorization, alert delivery, containment execution, adapter availability, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: simulated AI playbook-generator retirement
+
+The unreferenced internal `AIPlaybookGenerator` is removed. It converted incident fields into hard-coded playbook steps for indicator enrichment, firewall blocking, ticket creation, user notification, and password reset, described the result as AI-generated, and included a local demonstration runner. It had no mounted API, startup hook, deployment reference, tracked caller, tenant-owned evidence requirement, approval identity, HMAC-signed audit evidence, controlled adapter gate, verification, or governed rollback.
+
+The separate legacy playbook-flow-builder service remains an explicit fail-closed boundary, while the retained SOAR control plane remains the tenant-scoped governed containment API. Regression coverage requires the generator and the prior raw worker, consumer, autonomous execution, simulation, and conceptual-human-loop modules to remain absent.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI generation quality, enrichment authorization or accuracy, ticketing integration, identity or password-management operation, firewall or endpoint operation, containment execution, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
