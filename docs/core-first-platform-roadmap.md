@@ -956,3 +956,12 @@ The unreferenced legacy normalizer event schema, obsolete Python 3.9 container b
 Regression coverage preserves the fail-closed compatibility routes and prevents restoration of the legacy schema, container, or root-Compose service.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove normalization accuracy, source authentication, tenant isolation under live load, event delivery, canonical-schema conformance for external traffic, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy PhantomQL deployment retirement
+
+The obsolete Python 3.9 container build and root development-Compose service for the fail-closed legacy PhantomQL API are removed. The retired direct-query service previously carried database credentials and a network port despite returning `410 LEGACY_PHANTOMQL_API_RETIRED` for its legacy query and aggregate routes. The separate governed threat-hunting analysis boundary remains unchanged.
+
+Regression coverage preserves the fail-closed compatibility routes and prevents restoration of the PhantomQL container or root-Compose service.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove query execution, event delivery, analyst identity, authorization enforcement, tenant isolation, evidence provenance, Docker-host operation, investigation efficacy, or defensive efficacy.

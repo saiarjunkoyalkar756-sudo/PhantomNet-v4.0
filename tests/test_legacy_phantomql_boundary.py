@@ -12,6 +12,12 @@ from backend_api.phantomql_engine import main as legacy_phantomql
 ROOT = Path(__file__).resolve().parents[1]
 PHANTOMQL_MAIN_PATH = ROOT / "backend_api/phantomql_engine/main.py"
 PHANTOMQL_DOCKERFILE_PATH = ROOT / "backend_api/phantomql_engine/Dockerfile"
+ROOT_COMPOSE_PATH = ROOT / "docker-compose.yml"
+
+
+def test_legacy_phantomql_has_no_container_or_compose_surface():
+    assert not PHANTOMQL_DOCKERFILE_PATH.exists()
+    assert "phantomql-engine:" not in ROOT_COMPOSE_PATH.read_text(encoding="utf-8")
 
 
 def test_legacy_phantomql_has_no_required_upstream_dependencies():
@@ -24,7 +30,6 @@ def test_legacy_phantomql_entrypoint_does_not_import_query_or_database_component
     assert "SessionLocal" not in source
     assert "get_normalized_events" not in source
     assert "_parse_phantomql_query" not in source
-    assert '"main:app"' in PHANTOMQL_DOCKERFILE_PATH.read_text(encoding="utf-8")
 
 
 @pytest.mark.asyncio
