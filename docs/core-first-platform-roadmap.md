@@ -749,3 +749,12 @@ The duplicate unmounted configuration route and standalone config service are re
 The separately supported endpoint/Wazuh configuration workflows remain capability-protected with `config:write` and tenant identity checks. This retirement does not claim agent configuration management, local-file protection, tenant isolation under live load, configuration deployment, or runtime enforcement.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove configuration authorization in production, local-file protection, configuration deployment, agent behavior, tenant isolation under live load, audit durability, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: fixture-backed Kafka enrichment retirement
+
+The unmounted enrichment service and its Docker build surface are removed after tracked-source tracing found no active mount, deployment, import, caller, or regression dependency. It consumed normalized events and emitted deterministic mock “threat intelligence” labels, scores, feed names, actor attribution, and simulation claims from hard-coded indicators and keywords, without tenant scope, evidence provenance, provider authorization, evaluation, or policy controls.
+
+The separately supported threat-intelligence service remains the bounded advisory replacement: it requires `alerts:read`, limits indicator types and bulk input, and sanitizes provider availability output. This retirement does not modify the active behavioral consumer’s separate topic contract or establish enrichment accuracy, source delivery, or production provider behavior.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove external provider authorization, enrichment accuracy, source-event delivery, broker connectivity, tenant isolation under live load, advisory quality, analyst authorization in production, Docker-host operation, or detection efficacy.
