@@ -3,6 +3,7 @@ from backend_api.shared.health_utils import check_kafka_health, check_postgres_h
 from backend_api.shared.logger_config import setup_logging
 from backend_api.core.response import success_response, error_response
 from .api import router as alerts_router
+from .tenant import require_alert_tenant_id
 from loguru import logger
 from uuid import UUID
 import json
@@ -24,8 +25,6 @@ DB_HOST = os.environ.get('DB_HOST', 'postgres')
 DB_NAME = os.environ.get('DB_NAME', 'phantomnet_db')
 DB_USER = os.environ.get('DB_USER', 'phantomnet')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
-
-DEFAULT_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001") 
 
 # --- Global State ---
 stop_processing_event = asyncio.Event()
@@ -79,8 +78,7 @@ async def consume_and_process_kafka_messages():
 
             try:
                 alert = message.value
-                tenant_id_str = alert.get('tenant_id')
-                parsed_tenant_id = UUID(tenant_id_str) if tenant_id_str else DEFAULT_TENANT_ID
+                parsed_tenant_id = require_alert_tenant_id(alert)
 
                 db_cursor.execute(INSERT_STMT, (
                     str(parsed_tenant_id),

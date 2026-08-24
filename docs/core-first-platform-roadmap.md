@@ -785,3 +785,12 @@ The source-reachable static `/user` portal page no longer displays fabricated en
 The route now states plainly that it is non-operational and directs users to authenticated, tenant-scoped governed service boundaries. This change does not alter any governed analyst workflow or claim that the public portal provides operational SOC functionality.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove public portal availability, endpoint posture, telemetry ingestion, honeypot operation, cryptographic audit status, authentication, tenant isolation, containment execution, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: alert-storage tenant fallback removal
+
+The active alert-storage broker consumer no longer assigns broker records without a tenant identifier to a shared default tenant. A new explicit tenant parser rejects non-object records and missing, blank, or malformed tenant UUIDs before any insert is attempted. This preserves the service’s existing tenant-filtered read API and the canonical detection workflow’s explicit tenant-bearing alerts without converting malformed cross-tenant inputs into stored data.
+
+Invalid broker records remain visible through the existing error-and-rollback path; the change does not silently coerce them into a shared tenant or claim broker enforcement, durable delivery, source authentication, or production tenant isolation.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove broker access controls, source-event delivery, alert persistence, database availability, source authentication, tenant isolation under live load, operational alerting, Docker-host operation, or detection efficacy.
