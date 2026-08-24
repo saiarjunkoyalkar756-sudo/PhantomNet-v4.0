@@ -12,4 +12,7 @@ app.include_router(logs_router)
 
 @app.get("/status")
 async def read_root():
-    return {"status": "log-service-operational"}
+    return {
+        "status": "legacy-log-retrieval-retired",
+        "detail": "Raw log retrieval requires a governed tenant-scoped evidence integration.",
+    }

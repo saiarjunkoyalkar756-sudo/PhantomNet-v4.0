@@ -619,3 +619,10 @@ The unmounted `gateway_service/policy_api.py` router has been removed after reac
 The unmounted `gateway_service/threat_intelligence_api.py` router has been removed after source tracing confirmed no imports or router inclusion. It accepted unauthenticated IOC submissions and alert feedback, hard-coded the submitting identity, and retained records only in process memory while presenting a conceptual threat-intelligence and AI-feedback lifecycle. The removal does not change separately governed intelligence, detection, or analyst workflows; it prevents accidental remounting of an unscoped and non-durable intake surface.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate intelligence ingestion, IOC vetting, source authorization, tenant isolation, provenance, persistence, data quality, feedback handling, AI learning, detection efficacy, analyst workflows, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: legacy log-service retrieval retirement
+
+The source-reachable standalone log-service retained global raw attack-log and SIEM-polling endpoints despite no tenant identifier on the legacy `AttackLog` model and no tenant filter on either retrieval path. Both routes now return a distinct 410 retirement contract, and the service status no longer claims raw-log retrieval is operational. The log service is not part of the hardened self-hosted reference, and the dashboard log viewer already states that governed evidence integration is pending. This change preserves the service boundary while preventing global raw-data disclosure until a tenant-scoped evidence integration is designed and validated.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate a replacement log-service deployment, raw-log ingestion, broker connectivity, data durability, authorization, tenant isolation, provenance, data minimization, analyst retrieval, retention, observability, Docker-host operation, or defensive efficacy.
