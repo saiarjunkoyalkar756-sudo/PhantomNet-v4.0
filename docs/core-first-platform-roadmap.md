@@ -598,3 +598,10 @@ The unmounted `gateway_service/alert_manager_api.py` module has been removed aft
 Two unmounted legacy gateway dashboard modules have been removed after source tracing confirmed they had no active imports, router inclusion, or tests. One accepted raw PNQL queries against fixture logs and threats with commented authorization checks; the other exposed fabricated incident details, attack paths, SOAR previews, executive metrics, remediation counts, risk trends, and security claims. This does not modify the independently active dashboard service, the protected threat-hunting summary, governed attack-path analysis, alert storage, case workflow, or containment controls. It removes only dormant modules that could otherwise be accidentally remounted or treated as product evidence.
 
 > **Evidence boundary:** this is Class A source-and-build evidence. It does not validate any dashboard service deployment, PNQL or hunting semantics, data authorization, tenant isolation, evidence provenance, analytics accuracy, threat detection, remediation, executive reporting, alert delivery, containment, response execution, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: orphaned gateway WebSocket-router retirement
+
+The unmounted `gateway_service/websocket_api.py` router has been removed after reachability tracing confirmed no imports or router inclusion. It accepted JWTs in query parameters and exposed event and log streams without tenant or capability controls. The gateway background event and log helpers remain unchanged because they are separately referenced, and separately routed WebSocket modules outside this orphan gateway router were not altered. This increment only prevents accidental remounting of the legacy query-token stream surface.
+
+> **Evidence boundary:** this is Class A source-and-build evidence. It does not validate any remaining WebSocket route, authentication, authorization, token confidentiality, tenant isolation, event or log provenance, stream integrity, delivery, retention, broker connectivity, operational monitoring, Docker-host operation, or defensive efficacy.
