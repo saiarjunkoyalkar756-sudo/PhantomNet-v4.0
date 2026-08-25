@@ -1244,3 +1244,12 @@ The unmounted emotional incident-assistant package that generated canned analyst
 The separately supported containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the simulated assistant while preserving that governed boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove analyst-state detection, analyst assistance, automated response readiness, containment execution, alert delivery, analyst authorization, tenant isolation, audit durability, verification, rollback, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: speculative cross-domain fusion retirement
+
+The unmounted cross-domain fusion package that combined caller-supplied psychological, economic, linguistic, and technical scores into predictions of insider threats or imminent malicious activity is removed with its companion test. It had no tenant-owned evidence, validated source provenance, analyst authorization, governed evaluation contract, product caller, service mount, or deployment reference.
+
+The separately referenced shared biometric audit helper remains unchanged. Regression coverage prevents restoration of the speculative fusion package while preserving that distinct boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove insider-threat identification, psychological or economic inference, attack prediction, behavioral-biometric accuracy, source provenance, tenant isolation, analyst authorization, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
