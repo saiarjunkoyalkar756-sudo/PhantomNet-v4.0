@@ -1154,3 +1154,12 @@ The unreferenced password-reset email helper that logged simulated delivery and 
 Regression coverage prevents restoration of the simulated email logger while retaining the `410` password-reset boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove password-reset delivery, mailbox ownership, reset-token confidentiality, authentication, account recovery, notification availability, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: simulated credential-spraying plugin retirement
+
+The auto-discoverable Kerbrute plugin that simulated credential enumeration and password-spraying outcomes is removed with its discovery manifest. The separate plugin sandbox boundary remains explicitly unavailable without Docker execution and does not fabricate a plugin result.
+
+Regression coverage prevents restoration of the credential-spraying plugin while retaining the separate fail-closed sandbox boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove credential enumeration, password spraying, authorization, scanning, sandbox isolation, plugin safety, target ownership, Docker-host operation, investigation efficacy, or defensive efficacy.
