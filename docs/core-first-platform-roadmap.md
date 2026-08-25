@@ -1100,3 +1100,12 @@ The shared plugin sandbox no longer fabricates mock container or plugin results 
 Regression coverage prevents restoration of fabricated mock plugin output while retaining the plugin-manager sandbox boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove Docker isolation, plugin safety, plugin execution, source authentication, AI analysis, tenant isolation, response authorization, containment behavior, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: randomized shared MITRE simulation retirement
+
+The unreachable shared MITRE module that assigned randomized confidence values, generic random technique fallbacks, and simulated coverage explanations is removed. Governed tenant-scoped MITRE evidence remains separately implemented in correlation, investigation, and threat-hunting paths.
+
+Regression coverage prevents restoration of the randomized shared MITRE simulation while retaining separate governed MITRE evidence implementations.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove ATT&CK mapping accuracy, coverage completeness, evidence provenance, tenant isolation under live load, investigation behavior, threat-hunting behavior, Docker-host operation, or defensive efficacy.
