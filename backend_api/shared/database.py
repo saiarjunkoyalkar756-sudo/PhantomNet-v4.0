@@ -638,13 +638,6 @@ class RevokedCertificate(Base):
     revocation_date = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     reason = Column(String)
 
-class CognitiveMemoryDB(Base):
-    __tablename__ = "cognitive_memory"
-    id = Column(Integer, primary_key=True, index=True)
-    threat_data = Column(String, unique=True, nullable=False)
-    episode_data = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
-
 class PhantomChainDB(Base):
     __tablename__ = "phantom_chain"
     block_index = Column(Integer, primary_key=True, index=True)

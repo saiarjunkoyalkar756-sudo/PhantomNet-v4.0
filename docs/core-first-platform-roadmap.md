@@ -1226,3 +1226,12 @@ The unmounted signature-mutation feature that altered detection signatures rando
 The separately active event processor remains deterministic when advisory correlation is unavailable, retaining its rule, threat-intelligence, and UEBA handling. Regression coverage prevents restoration of the mutation simulation while preserving that fallback.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove signature evolution, detection-rule generation, detection accuracy, false-positive control, corpus provenance, model evaluation, rule deployment, tenant isolation, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: cognitive simulation-set retirement
+
+The isolated cognitive-core and synthetic-memory feature set is removed together with its companion tests and the unreferenced `CognitiveMemoryDB` persistence model. It treated similarity over locally stored strings as threat analysis, labeled unmatched input as a critical zero-day, auto-stored conclusions, and represented an isolation action as executed without tenant-owned evidence, governed detection content, authorization, signed audit evidence, controlled adapter, verification, or rollback. Source tracing found no product caller, service mount, deployment, migration, or external database-model dependency.
+
+The separately active defensive-evaluation boundary remains tenant-scoped, sanitized, advisory-only, and non-enforcing. Regression coverage prevents restoration of the cognitive simulation set or persistence model while preserving that boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove cognitive analysis, zero-day detection, memory persistence, automatic learning, containment execution, isolation, model evaluation, source provenance, tenant isolation under live load, audit durability, Docker-host operation, investigation efficacy, or defensive efficacy.

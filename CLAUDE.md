@@ -168,7 +168,6 @@ Advanced capabilities. Load only when working on specific modules.
 | `behavioral_biometrics/` | Continuous auth via keystroke dynamics + pointer telemetry (UEBA) |
 | `snapshot_recovery/` | Timestamped file/dir snapshots with ring-buffer rotation + rollback |
 | `device_fingerprint/` | Hardware-bound 128-bit identity hash (hostname, MAC, arch, FQDN) |
-| `cognitive_core_intelligence/` | Multi-modal cognitive reasoning engine |
 | `phantom_chain/` | Extended blockchain features (multi-node, federation) |
 | `synthetic_cyber_twin_universe/` | Digital twin simulation for pre-deployment testing |
 | `neural_federation_council/` | Federated learning coordination across agent nodes |

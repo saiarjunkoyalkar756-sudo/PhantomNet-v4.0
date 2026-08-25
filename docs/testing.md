@@ -182,11 +182,9 @@ Test each collector starts without error:
 Test each feature module:
 
 - chrono_defense_layer/chrono_defense.py — check temporal correlation works  
-- cognitive_core_intelligence/cognitive_core.py — check cognitive analysis runs
 - cross_domain_fusion_intelligence/fusion_engine.py — check fusion logic works
 - emotionally_aware_incident_assistant/incident_assistant.py — check incident response logic
 - phantom_chain/decentralized_trust_fabric.py — check trust chain logic
-- synthetic_cognitive_memory/ — check memory persistence works
 - neural_security_language/nsl_parser.py — check parser handles sample queries
 
 For each: if it's a stub, implement a minimal working version. If it's broken, fix it.
