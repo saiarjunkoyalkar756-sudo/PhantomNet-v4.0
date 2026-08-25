@@ -1136,3 +1136,12 @@ The unreachable SOC copilot implementation that fabricated canned LLM responses 
 Regression coverage prevents restoration of the fabricated copilot implementation while retaining the `410` legacy boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI analysis, model-provider availability, evidence provenance, investigation behavior, tenant isolation, advisory usefulness, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: simulated attack-path generator retirement
+
+The unused shared attack-path generator that fabricated random assets, topology, and risk values is removed with its sole gateway import. The active governed tenant-scoped evidence-bound attack-path service and route remain separate.
+
+Regression coverage prevents restoration of the simulated generator while retaining the governed attack-path analysis boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove attack-path completeness, asset accuracy, topology accuracy, risk accuracy, evidence provenance, tenant isolation under live load, Docker-host operation, investigation efficacy, or defensive efficacy.

@@ -26,10 +26,6 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from backend_api.shared.plugin_manager import PluginManager
 import pyotp  # Ensure pyotp is imported for 2FA setup
-from backend_api.shared.attack_path_generator import (
-    generate_simulated_attack_path,
-    AttackPathGraph,
-)  # Import Attack Path Generator
 from backend_api.shared.event_stream_processor import (
     EventStreamProcessor,
     RawEvent,
