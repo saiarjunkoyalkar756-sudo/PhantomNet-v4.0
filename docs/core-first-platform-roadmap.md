@@ -1271,3 +1271,12 @@ The unmounted synthetic cyber-twin package that created in-memory asset twins fr
 The separately active endpoint-inventory repository remains tenant-scoped. Regression coverage prevents restoration of the simulated digital-twin package while preserving that distinct boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove digital-twin fidelity, attack simulation, vulnerability identification, impact prediction, asset discovery, source provenance, tenant isolation under live load, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: phantom-chain simulation retirement
+
+The isolated phantom-chain feature, its companion test, and the unreferenced `PhantomChainDB` model are removed. The feature maintained an in-memory chain, fixed its proof value, and treated caller-supplied transactions plus hash linkage as a blockchain audit layer without tenant scope, authenticated authorship, durable signed audit evidence, product caller, service mount, deployment reference, or migration dependency.
+
+The separate audit-log integrity implementation remains tamper-evident and optionally HMAC-signed. Regression coverage prevents restoration of the chain simulation or persistence model while preserving that signed-audit boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove blockchain operation, distributed consensus, transaction provenance, immutable audit storage, audit authorship, signature validation beyond the retained source contract, tenant isolation, Docker-host operation, investigation efficacy, or defensive efficacy.

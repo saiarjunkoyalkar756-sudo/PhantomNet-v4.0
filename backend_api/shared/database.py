@@ -638,14 +638,6 @@ class RevokedCertificate(Base):
     revocation_date = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     reason = Column(String)
 
-class PhantomChainDB(Base):
-    __tablename__ = "phantom_chain"
-    block_index = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(String, nullable=False)
-    data = Column(String, nullable=False)
-    previous_hash = Column(String, nullable=False)
-    hash = Column(String, unique=True, nullable=False)
-
 class PlaybookDB(Base):
     __tablename__ = "soar_playbooks"
     id = Column(Integer, primary_key=True, index=True)

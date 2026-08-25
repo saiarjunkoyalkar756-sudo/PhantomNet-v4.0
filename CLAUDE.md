@@ -168,7 +168,6 @@ Advanced capabilities. Load only when working on specific modules.
 | `behavioral_biometrics/` | Continuous auth via keystroke dynamics + pointer telemetry (UEBA) |
 | `snapshot_recovery/` | Timestamped file/dir snapshots with ring-buffer rotation + rollback |
 | `device_fingerprint/` | Hardware-bound 128-bit identity hash (hostname, MAC, arch, FQDN) |
-| `phantom_chain/` | Extended blockchain features (multi-node, federation) |
 
 ---
 

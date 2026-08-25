@@ -137,9 +137,9 @@ Accessible only to users with the 'admin' role, this section provides comprehens
 *   **Attack Map (`/attack-map`):** See real-time attack visualizations.
 *   **Federation Settings (`/federation-settings`):** Manage agent federation, Certificate Authorities (CA), and bootstrap tokens.
 
-### 3.6. Blockchain Viewer (`/blockchain`)
+### 3.6. Audit-integrity boundary
 
-View the immutable audit trail recorded on the PhantomChain. This provides transparency and integrity for critical system events.
+The retired blockchain viewer is not available. Audit integrity is implemented through the separate tamper-evident, optionally HMAC-signed audit-record boundary; this documentation does not claim immutable storage or live operational verification.
 
 ## 4. Troubleshooting
 
