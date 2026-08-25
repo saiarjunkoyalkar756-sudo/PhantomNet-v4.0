@@ -167,7 +167,6 @@ Advanced capabilities. Load only when working on specific modules.
 |---|---|
 | `behavioral_biometrics/` | Continuous auth via keystroke dynamics + pointer telemetry (UEBA) |
 | `snapshot_recovery/` | Timestamped file/dir snapshots with ring-buffer rotation + rollback |
-| `device_fingerprint/` | Hardware-bound 128-bit identity hash (hostname, MAC, arch, FQDN) |
 
 ---
 
@@ -349,7 +348,6 @@ When a Gemini-style feature number is selected, use this map to find the right r
 | #13 | Plugin Marketplace | `backend_api/plugin_marketplace/`, `plugins/` |
 | #14 | PNQL Query Language | `backend_api/pnql_engine/` |
 | #15 | Blockchain Audit Layer | `blockchain_layer/`, `backend_api/blockchain_service/` |
-| — | Device Identity / Zero-Trust | `features/device_fingerprint/evolutionary_genetics.py` |
 
 ---
 

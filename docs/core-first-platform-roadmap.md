@@ -1280,3 +1280,12 @@ The isolated phantom-chain feature, its companion test, and the unreferenced `Ph
 The separate audit-log integrity implementation remains tamper-evident and optionally HMAC-signed. Regression coverage prevents restoration of the chain simulation or persistence model while preserving that signed-audit boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove blockchain operation, distributed consensus, transaction provenance, immutable audit storage, audit authorship, signature validation beyond the retained source contract, tenant isolation, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: Phantom DNA identity-experiment retirement
+
+The two unmounted Phantom DNA feature packages are removed. They represented hashes of local host metadata or caller-supplied material as immutable hardware-bound identity and root-of-trust evidence without attestation, enrollment, verified hardware provenance, tenant scope, authenticated session binding, product caller, service mount, or deployment reference.
+
+The separately active IAM boundary continues to record the caller-provided session fingerprint field. Regression coverage prevents restoration of the identity experiments while preserving that distinct session field.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove hardware identity, device attestation, device trust, enrollment, session binding, source provenance, tenant isolation, authentication strength, Docker-host operation, investigation efficacy, or defensive efficacy.
