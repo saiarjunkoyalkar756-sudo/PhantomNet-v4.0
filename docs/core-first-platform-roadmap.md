@@ -1307,3 +1307,12 @@ The unmounted neural-security-language parser that translated free-form method c
 The separate PNQL API remains explicitly retired in favor of governed tenant-scoped analytical workflows. Regression coverage prevents restoration of the unsupported parser while preserving that boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove natural-language query support, policy interpretation, action authorization, query safety, command execution, tenant isolation, evidence provenance, verification, rollback, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: neural-diplomacy simulation retirement
+
+The unmounted neural-diplomacy package that used locally seeded peer reputations and caller-supplied threat and business-impact values to emit `APPROVED`, `PARTIAL_REMEDIATION`, or `REJECTED` action outcomes is removed. It had no authenticated peer identity, tenant isolation, authorization boundary, evidence provenance, human approval, signed audit, controlled adapter, verification, rollback, product caller, service mount, or deployment reference.
+
+The distinct governed containment lifecycle remains approval- and HMAC-signed-audit-bound; its controlled adapter, verification, and rollback semantics are preserved. Regression coverage prevents restoration of the negotiation simulation while retaining those source-contract markers.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove peer identity, external ecosystem integration, autonomous response authorization, policy negotiation, action execution, containment, tenant isolation, evidence provenance, audit durability, verification, rollback, Docker-host operation, investigation efficacy, or defensive efficacy.
