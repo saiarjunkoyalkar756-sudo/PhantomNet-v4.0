@@ -171,7 +171,6 @@ Advanced capabilities. Load only when working on specific modules.
 | `device_fingerprint/` | Hardware-bound 128-bit identity hash (hostname, MAC, arch, FQDN) |
 | `self_evolving_threat_brain/` | Adaptive threat model with self-learning feedback loop |
 | `ai_autonomy_levels/` | Configurable AI autonomy tiers (passive → active response) |
-| `ai_threat_marketplace/` | Threat intel sharing marketplace logic |
 | `phantom_os/` | Hardened OS baseline enforcement layer |
 | `cognitive_core_intelligence/` | Multi-modal cognitive reasoning engine |
 | `phantom_chain/` | Extended blockchain features (multi-node, federation) |

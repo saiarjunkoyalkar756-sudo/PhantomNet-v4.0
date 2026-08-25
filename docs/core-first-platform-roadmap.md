@@ -1172,3 +1172,12 @@ The unreferenced shared asset-management module that fabricated fixed network ho
 Regression coverage prevents restoration of the simulated module or its simulation-only test while preserving the tenant-bound endpoint-inventory ingestion boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove asset discovery, network scanning, vulnerability identification, risk-score accuracy, tenant isolation under live load, evidence durability, source authentication, endpoint-inventory availability, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: simulated threat-marketplace retirement
+
+The unmounted threat-marketplace package that accepted arbitrary detection-logic payloads, recorded in-memory developer reputation and reward balances, and marked submissions as validated after a fixed delay is removed with its companion demonstration script. Source tracing found no product caller, service mount, deployment reference, or governed publication path. The separate threat-intelligence service remains capability-protected, advisory, and non-enforcing.
+
+Regression coverage prevents restoration of the simulated marketplace package while preserving the separate advisory threat-intelligence boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove detection-module validation, rule safety, threat-intelligence sharing, provider authorization, analyst authorization in production, reputation or reward accounting, tenant isolation under live load, evidence provenance, Docker-host operation, investigation efficacy, or defensive efficacy.
