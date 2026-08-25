@@ -111,7 +111,6 @@ from backend_api.gateway_service.routes.health import router as health_router
 from backend_api.shared.redis_client import redis_client
 from starlette.datastructures import URL  # Import URL
 from uuid import uuid4  # Import uuid4
-from backend_api.shared.email_service import send_reset_email  # Import send_reset_email
 from backend_api.shared.health_monitor import monitor_health  # Import health monitor
 from jose import jwt, JWTError  # Import jwt for token decoding in logout
 

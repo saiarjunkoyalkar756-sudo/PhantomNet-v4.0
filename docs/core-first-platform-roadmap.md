@@ -1145,3 +1145,12 @@ The unused shared attack-path generator that fabricated random assets, topology,
 Regression coverage prevents restoration of the simulated generator while retaining the governed attack-path analysis boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove attack-path completeness, asset accuracy, topology accuracy, risk accuracy, evidence provenance, tenant isolation under live load, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: simulated password-reset email logger retirement
+
+The unreferenced password-reset email helper that logged simulated delivery and reset-link content is removed with its sole gateway import. The separate legacy password-reset API boundary remains explicitly fail closed.
+
+Regression coverage prevents restoration of the simulated email logger while retaining the `410` password-reset boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove password-reset delivery, mailbox ownership, reset-token confidentiality, authentication, account recovery, notification availability, Docker-host operation, or defensive efficacy.
