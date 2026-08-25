@@ -1298,3 +1298,12 @@ The unmounted behavioral-biometrics package that built in-memory keystroke and p
 The separately referenced shared biometric audit helper remains unchanged. Regression coverage prevents restoration of the simulation while preserving that distinct boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove behavioral-biometric accuracy, continuous authentication, identity verification, session-hijack detection, source provenance, consent, tenant isolation, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: neural-security-language parser retirement
+
+The unmounted neural-security-language parser that translated free-form method chains into purported executable intent is removed. It had no tenant context, request authentication, authorization, evidence linkage, parser provenance, controlled adapter, verification, rollback, product caller, service mount, or deployment reference.
+
+The separate PNQL API remains explicitly retired in favor of governed tenant-scoped analytical workflows. Regression coverage prevents restoration of the unsupported parser while preserving that boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove natural-language query support, policy interpretation, action authorization, query safety, command execution, tenant isolation, evidence provenance, verification, rollback, Docker-host operation, investigation efficacy, or defensive efficacy.
