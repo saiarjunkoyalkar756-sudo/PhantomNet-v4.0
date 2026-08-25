@@ -1109,3 +1109,12 @@ The unreachable shared MITRE module that assigned randomized confidence values, 
 Regression coverage prevents restoration of the randomized shared MITRE simulation while retaining separate governed MITRE evidence implementations.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove ATT&CK mapping accuracy, coverage completeness, evidence provenance, tenant isolation under live load, investigation behavior, threat-hunting behavior, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: deterministic zero-trust evidence handling
+
+The active shared zero-trust engine no longer generates randomized trust or device-posture values. It derives a score only from bounded supplied numeric evidence and uses a deterministic zero score when required evidence is unavailable; device posture is preserved from request context or set to `unknown`. Active RBAC, approval-bound governed containment, signed audit, verification, and rollback controls remain separate and unchanged.
+
+Regression coverage prevents restoration of randomized trust and posture fallbacks while preserving the active zero-trust manager contract and separate governed control boundaries.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove identity assurance, device posture, access enforcement, policy accuracy, authorization, tenant isolation under live load, containment execution, Docker-host operation, investigation efficacy, or defensive efficacy.

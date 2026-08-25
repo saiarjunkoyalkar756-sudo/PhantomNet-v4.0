@@ -1,7 +1,6 @@
 # backend_api/zero_trust_engine.py
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-import random
 import time
 import uuid
 from loguru import logger
@@ -144,36 +143,28 @@ class ZeroTrustEngine:
         return list(self.policies.values())
 
     async def _evaluate_trust_score(self, identity: Identity) -> TrustScore:
-        """Simulates calculating a trust score for an identity."""
-        time.sleep(random.uniform(0.5, 2))  # Simulate processing
+        """Calculate a deterministic score from supplied, bounded numeric evidence."""
+        evidence_fields = ("login_history_score", "device_health_score", "geo_location_score")
+        factors: Dict[str, float] = {}
+        for field in evidence_fields:
+            value = identity.attributes.get(field)
+            if isinstance(value, (int, float)) and 0 <= float(value) <= 100:
+                factors[field.removesuffix("_score")] = float(value)
 
-        # Example factors for simulation
-        login_history_score = random.uniform(50, 100)
-        device_health_score = random.uniform(40, 95)
-        geo_location_score = random.uniform(70, 100)
-
-        # Simple aggregation
-        score = (login_history_score + device_health_score + geo_location_score) / 3
-
-        trust_factors = {
-            "login_history": login_history_score,
-            "device_health": device_health_score,
-            "geo_location": geo_location_score,
-        }
+        if len(factors) != len(evidence_fields):
+            score = 0.0
+            factors["reason"] = "required_trust_evidence_unavailable"
+        else:
+            score = sum(factors.values()) / len(evidence_fields)
 
         self.current_trust_scores[identity.id] = TrustScore(
-            entity_id=identity.id, score=round(score, 2), factors=trust_factors
+            entity_id=identity.id, score=round(score, 2), factors=factors
         )
         return self.current_trust_scores[identity.id]
 
     async def get_trust_score(self, entity_id: str) -> Optional[TrustScore]:
-        """Retrieves the current trust score for an entity, re-evaluating if necessary."""
-        # For simulation, always re-evaluate or use a cached one for a short period
-        # In a real system, this would involve continuous evaluation or event-driven updates.
-        identity = Identity(
-            id=entity_id, type="user", attributes={"username": entity_id}
-        )  # Placeholder identity
-        return await self._evaluate_trust_score(identity)
+        """Return a cached score or fail closed when no evidence-backed score exists."""
+        return self.current_trust_scores.get(entity_id)
 
     async def evaluate_access_request(
         self, request: AccessRequest
@@ -191,12 +182,9 @@ class ZeroTrustEngine:
                 factors={"reason": "identity_unknown"},
             )
 
-        # Simulate context dynamically
-        context = request.context
+        context = dict(request.context)
         context["user_trust_score"] = trust_score_obj.score
-        context["device_health"] = random.choice(
-            ["healthy", "compromised", "unknown"]
-        )  # Simulated device health
+        context.setdefault("device_health", "unknown")
 
         enforced_action = "allowed"
         violated_policy_id = None
