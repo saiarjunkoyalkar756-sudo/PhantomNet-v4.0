@@ -1253,3 +1253,12 @@ The unmounted cross-domain fusion package that combined caller-supplied psycholo
 The separately referenced shared biometric audit helper remains unchanged. Regression coverage prevents restoration of the speculative fusion package while preserving that distinct boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove insider-threat identification, psychological or economic inference, attack prediction, behavioral-biometric accuracy, source provenance, tenant isolation, analyst authorization, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: neural-federation council simulation retirement
+
+The unmounted neural-federation council package that auto-approved proposer votes and represented in-memory agent vote counts as authorization for disruptive actions is removed. It had no authenticated agent identity, tenant scope, durable signed audit evidence, controlled adapter, verification, rollback, product caller, service mount, or deployment reference.
+
+The separately active shared consensus boundary remains unchanged. Regression coverage prevents restoration of the simulated council while preserving that distinct boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove agent identity, consensus authorization, multi-agent safety, policy enforcement, containment execution, audit durability, verification, rollback, tenant isolation, Docker-host operation, investigation efficacy, or defensive efficacy.

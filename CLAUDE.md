@@ -170,7 +170,6 @@ Advanced capabilities. Load only when working on specific modules.
 | `device_fingerprint/` | Hardware-bound 128-bit identity hash (hostname, MAC, arch, FQDN) |
 | `phantom_chain/` | Extended blockchain features (multi-node, federation) |
 | `synthetic_cyber_twin_universe/` | Digital twin simulation for pre-deployment testing |
-| `neural_federation_council/` | Federated learning coordination across agent nodes |
 
 ---
 
