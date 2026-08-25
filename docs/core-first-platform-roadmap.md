@@ -1190,3 +1190,12 @@ The unmounted edge-brain package that claimed endpoint syscall and process inter
 The separately supported governed containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the pseudo-enforcement package while preserving that governed boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove endpoint telemetry, syscall or process interception, policy enforcement, integrity verification, containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: silent-remediation simulation retirement
+
+The unmounted silent-remediation package that represented low-risk alerts as automatically resolved “in secret,” retained in-memory remediation records, and reported a fabricated friction-saved metric is removed with its non-runnable demonstration script. It had no tenant-owned evidence, authenticated approval, signed audit evidence, controlled adapter, verification, rollback, product caller, service mount, or deployment reference.
+
+The separately supported governed containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the silent-remediation simulation while preserving that governed boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove automatic remediation, alert resolution, risk-score correctness, telemetry delivery, analyst notification, containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
