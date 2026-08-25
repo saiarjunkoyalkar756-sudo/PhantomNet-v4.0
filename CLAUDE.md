@@ -165,7 +165,6 @@ Advanced capabilities. Load only when working on specific modules.
 
 | Directory | What it actually does |
 |---|---|
-| `behavioral_biometrics/` | Continuous auth via keystroke dynamics + pointer telemetry (UEBA) |
 | `snapshot_recovery/` | Timestamped file/dir snapshots with ring-buffer rotation + rollback |
 
 ---
@@ -335,7 +334,7 @@ When a Gemini-style feature number is selected, use this map to find the right r
 |---|---|---|
 | #1 | XDR-Level Agent | `phantomnet_agent/` |
 | #2 | Threat Correlation Engine | `backend_api/correlation_engine/` |
-| #3 | AI Behavioral Engine (UEBA) | `backend_api/ai_behavioral_engine/`, `features/behavioral_biometrics/` |
+| #3 | AI Behavioral Engine (UEBA) | `backend_api/ai_behavioral_engine/` |
 | #4 | SOAR Automation Engine | `backend_api/soar_engine/`, `soar_playbook_engine/` |
 | #5 | Real-Time Event Pipeline | `backend_api/event_stream_processor/`, `DOCS/EVENT_BUS_SCHEMA.md` |
 | #6 | Asset Inventory & Attack Surface | `backend_api/asset_inventory_service/`, `attack_graph_engine/` |

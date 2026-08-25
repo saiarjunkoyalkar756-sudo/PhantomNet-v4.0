@@ -1289,3 +1289,12 @@ The two unmounted Phantom DNA feature packages are removed. They represented has
 The separately active IAM boundary continues to record the caller-provided session fingerprint field. Regression coverage prevents restoration of the identity experiments while preserving that distinct session field.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove hardware identity, device attestation, device trust, enrollment, session binding, source provenance, tenant isolation, authentication strength, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: behavioral-biometrics simulation retirement
+
+The unmounted behavioral-biometrics package that built in-memory keystroke and pointer baselines then reported identity verification from caller-supplied telemetry is removed. It had no enrollment workflow, validated biometric source, tenant scope, consent boundary, authentication contract, product caller, service mount, or deployment reference.
+
+The separately referenced shared biometric audit helper remains unchanged. Regression coverage prevents restoration of the simulation while preserving that distinct boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove behavioral-biometric accuracy, continuous authentication, identity verification, session-hijack detection, source provenance, consent, tenant isolation, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
