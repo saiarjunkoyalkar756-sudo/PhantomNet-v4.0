@@ -1235,3 +1235,12 @@ The isolated cognitive-core and synthetic-memory feature set is removed together
 The separately active defensive-evaluation boundary remains tenant-scoped, sanitized, advisory-only, and non-enforcing. Regression coverage prevents restoration of the cognitive simulation set or persistence model while preserving that boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove cognitive analysis, zero-day detection, memory persistence, automatic learning, containment execution, isolation, model evaluation, source provenance, tenant isolation under live load, audit durability, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: emotional incident-assistant simulation retirement
+
+The unmounted emotional incident-assistant package that generated canned analyst messages, reported nominal automated actions as ready, and framed critical incidents around future auto-remediation is removed with its companion test. It had no tenant-owned evidence, authenticated analyst identity, governed advisory contract, approval identity, signed audit evidence, controlled adapter, verification, rollback, product caller, service mount, or deployment reference.
+
+The separately supported containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the simulated assistant while preserving that governed boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove analyst-state detection, analyst assistance, automated response readiness, containment execution, alert delivery, analyst authorization, tenant isolation, audit durability, verification, rollback, Docker-host operation, investigation efficacy, or defensive efficacy.

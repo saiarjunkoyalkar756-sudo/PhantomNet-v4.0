@@ -183,7 +183,6 @@ Test each feature module:
 
 - chrono_defense_layer/chrono_defense.py — check temporal correlation works  
 - cross_domain_fusion_intelligence/fusion_engine.py — check fusion logic works
-- emotionally_aware_incident_assistant/incident_assistant.py — check incident response logic
 - phantom_chain/decentralized_trust_fabric.py — check trust chain logic
 - neural_security_language/nsl_parser.py — check parser handles sample queries
 
