@@ -1217,3 +1217,12 @@ The unmounted PQC-readiness feature that represented random bytes and hashes as 
 The separately referenced shared cryptographic-audit wrapper and explicit `LEGACY_GATEWAY_PQC_API_RETIRED` gateway boundary remain unchanged. Regression coverage prevents restoration of the simulated feature while preserving these distinct boundaries.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove quantum resistance, PQC algorithm implementation, key generation, encapsulation, signature generation or verification, cryptographic agility, system readiness, key management, source authentication, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: randomized signature-mutation retirement
+
+The unmounted signature-mutation feature that altered detection signatures randomly, fabricated a version identifier and fitness-improvement metric, and could trigger automatic mutation from fixture rule data is removed. It had no tenant-owned evidence, governed detection-content lifecycle, evaluation corpus, approval identity, source provenance, product caller, router mount, or deployment reference.
+
+The separately active event processor remains deterministic when advisory correlation is unavailable, retaining its rule, threat-intelligence, and UEBA handling. Regression coverage prevents restoration of the mutation simulation while preserving that fallback.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove signature evolution, detection-rule generation, detection accuracy, false-positive control, corpus provenance, model evaluation, rule deployment, tenant isolation, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.

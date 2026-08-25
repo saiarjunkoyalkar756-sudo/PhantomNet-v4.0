@@ -19,9 +19,6 @@ PhantomNet-v2.0/
 │   ├── src/
 │   └── public/
 │
-├── features/                   # Advanced AI/cyber modules
-│   └── self_evolving_threat_brain/
-│
 ├── docs/                       # User and marketing docs
 │
 ├── microservices/              # Additional distributed components
