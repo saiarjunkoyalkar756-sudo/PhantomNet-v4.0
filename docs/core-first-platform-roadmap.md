@@ -1181,3 +1181,12 @@ The unmounted threat-marketplace package that accepted arbitrary detection-logic
 Regression coverage prevents restoration of the simulated marketplace package while preserving the separate advisory threat-intelligence boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove detection-module validation, rule safety, threat-intelligence sharing, provider authorization, analyst authorization in production, reputation or reward accounting, tenant isolation under live load, evidence provenance, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: pseudo-enforcement edge-brain retirement
+
+The unmounted edge-brain package that claimed endpoint syscall and process interception is removed with its non-runnable local demonstration script. It derived a local identifier, returned hard-coded “verified” integrity status, and applied a fixed string drop list without tenant-owned evidence, authenticated approval, signed audit evidence, controlled adapter execution, verification, or rollback. Source tracing found no product caller, service mount, or deployment reference.
+
+The separately supported governed containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the pseudo-enforcement package while preserving that governed boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove endpoint telemetry, syscall or process interception, policy enforcement, integrity verification, containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.

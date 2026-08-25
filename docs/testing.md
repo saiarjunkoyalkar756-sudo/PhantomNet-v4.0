@@ -188,7 +188,6 @@ Test each feature module:
 - emotionally_aware_incident_assistant/incident_assistant.py — check incident response logic
 - invisible_security_experience/seamless_defense.py — check transparent defense works
 - phantom_chain/decentralized_trust_fabric.py — check trust chain logic
-- phantom_os/edge_brain.py — check edge processing works
 - quantum_aware_cyber_defense/quantum_defense.py — check it runs (likely simulated)
 - self_evolving_threat_brain/ — check evolution logic
 - synthetic_cognitive_memory/ — check memory persistence works

@@ -21,7 +21,6 @@ PhantomNet-v2.0/
 │
 ├── features/                   # Advanced AI/cyber modules
 │   ├── ai_autonomy_levels/
-│   ├── phantom_os/
 │   └── self_evolving_threat_brain/
 │
 ├── docs/                       # User and marketing docs
