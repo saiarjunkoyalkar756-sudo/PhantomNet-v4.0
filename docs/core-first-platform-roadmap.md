@@ -1208,3 +1208,12 @@ The unmounted AI-autonomy router and implementation that allowed privileged call
 The separately supported governed containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the autonomous-execution surface while preserving that governed boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove autonomy-policy operation, automatic execution, RBAC enforcement, tenant isolation, audit durability, asset-criticality accuracy, containment execution, adapter availability, approval authorization, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: simulated PQC-readiness retirement
+
+The unmounted PQC-readiness feature that represented random bytes and hashes as quantum entropy, ML-KEM encapsulation, and ML-DSA signatures is removed. It also made readiness claims from caller-supplied application labels without verified cryptographic material, source provenance, key management, peer validation, deployment integration, or a governed cryptographic contract. Source tracing found no product caller, router mount, or deployment reference.
+
+The separately referenced shared cryptographic-audit wrapper and explicit `LEGACY_GATEWAY_PQC_API_RETIRED` gateway boundary remain unchanged. Regression coverage prevents restoration of the simulated feature while preserving these distinct boundaries.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove quantum resistance, PQC algorithm implementation, key generation, encapsulation, signature generation or verification, cryptographic agility, system readiness, key management, source authentication, Docker-host operation, or defensive efficacy.
