@@ -1262,3 +1262,12 @@ The unmounted neural-federation council package that auto-approved proposer vote
 The separately active shared consensus boundary remains unchanged. Regression coverage prevents restoration of the simulated council while preserving that distinct boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove agent identity, consensus authorization, multi-agent safety, policy enforcement, containment execution, audit durability, verification, rollback, tenant isolation, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: synthetic cyber-twin simulation retirement
+
+The unmounted synthetic cyber-twin package that created in-memory asset twins from caller-supplied configuration and reported simulated attack success and predicted impact is removed. It had no tenant-owned evidence, validated asset identity, source provenance, governed test contract, product caller, service mount, or deployment reference.
+
+The separately active endpoint-inventory repository remains tenant-scoped. Regression coverage prevents restoration of the simulated digital-twin package while preserving that distinct boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove digital-twin fidelity, attack simulation, vulnerability identification, impact prediction, asset discovery, source provenance, tenant isolation under live load, event delivery, Docker-host operation, investigation efficacy, or defensive efficacy.
