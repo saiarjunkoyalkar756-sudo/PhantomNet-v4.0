@@ -170,7 +170,6 @@ Advanced capabilities. Load only when working on specific modules.
 | `pqc_readiness/` | Post-Quantum Crypto audit: ML-KEM/Kyber, ML-DSA/Dilithium readiness |
 | `device_fingerprint/` | Hardware-bound 128-bit identity hash (hostname, MAC, arch, FQDN) |
 | `self_evolving_threat_brain/` | Adaptive threat model with self-learning feedback loop |
-| `ai_autonomy_levels/` | Configurable AI autonomy tiers (passive → active response) |
 | `cognitive_core_intelligence/` | Multi-modal cognitive reasoning engine |
 | `phantom_chain/` | Extended blockchain features (multi-node, federation) |
 | `synthetic_cyber_twin_universe/` | Digital twin simulation for pre-deployment testing |

@@ -1199,3 +1199,12 @@ The unmounted silent-remediation package that represented low-risk alerts as aut
 The separately supported governed containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the silent-remediation simulation while preserving that governed boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove automatic remediation, alert resolution, risk-score correctness, telemetry delivery, analyst notification, containment execution, adapter availability, approval authorization, audit durability, verification, rollback, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: unmounted AI-autonomy retirement
+
+The unmounted AI-autonomy router and implementation that allowed privileged callers to select A3–A5 autonomous execution modes are removed. The code treated in-memory state as an audit history, permitted auto-execution decisions based on mode and asset criticality, and had no tenant-owned evidence, authenticated approval identity, signed audit evidence, controlled adapter, verification, rollback, product mount, caller, or deployment reference.
+
+The separately supported governed containment lifecycle remains request → human approval → signed audit → controlled adapter → verification → rollback. Regression coverage prevents restoration of the autonomous-execution surface while preserving that governed boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove autonomy-policy operation, automatic execution, RBAC enforcement, tenant isolation, audit durability, asset-criticality accuracy, containment execution, adapter availability, approval authorization, verification, rollback, Docker-host operation, or defensive efficacy.

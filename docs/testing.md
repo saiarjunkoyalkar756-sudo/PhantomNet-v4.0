@@ -181,7 +181,6 @@ Test each collector starts without error:
 
 Test each feature module:
 
-- ai_autonomy_levels/autonomy_manager.py — check autonomy level switching works
 - chrono_defense_layer/chrono_defense.py — check temporal correlation works  
 - cognitive_core_intelligence/cognitive_core.py — check cognitive analysis runs
 - cross_domain_fusion_intelligence/fusion_engine.py — check fusion logic works
