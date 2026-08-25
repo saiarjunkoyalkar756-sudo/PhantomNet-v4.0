@@ -1163,3 +1163,12 @@ The auto-discoverable Kerbrute plugin that simulated credential enumeration and 
 Regression coverage prevents restoration of the credential-spraying plugin while retaining the separate fail-closed sandbox boundary.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove credential enumeration, password spraying, authorization, scanning, sandbox isolation, plugin safety, target ownership, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: simulated asset-management retirement
+
+The unreferenced shared asset-management module that fabricated fixed network hosts, ports, vulnerabilities, and risk scores is removed together with its companion simulation-only unit test. Source tracing found no product import, caller, service mount, or deployment reference; full regression collection identified the unit test as the sole remaining import dependency. The separately active endpoint-inventory service remains the supported tenant-scoped, evidence-ingestion boundary and stays non-enforcing.
+
+Regression coverage prevents restoration of the simulated module or its simulation-only test while preserving the tenant-bound endpoint-inventory ingestion boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove asset discovery, network scanning, vulnerability identification, risk-score accuracy, tenant isolation under live load, evidence durability, source authentication, endpoint-inventory availability, Docker-host operation, investigation efficacy, or defensive efficacy.
