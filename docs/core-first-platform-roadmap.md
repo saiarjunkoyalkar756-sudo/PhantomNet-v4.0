@@ -1127,3 +1127,12 @@ The active gateway health monitor no longer selects agents randomly, probes a ha
 Regression coverage prevents restoration of randomized or mutating monitor behavior while preserving the active gateway monitor import and structured readiness implementation.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove service availability, dependency reachability, control-plane operation, recovery, Docker-host operation, scale, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: fabricated SOC copilot implementation retirement
+
+The unreachable SOC copilot implementation that fabricated canned LLM responses and simulated investigation content is removed. The separate SOC copilot API boundary remains explicitly fail closed, and governed evidence-grounded advisory controls remain separate.
+
+Regression coverage prevents restoration of the fabricated copilot implementation while retaining the `410` legacy boundary.
+
+> **Evidence boundary:** this is Class A source-and-test evidence. It does not prove AI analysis, model-provider availability, evidence provenance, investigation behavior, tenant isolation, advisory usefulness, Docker-host operation, investigation efficacy, or defensive efficacy.
