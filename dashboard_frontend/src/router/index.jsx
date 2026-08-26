@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 
 import ProtectedRoute from './ProtectedRoute';
 import AdminRoute from './AdminRoute';
@@ -56,6 +56,10 @@ const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
+      {
+        index: true,
+        element: <Navigate to="/dashboard" replace />,
+      },
       {
         path: 'dashboard',
         element: (

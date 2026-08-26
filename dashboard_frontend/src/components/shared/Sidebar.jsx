@@ -1,131 +1,43 @@
-import { motion } from 'framer-motion';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Shield,
-  LayoutGrid,
-  Activity,
-  GitGraph,
-  Globe,
-  Puzzle,
-  BookCopy,
-  Bot,
-  Settings,
-  ChevronsLeft,
-  ChevronsRight,
-  Fingerprint,
-  Users,
-  HardDriveDownload,
-  Terminal,
-  MessageSquare,
-  Target
+  Activity, Bot, Boxes, ChevronLeft, ChevronRight, FileSearch, Fingerprint,
+  GitBranch, LayoutDashboard, RadioTower, Settings, ShieldCheck, UsersRound,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-const MotionAside = motion.aside;
-const MotionButton = motion.button;
-const MotionDiv = motion.div;
-const MotionLi = motion.li;
-const MotionSpan = motion.span;
-
-const NavItem = ({ icon: Icon, text, to, expanded }) => {
-    return (
-        <MotionLi whileHover={{ scale: expanded ? 1.02 : 1, x: expanded ? 5 : 0 }}>
-            <NavLink
-                to={to}
-                className={({ isActive }) =>
-                    cn(`
-                        relative flex items-center py-3 px-4 my-1
-                        font-medium rounded-md cursor-pointer
-                        transition-colors group
-                        font-mono text-sm
-                        whitespace-nowrap
-                        ${isActive
-                            ? "bg-gradient-to-tr from-primary to-primary/50 text-primary-foreground shadow-lg"
-                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                        }
-                    `)
-                }
-            >
-                {React.createElement(Icon, { size: 20, className: "shrink-0" })}
-                <MotionSpan
-                    initial={false}
-                    animate={{ width: expanded ? "auto" : 0, opacity: expanded ? 1 : 0, marginLeft: expanded ? '0.75rem' : 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                >
-                    {text}
-                </MotionSpan>
-            </NavLink>
-             {!expanded && (
-                <div
-                    className={`
-                        absolute left-full rounded-md px-3 py-2 ml-6
-                        bg-card text-card-foreground text-sm
-                        invisible opacity-0 -translate-x-3 transition-all
-                        group-hover:visible group-hover:opacity-100 group-hover:translate-x-0
-                        border shadow-md z-20
-                    `}
-                >
-                    {text}
-                </div>
-            )}
-        </MotionLi>
-    );
-};
-
+const sections = [
+  { label: 'Operations', items: [
+    { icon: LayoutDashboard, label: 'Command center', to: '/dashboard' },
+    { icon: Activity, label: 'Event stream', to: '/events' },
+    { icon: FileSearch, label: 'Case management', to: '/case-management' },
+    { icon: RadioTower, label: 'Threat hunting', to: '/threat-hunting' },
+  ] },
+  { label: 'Response', items: [
+    { icon: ShieldCheck, label: 'Governed response', to: '/soar' },
+    { icon: UsersRound, label: 'Agents', to: '/agents' },
+    { icon: GitBranch, label: 'Threat graph', to: '/threat-graph' },
+  ] },
+  { label: 'Platform', items: [
+    { icon: Boxes, label: 'SIEM integration', to: '/siem-integration' },
+    { icon: Bot, label: 'AI decision log', to: '/ai-decision-log' },
+    { icon: Settings, label: 'Settings', to: '/settings' },
+  ] },
+];
 
 const Sidebar = () => {
-    const [expanded, setExpanded] = useState(true);
-
-    const navItems = [
-        { icon: LayoutGrid, text: "Dashboard", to: "/dashboard" },
-        { icon: Terminal, text: "Event Stream", to: "/events" },
-        { icon: Users, text: "Agents", to: "/agents" },
-        { icon: GitGraph, text: "Threat Graph", to: "/threat-graph" },
-        { icon: Globe, text: "Threat Intel", to: "/intel" },
-        { icon: MessageSquare, text: "AI Console", to: "/ai-console" },
-        { icon: HardDriveDownload, text: "Marketplace", to: "/marketplace" },
-        { icon: BookCopy, text: "Log Viewer", to: "/logs" },
-        { icon: Target, text: "Red Team", to: "/red-team" },
-    ];
-
-    return (
-        <MotionAside
-            initial={false}
-            animate={{ width: expanded ? "280px" : "80px" }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="h-screen p-4 flex flex-col bg-card border-r shadow-lg relative z-20"
-        >
-            <div className="flex items-center justify-between pb-4 border-b mb-4">
-                <MotionDiv
-                    animate={{ opacity: expanded ? 1 : 0, width: expanded ? "auto" : 0 }}
-                    className="flex items-center gap-2 overflow-hidden"
-                >
-                    <Fingerprint size={28} className="text-primary shrink-0" />
-                    <span className="font-bold text-xl text-primary whitespace-nowrap">PhantomNet</span>
-                </MotionDiv>
-                <MotionButton
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setExpanded(curr => !curr)}
-                    className="p-2 rounded-full text-muted-foreground hover:bg-accent"
-                >
-                    {expanded ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
-                </MotionButton>
-            </div>
-
-            <ul className="flex-1">
-                {navItems.map((item) => (
-                    <NavItem key={item.to} {...item} expanded={expanded} />
-                ))}
-            </ul>
-
-            <div className="border-t pt-4 mt-4">
-                <NavItem icon={Settings} text="Settings" to="/settings" expanded={expanded} />
-            </div>
-        </MotionAside>
-    );
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <aside className={`relative z-30 hidden h-screen shrink-0 flex-col border-r border-white/[0.08] bg-[#09111c] text-slate-300 transition-[width] duration-200 md:flex ${collapsed ? 'w-[76px]' : 'w-[252px]'}`}>
+      <div className="flex h-[76px] items-center border-b border-white/[0.08] px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[rgba(72,225,193,0.2)] bg-[rgba(72,225,193,0.08)] text-[#48e1c1]"><Fingerprint size={19} /></div>{!collapsed && <div className="min-w-0"><p className="truncate text-sm font-semibold tracking-tight text-slate-100">PhantomNet</p><p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">SOC console</p></div>}</div>
+        <button type="button" onClick={() => setCollapsed((current) => !current)} className="soc-focus grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-white/[0.06] hover:text-slate-200" aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}>{collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}</button>
+      </div>
+      <nav className="custom-scrollbar flex-1 overflow-y-auto px-3 py-5" aria-label="Primary">
+        {sections.map((section) => <div key={section.label} className="mb-6">{!collapsed && <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">{section.label}</p>}<div className="space-y-1">{section.items.map((item) => { const Icon = item.icon; return <NavLink key={item.to} to={item.to} title={collapsed ? item.label : undefined} className={({ isActive }) => `soc-focus group flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm transition ${isActive ? 'bg-[rgba(72,225,193,0.1)] text-[#85f1d8]' : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'}`}><Icon size={17} className="shrink-0" strokeWidth={1.8} />{!collapsed && <span className="truncate">{item.label}</span>}</NavLink>; })}</div></div>)}
+      </nav>
+      <div className="m-3 rounded-xl border border-white/[0.08] bg-white/[0.025] p-3">{!collapsed ? <><div className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#48e1c1]" /><p className="text-xs font-medium text-slate-300">Evidence-first mode</p></div><p className="mt-2 text-[11px] leading-4 text-slate-500">Response remains approval-bound and deployment-gated.</p></> : <span className="mx-auto block h-2 w-2 rounded-full bg-[#48e1c1]" />}</div>
+    </aside>
+  );
 };
 
 export default Sidebar;

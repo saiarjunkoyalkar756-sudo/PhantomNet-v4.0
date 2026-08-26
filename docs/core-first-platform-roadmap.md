@@ -1343,3 +1343,12 @@ The gateway no longer mounts its separate legacy `/health/` router. That route c
 The gateway retains the standard factory `/health`, `/ready`, and `/metrics` control-plane surfaces. The Phase 7 self-hosted topology continues to health-check only the standard `/ready` endpoint. Regression coverage prevents restoration of the placeholder route while retaining the standardized probes.
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove live Kafka, PostgreSQL, Redis, or Neo4j health; real dependency diagnostics; container healthcheck execution; service availability; alerting; recovery; Docker-host operation; or production operation.
+
+
+## Completed bounded increment: evidence-first SOC console rebuild
+
+The primary dashboard has been rebuilt from the Vite-constrained, sparse threat-hunting summary into an operator-oriented SOC command center. It now exposes a coherent navigation hierarchy, analyst workflow entry points, source-backed metric placeholders, governed MITRE technique evidence, containment lifecycle visibility, and bounded operating-posture indicators. The root dashboard route now redirects to the protected command-center route instead of rendering an empty shared shell.
+
+The console deliberately shows awaiting or unavailable states when the protected threat-hunting summary cannot be obtained. It does not synthesize telemetry, AI findings, alert counts, investigations, response execution, or integration state. High-impact response is presented only as the existing request → human approval → signed audit → controlled adapter → verification → rollback lifecycle. The protected route's subscriptions were also made stable to prevent a client-side update loop during dashboard render.
+
+> **Evidence boundary:** this is Class A source, lint, build, and local visual-preview evidence. It does not prove authenticated user journeys, tenant data access, live telemetry, real alert volumes, incident-case behavior, AI quality, adapter execution, containment, verification, rollback, responsive operation on a user device, Docker-host operation, or defensive efficacy.

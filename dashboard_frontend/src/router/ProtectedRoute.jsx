@@ -3,10 +3,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
 const ProtectedRoute = ({ children }) => {
-  const { accessToken, loading } = useAuthStore((state) => ({
-    accessToken: state.accessToken,
-    loading: state.loading,
-  }));
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const loading = useAuthStore((state) => state.loading);
   const location = useLocation();
 
   if (loading) {
