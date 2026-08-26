@@ -1,81 +1,96 @@
-# backend_api/shared/redis_client.py
-"""
-Resilient Auto-Reconnecting Redis Client with Exponential Backoff.
-Integrates mock fallback during testing or local safe-mode deployments.
-"""
+"""Redis client boundary with safe-mode mocks and non-safe-mode fail-closed behavior."""
+from __future__ import annotations
 
 import os
 import time
+from unittest.mock import MagicMock
+
 import redis
 from loguru import logger
-from unittest.mock import MagicMock
+
 from backend_api.core_config import SAFE_MODE
 
+
+class RedisUnavailable(RuntimeError):
+    """Raised when a non-safe-mode service cannot reach its configured Redis dependency."""
+
+
+def _runtime_environment() -> str:
+    """Return the deployment environment without exposing configuration values."""
+    return os.getenv("PHANTOMNET_ENVIRONMENT", os.getenv("ENVIRONMENT", "development")).strip().lower()
+
+
 class ReconnectingRedisClient:
-    """
-    Wrapper around redis.Redis that provides auto-reconnect logic
-    with exponential backoff on connection failure.
-    """
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
+    """Reconnect to configured Redis, allowing mocks only for safe or test execution."""
+
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 6379,
+        db: int = 0,
+        *,
+        redis_url: str | None = None,
+        max_attempts: int = 5,
+    ):
         self._host = host
         self._port = port
         self._db = db
+        self._redis_url = redis_url if redis_url is not None else os.getenv("REDIS_URL")
+        self._max_attempts = max_attempts
         self._client = None
         self._mock_client = None
 
     def _get_mock(self) -> MagicMock:
         if not self._mock_client:
-            logger.warning("SAFE_MODE is ON, environment is testing, or Redis is down. Using mock Redis client.")
+            logger.warning("Using an in-memory Redis mock only because safe mode or test mode is active.")
             self._mock_client = MagicMock()
-            # Standard return values to keep auth and sessions functional in local tests
             self._mock_client.ping.return_value = False
             self._mock_client.pipeline.return_value.execute.return_value = [1, 60]
             self._mock_client.get.return_value = None
             self._mock_client.setex.return_value = True
         return self._mock_client
 
+    def _new_client(self):
+        connection_options = {
+            "decode_responses": True,
+            "socket_connect_timeout": 2.0,
+            "socket_timeout": 2.0,
+        }
+        if self._redis_url:
+            return redis.Redis.from_url(self._redis_url, **connection_options)
+        return redis.Redis(host=self._host, port=self._port, db=self._db, **connection_options)
+
     def get_client(self):
-        env = os.getenv("ENVIRONMENT", "development").lower()
-        if SAFE_MODE or env == "testing":
+        if SAFE_MODE or _runtime_environment() in {"test", "testing"}:
             return self._get_mock()
 
-        # If client already exists, test if it's still alive
         if self._client:
             try:
                 self._client.ping()
                 return self._client
             except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
-                logger.warning("Redis connection lost. Retrying to connect...")
+                logger.warning("Redis connection lost; reconnecting before allowing another request.")
                 self._client = None
 
-        # Reconnect with exponential backoff
         backoff = 0.5
-        for attempt in range(5):
+        for attempt in range(self._max_attempts):
             try:
-                client = redis.Redis(
-                    host=self._host,
-                    port=self._port,
-                    db=self._db,
-                    decode_responses=True,
-                    socket_connect_timeout=2.0
-                )
+                client = self._new_client()
                 client.ping()
                 self._client = client
-                logger.info("Successfully connected to Redis.")
+                logger.info("Connected to configured Redis dependency.")
                 return client
-            except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as err:
-                logger.warning(f"Redis connection attempt {attempt+1} failed: {err}")
-                if attempt == 4:
-                    break
-                time.sleep(backoff)
-                backoff *= 2
+            except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
+                logger.warning("Redis connection attempt {} failed.", attempt + 1)
+                if attempt + 1 < self._max_attempts:
+                    time.sleep(backoff)
+                    backoff *= 2
 
-        logger.error("Could not connect to Redis after 5 attempts. Falling back to mock client.")
-        return self._get_mock()
+        logger.error("Redis is unavailable while safe mode is disabled; refusing mock fallback.")
+        raise RedisUnavailable("Redis is unavailable while safe mode is disabled.")
 
     def __getattr__(self, name: str):
-        # Dynamically forward attributes/calls to the underlying active client (real or mock)
         return getattr(self.get_client(), name)
 
-# Central singleton instance
+
 redis_client = ReconnectingRedisClient()

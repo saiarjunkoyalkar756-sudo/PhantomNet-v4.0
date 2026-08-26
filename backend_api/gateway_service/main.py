@@ -108,7 +108,7 @@ from backend_api.gateway_service.agent_api import router as agent_router  # Impo
 from backend_api.gateway_service.orchestrator_api import router as orchestrator_router
 from backend_api.iam_service.api import router as iam_router
 from backend_api.gateway_service.routes.health import router as health_router
-from backend_api.shared.redis_client import redis_client
+from backend_api.shared.redis_client import RedisUnavailable, redis_client
 from starlette.datastructures import URL  # Import URL
 from uuid import uuid4  # Import uuid4
 from backend_api.shared.health_monitor import monitor_health  # Import health monitor
@@ -333,11 +333,17 @@ async def rate_limit_middleware(request: Request, call_next):
         ip = request.client.host
     key = f"rate_limit:{ip}"
 
-    # Use a pipeline to execute commands atomically
-    pipe = redis_client.pipeline()
-    pipe.incr(key)
-    pipe.expire(key, RATE_LIMIT_WINDOW)
-    request_count, _ = pipe.execute()
+    try:
+        pipe = redis_client.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, RATE_LIMIT_WINDOW)
+        request_count, _ = pipe.execute()
+    except RedisUnavailable:
+        logger.error("Gateway rate-limit dependency is unavailable; refusing the request.")
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Request security controls are temporarily unavailable."},
+        )
 
     if request_count > RATE_LIMIT_THRESHOLD:
         logger.warning(f"Rate limit exceeded for IP: {ip}")

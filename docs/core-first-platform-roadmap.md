@@ -1316,3 +1316,12 @@ The unmounted neural-diplomacy package that used locally seeded peer reputations
 The distinct governed containment lifecycle remains approval- and HMAC-signed-audit-bound; its controlled adapter, verification, and rollback semantics are preserved. Regression coverage prevents restoration of the negotiation simulation while retaining those source-contract markers.
 
 > **Evidence boundary:** this is Class A source-and-test evidence. It does not prove peer identity, external ecosystem integration, autonomous response authorization, policy negotiation, action execution, containment, tenant isolation, evidence provenance, audit durability, verification, rollback, Docker-host operation, investigation efficacy, or defensive efficacy.
+
+
+## Completed bounded increment: self-hosted gateway Redis dependency boundary
+
+The self-hosted gateway no longer substitutes an in-memory Redis mock after its configured Redis dependency is unavailable while safe mode is disabled. It now reconnects only to the configured Redis endpoint and raises an explicit dependency-unavailable condition after bounded attempts. The gateway rate-limit middleware converts that condition into a generic `503` response, so a request cannot bypass its rate-limit control through an outage fallback.
+
+Safe mode and explicit test environments retain the local mock only for isolated development and regression execution. The gateway still declares Redis as a required Phase 7 readiness dependency, and the hardened self-hosted Compose reference remains unchanged.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove a live Redis outage response, Redis authentication, Compose startup, rate-limit throughput, distributed rate-limit consistency, persistence, DDoS resistance, Docker-host operation, or defensive efficacy.
