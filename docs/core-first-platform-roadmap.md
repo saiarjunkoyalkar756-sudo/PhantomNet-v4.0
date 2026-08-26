@@ -1334,3 +1334,12 @@ The self-hosted reference now includes a secret-safe preflight runner for an ope
 The runner never prints supplied secret values. It is a pre-start configuration gate, not an action authority, deployment, recovery test, or provider integration proof. Regression coverage uses a mocked Docker command and verifies success and key fail-closed conditions without retaining credential material.
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove a real protected environment file, Docker Engine or Compose availability, image retrieval, container startup, secret-manager integration, network isolation, persistence, authentication, recovery, adapter behavior, or production operation.
+
+
+## Completed bounded increment: gateway placeholder-health retirement
+
+The gateway no longer mounts its separate legacy `/health/` router. That route composed deprecated Kafka and PostgreSQL helpers with a hard-coded Redis `healthy` result even though it did not perform a Redis probe. It also could serialize implementation-specific dependency errors. Source tracing found no supported caller, self-hosted deployment probe, or documentation contract for the trailing-slash endpoint.
+
+The gateway retains the standard factory `/health`, `/ready`, and `/metrics` control-plane surfaces. The Phase 7 self-hosted topology continues to health-check only the standard `/ready` endpoint. Regression coverage prevents restoration of the placeholder route while retaining the standardized probes.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove live Kafka, PostgreSQL, Redis, or Neo4j health; real dependency diagnostics; container healthcheck execution; service availability; alerting; recovery; Docker-host operation; or production operation.

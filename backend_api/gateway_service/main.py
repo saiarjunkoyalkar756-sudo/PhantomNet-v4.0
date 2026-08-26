@@ -107,7 +107,6 @@ from backend_api.gateway_service.admin import router as admin_router
 from backend_api.gateway_service.agent_api import router as agent_router  # Import admin_router
 from backend_api.gateway_service.orchestrator_api import router as orchestrator_router
 from backend_api.iam_service.api import router as iam_router
-from backend_api.gateway_service.routes.health import router as health_router
 from backend_api.shared.redis_client import RedisUnavailable, redis_client
 from starlette.datastructures import URL  # Import URL
 from uuid import uuid4  # Import uuid4
@@ -374,7 +373,6 @@ app.include_router(admin_router, tags=["Admin"])
 app.include_router(agent_router, tags=["Agents"])
 
 app.include_router(iam_router)
-app.include_router(health_router, tags=["Health"])
 
 
 
