@@ -135,6 +135,10 @@ The dashboard's production bundle uses an explicit 600 kB vendor-chunk budget. T
 Use Docker Compose only with non-production environment values. Secrets, passwords, HMAC keys, and provider credentials must be passed through the environment or an untracked local environment file.
 
 ```bash
+# On an operator-controlled Docker host, validate protected configuration without printing secrets.
+# This requires a 0600 lab or production environment file and keeps all response adapters disabled.
+./scripts/preflight_self_hosted_release.sh deploy/self-hosted/.env
+
 # Inspect the declared service topology before starting it.
 docker compose config
 
@@ -158,6 +162,7 @@ PhantomNet separates quick, safe regression evidence from Docker-host integratio
 | Resilience stress benchmark | `python3 scripts/run_resilience_stress.py --events 500` | Synthetic BAS-marked telemetry; verifies idempotency and detection/alert invariants without response execution. |
 | Dashboard quality gate | `cd dashboard_frontend && npm run lint && npm run build` | Static analysis and production bundle validation. |
 | Portal quality gate | `cd phantomnet-website && npm run lint && npm run build` | Static analysis, TypeScript validation, and static-route generation. |
+| Self-hosted release preflight | `./scripts/preflight_self_hosted_release.sh deploy/self-hosted/.env` | Operator-controlled Docker host only; validates protected configuration, disabled response adapters, and Compose rendering without printing secret values. |
 | Docker recovery validation | `./scripts/run_docker_recovery_validation.sh` | Docker-capable host only; runs against an internal-only, ephemeral test topology. |
 | Wazuh governed-response dry-run | `python3 scripts/run_wazuh_governed_response_dry_run.py` | SQLite-only, local Wazuh/endpoint simulation; validates approval, signed receipt, rollback, and HMAC audit evidence without network or endpoint changes. |
 | Containerized Wazuh dry-run | `./scripts/run_docker_wazuh_governed_response_dry_run.sh` | Docker-capable host only; repeats the local simulation in an internal-only, disposable hardened container. |

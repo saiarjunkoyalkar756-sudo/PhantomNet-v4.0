@@ -1325,3 +1325,12 @@ The self-hosted gateway no longer substitutes an in-memory Redis mock after its 
 Safe mode and explicit test environments retain the local mock only for isolated development and regression execution. The gateway still declares Redis as a required Phase 7 readiness dependency, and the hardened self-hosted Compose reference remains unchanged.
 
 > **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove a live Redis outage response, Redis authentication, Compose startup, rate-limit throughput, distributed rate-limit consistency, persistence, DDoS resistance, Docker-host operation, or defensive efficacy.
+
+
+## Completed bounded increment: self-hosted release preflight
+
+The self-hosted reference now includes a secret-safe preflight runner for an operator-controlled Docker host. It rejects a missing, repository-tracked, group- or world-readable, duplicate, incomplete, or placeholder-containing environment file; requires a staging or production environment declaration; requires safe mode to be explicitly disabled; keeps endpoint, AWS, and Wazuh response adapters disabled; and enforces the documented minimum lengths for JWT and containment-audit key material. It then performs only a quiet Compose configuration render.
+
+The runner never prints supplied secret values. It is a pre-start configuration gate, not an action authority, deployment, recovery test, or provider integration proof. Regression coverage uses a mocked Docker command and verifies success and key fail-closed conditions without retaining credential material.
+
+> **Evidence boundary:** this is Class A source-and-isolated-test evidence. It does not prove a real protected environment file, Docker Engine or Compose availability, image retrieval, container startup, secret-manager integration, network isolation, persistence, authentication, recovery, adapter behavior, or production operation.

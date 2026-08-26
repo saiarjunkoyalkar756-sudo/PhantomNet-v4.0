@@ -96,16 +96,23 @@ The existing Docker recovery harness remains the minimum disposable proof for Re
 1. Use a Docker-capable host that is under the operator’s administrative control. Do not use the ephemeral development sandbox as a long-running service host.
 2. Copy `deploy/self-hosted/env/.env.example` to a protected local `.env` file and replace every placeholder with high-entropy values. Confirm the file is excluded from version control.
 3. Keep endpoint, AWS, and Wazuh response adapters disabled. Enable an adapter only through its separate non-production runbook and governed approval workflow.
-4. Render and inspect the composed configuration before starting services:
+4. Run the secret-safe release preflight before rendering or starting services. It requires a protected environment file, rejects placeholders and enabled response adapters, requires the documented JWT and containment-audit key lengths, and performs a quiet Compose render without printing configuration values:
 
 ```bash
 cp deploy/self-hosted/env/.env.example deploy/self-hosted/.env
+chmod 0600 deploy/self-hosted/.env
 # Edit deploy/self-hosted/.env outside version control.
+./scripts/preflight_self_hosted_release.sh deploy/self-hosted/.env
+```
+
+5. Render and inspect the composed configuration before starting services:
+
+```bash
 docker compose --env-file deploy/self-hosted/.env \
   -f deploy/self-hosted/docker-compose.yml config
 ```
 
-5. Start the internal topology, then wait for every health check to become healthy:
+6. Start the internal topology, then wait for every health check to become healthy:
 
 ```bash
 docker compose --env-file deploy/self-hosted/.env \
@@ -115,12 +122,12 @@ docker compose --env-file deploy/self-hosted/.env \
   -f deploy/self-hosted/docker-compose.yml ps
 ```
 
-6. From the controlled host, validate the gateway readiness endpoint, metrics endpoint, dependency health, audit-chain verification, recovery harness, and benchmark workload. Publish only through an operator-managed TLS boundary.
-7. Record the exact image tags, Compose render, migration revision, metrics snapshot, recovery artifact, and benchmark result before treating the host as a validated lab deployment.
+7. From the controlled host, validate the gateway readiness endpoint, metrics endpoint, dependency health, audit-chain verification, recovery harness, and benchmark workload. Publish only through an operator-managed TLS boundary.
+8. Record the secret-free preflight result, exact image tags, a redacted Compose render or digest, migration revision, metrics snapshot, recovery artifact, and benchmark result before treating the host as a validated lab deployment.
 
 ## Validation boundary
 
-Phase 7 adds static and isolated regression proof for the reference topology, health, and metrics contracts. This development environment does not provide Docker, so it cannot claim a live Compose start, persistent-volume test, or network topology proof. The repository’s Docker-dependent checks remain explicitly environment-gated; a Docker-capable lab host must execute them using non-production credentials and disposable or rehearsed data.
+Phase 7 adds static and isolated regression proof for the reference topology, health, metrics, and secret-safe release-preflight contracts. This development environment does not provide Docker, so it cannot claim a live Compose start, a successful preflight against a real protected environment file, persistent-volume test, or network topology proof. The repository’s Docker-dependent checks remain explicitly environment-gated; a Docker-capable lab host must execute them using non-production credentials and disposable or rehearsed data.
 
 ## Explicit limits
 
